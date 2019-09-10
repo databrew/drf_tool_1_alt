@@ -1,0 +1,7 @@
+item,annual_avg,1_in_5_year,1_in_10_year,1_in_25_year,1_in_50_year,1_in_100_year,highest_historical_annual_loss_2018,most_recent_anual_loss_2018
+drought,95,142,184,500,677,866,343,343
+overall,95,142,184,500,677,866,343,343
+graph,95,142,184,500,677,866,343,343
+funding_gap,95,142,184,500,677,866,343,343
+error_bars_upper,0,0,0,0,0,0,,
+error_bars_lower,0,0,0,0,0,0,,

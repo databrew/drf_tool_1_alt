@@ -1,0 +1,10 @@
+,,Long Term Average,1 in 5 Year,1 in 10 Year,1 in 25 Year,1 in 50 Year,1 in 100 Year,Highest Historical Annual Loss
+From UNFTS,Weibull,137,219,305,413,493,573,344
+,Gamma,131,203,274,362,426,491,344
+,LogN,135,192,286,432,563,717,344
+,,,,,,,,
+From Reported People x Fixed Cost pp,Weibull,252,161,489,1342,2414,3990,343
+,Gamma,95,142,284,500,677,866,343
+,LogN,3130,137,644,3188,8906,22906,343
+,,,,,,,,
+From GFDRR Risk Profile (2017),,,,483,,559,610,

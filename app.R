@@ -21,6 +21,19 @@ ui <- shinyUI(
               "#image img {max-width: 100%; width: auto; height: auto}"
             )),
             
+            tags$head(tags$style(HTML('
+      .modal.in .modal-dialog{
+        width:100%;
+        height:100%;
+        margin:0px;
+      }
+
+      .modal-content{
+        width:100%;
+        height:100%;
+      }
+    '))),
+            
             titlePanel(windowTitle = "Disaster Risk Financin Tool 1)",
                        title =
                          div(
@@ -185,169 +198,46 @@ ui <- shinyUI(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+  set.seed(122)
+  histdata <- rnorm(500)
+  
+  
+  observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, { 
+    # event will be called when histdata changes, which only happens once, when it is initially calculated
+    showModal(modalDialog(
+      title = "Disaster Risk Financing Tool 1", easyClose = FALSE, footer = modalButton('Accept'),
+      p('This Tool has been developed in conjunction with the World Bank in order to develop capacity of the World Bank partner countries
+        on key decisions they must take during disaster risk financing. The Tool is intended for use as outlined in the Introduction (About tab) and 
+        should not be used for any other purposes. The tool should not be used to inform real financial decisions.'),
+      br(),
+      p("Information in the Tool is provided for educational purposes only and does not constitute legal or scientific advice or service. The World Bank makes no warranties or 
+        representations, express or implied as to the accuracy or reliability of the Tool or the data contained therein. A user of the Tool should seek qualified expert advice for specific diagnosis 
+        and analysis of a particular project. Any ose thereof or reliance thereon is at the sole and independent discretion and responsibility of the user. No conclusions or inferences 
+        drawn from the Tool should be attributed to the World Bank, its Board of Executive Directors, its management, or any of its member countries."),
+      br(),
+      p('This tool does not imply and judgement of endorsement on the part of the World Bank. In no event will GAD or the World Bank be liable for any form of damage arising from the 
+        application or misapplication of the tool, or any other associated materials.')
+    ))
+  })
+  
   
   output$example_1 <- renderPlotly({
-    p1 <- dat %>%
-      plot_ly(
-        x = ~gdpPercap,
-        y = ~lifeExp,
-        size = ~pop,
-        color = ~continent,
-        frame = ~year,
-        text = ~country,
-        hoverinfo = "text",
-        type = 'scatter',
-        mode = 'markers'
-      ) %>%
-      layout(
-        xaxis = list(
-          type = "log"
-        )
-      )
-    return(p1)
-    # Download
+   
   })
   
   output$example_2 <- renderPlotly({
-    p <- plot_ly(ds, x = ~Date) %>%
-      add_lines(y = ~AAPL.Adjusted, name = "Apple") %>%
-      add_lines(y = ~MSFT.Adjusted, name = "Microsoft") %>%
-      layout(
-        title = "Stock Prices",
-        xaxis = list(
-          rangeselector = list(
-            buttons = list(
-              list(
-                count = 3,
-                label = "3 mo",
-                step = "month",
-                stepmode = "backward"),
-              list(
-                count = 6,
-                label = "6 mo",
-                step = "month",
-                stepmode = "backward"),
-              list(
-                count = 1,
-                label = "1 yr",
-                step = "year",
-                stepmode = "backward"),
-              list(
-                count = 1,
-                label = "YTD",
-                step = "year",
-                stepmode = "todate"),
-              list(step = "all"))),
-          
-          rangeslider = list(type = "date")),
-        
-        yaxis = list(title = "Price"))
-    p
-    
+   
   })
   
   output$example_3 <- renderPlotly({
     
-    p <- plot_ly(data, x = ~x, y = ~base, type = 'bar', marker = list(color = 'rgba(1,1,1, 0.0)')) %>%
-      add_trace(y = ~revenue, marker = list(color = 'rgba(55, 128, 191, 0.7)',
-                                            line = list(color = 'rgba(55, 128, 191, 0.7)',
-                                                        width = 2))) %>%
-      add_trace(y = ~costs, marker = list(color = 'rgba(219, 64, 82, 0.7)',
-                                          line = list(color = 'rgba(219, 64, 82, 1.0)',
-                                                      width = 2))) %>%
-      add_trace(y = ~profit, marker = list(color = 'rgba(50, 171, 96, 0.7)',
-                                           line = list(color = 'rgba(50, 171, 96, 1.0)',
-                                                       width = 2))) %>%
-      layout(title = 'Annual Profit - 2015',
-             xaxis = list(title = ""),
-             yaxis = list(title = ""),
-             barmode = 'stack',
-             paper_bgcolor = 'rgba(245, 246, 249, 1)',
-             plot_bgcolor = 'rgba(245, 246, 249, 1)',
-             showlegend = FALSE) %>%
-      add_annotations(text = text,
-                      x = x,
-                      y = y,
-                      xref = "x",
-                      yref = "y",
-                      font = list(family = 'Arial',
-                                  size = 14,
-                                  color = 'rgba(245, 246, 249, 1)'),
-                      showarrow = FALSE)
+
     
   })
   
   
   output$example_4 <- renderPlotly({
-    p <- plot_ly(data_2, x = ~x1, y = ~y, type = 'bar', orientation = 'h',
-                 marker = list(color = 'rgba(38, 24, 74, 0.8)',
-                               line = list(color = 'rgb(248, 248, 249)', width = 1))) %>%
-      add_trace(x = ~x2, marker = list(color = 'rgba(71, 58, 131, 0.8)')) %>%
-      add_trace(x = ~x3, marker = list(color = 'rgba(122, 120, 168, 0.8)')) %>%
-      add_trace(x = ~x4, marker = list(color = 'rgba(164, 163, 204, 0.85)')) %>%
-      add_trace(x = ~x5, marker = list(color = 'rgba(190, 192, 213, 1)')) %>%
-      layout(xaxis = list(title = "",
-                          showgrid = FALSE,
-                          showline = FALSE,
-                          showticklabels = FALSE,
-                          zeroline = FALSE,
-                          domain = c(0.15, 1)),
-             yaxis = list(title = "",
-                          showgrid = FALSE,
-                          showline = FALSE,
-                          showticklabels = FALSE,
-                          zeroline = FALSE),
-             barmode = 'stack',
-             paper_bgcolor = 'rgb(248, 248, 255)', plot_bgcolor = 'rgb(248, 248, 255)',
-             margin = list(l = 120, r = 10, t = 140, b = 80),
-             showlegend = FALSE) %>%
-      # labeling the y-axis
-      add_annotations(xref = 'paper', yref = 'y', x = 0.14, y = y,
-                      xanchor = 'right',
-                      text = y,
-                      font = list(family = 'Arial', size = 12,
-                                  color = 'rgb(67, 67, 67)'),
-                      showarrow = FALSE, align = 'right') %>%
-      # labeling the percentages of each bar (x_axis)
-      add_annotations(xref = 'x', yref = 'y',
-                      x = x1 / 2, y = y,
-                      text = paste(data_2[,"x1"], '%'),
-                      font = list(family = 'Arial', size = 12,
-                                  color = 'rgb(248, 248, 255)'),
-                      showarrow = FALSE) %>%
-      add_annotations(xref = 'x', yref = 'y',
-                      x = x1 + x2 / 2, y = y,
-                      text = paste(data_2[,"x2"], '%'),
-                      font = list(family = 'Arial', size = 12,
-                                  color = 'rgb(248, 248, 255)'),
-                      showarrow = FALSE) %>%
-      add_annotations(xref = 'x', yref = 'y',
-                      x = x1 + x2 + x3 / 2, y = y,
-                      text = paste(data_2[,"x3"], '%'),
-                      font = list(family = 'Arial', size = 12,
-                                  color = 'rgb(248, 248, 255)'),
-                      showarrow = FALSE) %>%
-      add_annotations(xref = 'x', yref = 'y',
-                      x = x1 + x2 + x3 + x4 / 2, y = y,
-                      text = paste(data_2[,"x4"], '%'),
-                      font = list(family = 'Arial', size = 12,
-                                  color = 'rgb(248, 248, 255)'),
-                      showarrow = FALSE) %>%
-      add_annotations(xref = 'x', yref = 'y',
-                      x = x1 + x2 + x3 + x4 + x5 / 2, y = y,
-                      text = paste(data_2[,"x5"], '%'),
-                      font = list(family = 'Arial', size = 12,
-                                  color = 'rgb(248, 248, 255)'),
-                      showarrow = FALSE) %>%
-      # labeling the first Likert scale (on the top)
-      add_annotations(xref = 'x', yref = 'paper',
-                      x = c(21 / 2, 21 + 30 / 2, 21 + 30 + 21 / 2, 21 + 30 + 21 + 16 / 2,
-                            21 + 30 + 21 + 16 + 12 / 2),
-                      y = 1.15,
-                      text = top_labels,
-                      font = list(family = 'Arial', size = 12,
-                                  color = 'rgb(67, 67, 67)'),
-                      showarrow = FALSE)
+  
   })
   
   
