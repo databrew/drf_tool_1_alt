@@ -51,6 +51,10 @@ countries <- c('Afghanistan',
                'Malaysia', 
                'Senegal')
 
+# create a vector of countries without scaling data
+no_scale_countries <- c('Afghanistan', 'Malaysia')
+
+
 # define a vector of countries and currencies to be used in the dropdown (add more later)
 currencies <- c('USD', 'Other')
 
