@@ -66,9 +66,19 @@ basic_parametric <- c('Lognormal', 'Beta', 'Gamma',
                       'Frechet', 'Gumbel', 'Weilbull',
                       'Poisson', ' Bernoulli')
 advanced_parametric <- c('Lognormal', 'Beta', 'Gamma', 
-                         'Frechet', 'Gumbel', 'Weilbull',
-                         'Pareto', 'Poisson', ' Bernoulli')
+                         'Frechet', 'Gumbel', 'Weibull',
+                         'Pareto')
 
+##########
+# read in earthquake data
+##########
+# earth_quake <- read.csv('data/earthquake-deaths.csv')
+# 
+# # get only years after 1980
+# earth_q
+# 
+# # subset albania
+# alb <- earth_quake[earth_quake$Code == 'ALB',]
 
 ##########
 # Afghanistan
@@ -79,6 +89,9 @@ raw_data_af <- read.csv('data/Afghanistan/raw_data_all.csv', header = FALSE)
 
 # rename columns
 names(raw_data_af) <- c('Country', 'Year', 'Peril', 'Loss')
+
+# round
+raw_data_af$Loss <- round(raw_data_af$Loss, 2)
 
 ##########
 # Somalia
@@ -96,12 +109,16 @@ names(raw_data_som) <- c('Country', 'Year', 'Peril', 'Loss')
 # scale data to work
 raw_data_som$Loss_scaled <- raw_data_som$Loss/scale_by
 
+# round
+raw_data_som$Loss <- round(raw_data_som$Loss, 2)
+
+
 
 ##########
 # malaysia
 ##########
 # set scaling number
-scale_by = 1000
+# scale_by = 1000
 
 # read in prepopulated raw data 
 raw_data_malay <- read.csv('data/Malaysia/raw_data_flood.csv', header = TRUE)
@@ -110,7 +127,10 @@ raw_data_malay <- read.csv('data/Malaysia/raw_data_flood.csv', header = TRUE)
 names(raw_data_malay) <- c('Country', 'Year', 'Peril', 'Loss')
 
 # divide loss by 1000
-raw_data_malay$Loss_scaled <- raw_data_malay$Loss/scale_by
+# raw_data_malay$Loss_scaled <- raw_data_malay$Loss/scale_by
+
+# round
+raw_data_malay$Loss <- round(raw_data_malay$Loss, 2)
 
 
 ##########
@@ -118,7 +138,7 @@ raw_data_malay$Loss_scaled <- raw_data_malay$Loss/scale_by
 ##########
 
 # set scaling number
-scale_by = 1000
+# scale_by = 1000
 
 # read in prepopulated raw data 
 raw_data_sen <- read.csv('data/Senegal/raw_data_flood.csv', header = TRUE)
@@ -130,7 +150,10 @@ names(raw_data_sen) <- c('Country', 'Year', 'Peril', 'Loss')
 raw_data_sen <- raw_data_sen[raw_data_sen$Loss != 0,]
 
 # scale data down
-raw_data_sen$Loss_scaled <- raw_data_sen$Loss/scale_by
+# raw_data_sen$Loss_scaled <- raw_data_sen$Loss/scale_by
+
+# round
+raw_data_sen$Loss <- round(raw_data_sen$Loss, 2)
 
 
 
