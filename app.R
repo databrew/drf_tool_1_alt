@@ -180,51 +180,9 @@ ui <- shinyUI(
                                 
                                 
                        ),
-                       
-                       tabPanel(title = "Simulations",
-                                value = 'simulations',
-                                fluidRow(
-                                  column(6,
-                                         uiOutput('prob_dis')) # advanced user only
-                                ),
-                               
-                                fluidRow(
-                                  column(6,
-                                         box(
-                                           title = 'Peril data',
-                                           width = 12,
-                                           status = 'primary',
-                                           plotOutput('hist_plot'))),
-                                  column(6,
-                                         box(
-                                           title = 'Simulation data',
-                                           width = 12,
-                                           status = 'primary',
-                                           plotOutput('sim_plot')))
-                                ),
-                                fluidRow(
-                                  br(),
-                                  
-                                  column(12,
-                                         box(
-                                           title = 'AIC',
-                                           width = 12,
-                                           status = 'primary',
-                                           DT::dataTableOutput('aic_table')))
-                                ),
-                                fluidRow(
-                                  column(6,
-                                         plotOutput('rag_ratings'))
-                                ),
-                                fluidRow(
-                                  column(6,
-                                         plotOutput('dist_plot')),
-                                  column(6,
-                                         plotOutput('grouped_plot'))
-                                )
-                              
-                                
-                       ),
+                       tabPanel(title = 'Simulations', 
+                                uiOutput('simulation_ui')),
+
                        tabPanel("Output",
                                 br(),
                                 fluidRow(
@@ -331,13 +289,78 @@ server <- function(input, output) {
     ))
   })
   
-
+  counter <- reactiveVal(value = 0)
   
   observeEvent(input$advanced,{
-    message(input$advanced)
-    hideTab(inputId = "Navbar", target = "simulations")
+    cc <- counter()
+    message('current counter is ', cc)
+    new_cc <- cc + 1
+    counter(new_cc)
+    message('new counter is ', new_cc)
   })
 
+  observeEvent(input$advanced_2,{
+    cc <- counter()
+    message('current counter is ', cc)
+    new_cc <- cc + 1
+    counter(new_cc)
+    message('new counter is ', new_cc)
+  })
+  
+  output$simulation_ui <- renderUI({
+    cc <- counter()
+    if(cc == 0){
+      message('cc is zero and not showing anything')
+      actionButton("advanced_2", "Use Basic Settings")
+      
+    } else {
+      tabPanel(#title = "Simulations",
+               #value = 'simulations',
+               fluidRow(
+                 column(6,
+                        uiOutput('prob_dis')) # advanced user only
+               ),
+               
+               fluidRow(
+                 column(6,
+                        box(
+                          title = 'Peril data',
+                          width = 12,
+                          status = 'primary',
+                          plotOutput('hist_plot'))),
+                 column(6,
+                        box(
+                          title = 'Simulation data',
+                          width = 12,
+                          status = 'primary',
+                          plotOutput('sim_plot')))
+               ),
+               fluidRow(
+                 br(),
+                 
+                 column(12,
+                        box(
+                          title = 'AIC',
+                          width = 12,
+                          status = 'primary',
+                          DT::dataTableOutput('aic_table')))
+               ),
+               fluidRow(
+                 column(6,
+                        plotOutput('rag_ratings'))
+               ),
+               fluidRow(
+                 column(6,
+                        plotOutput('dist_plot')),
+                 column(6,
+                        plotOutput('grouped_plot'))
+               )
+               
+               
+      )
+    }
+    
+  })
   # create a uioutput for when data type == cost per person
   output$cost_per_person <- renderUI({
     if(input$damage_type != 'Cost per person'){
