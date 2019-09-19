@@ -88,7 +88,7 @@ ui <- shinyUI(
                                   )
                                 ),
                                 fluidRow(
-                                  actionButton("advanced", "Use Basic Settings")
+                                  awesomeCheckbox("advanced", "Use Advanced Settings")
                                 )),
                        
                        tabPanel("User inputs",
@@ -134,7 +134,12 @@ ui <- shinyUI(
                                                           'Choose a currency',
                                                           choices = currencies,
                                                           selected = 'USD',
-                                                          inline = TRUE)),
+                                                          inline = TRUE),
+                                             fluidRow(
+                                               column(6,
+                                                      uiOutput('prob_dis')) # advanced user only
+                                             )
+                                         ),
                                          bsPopover(id = "damage_type", title = '', 
                                                    content = "Select whether you would like to view the loss as a cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD", 
                                                    placement = "middle", trigger = "hover"),
@@ -180,16 +185,51 @@ ui <- shinyUI(
                                 
                                 
                        ),
-                       tabPanel(title = 'Simulations', 
-                                uiOutput('simulation_ui')),
+                       tabPanel(title = 'Simulations',
+                                value = 'simulations',
+                                  
+                                  fluidRow(
+                                    column(6,
+                                           box(
+                                             title = 'Peril data',
+                                             width = 12,
+                                             status = 'primary',
+                                             plotOutput('hist_plot'))),
+                                    column(6,
+                                           box(
+                                             title = 'Simulation data',
+                                             width = 12,
+                                             status = 'primary',
+                                             plotOutput('sim_plot')))
+                                  ),
+                                  fluidRow(
+                                    br(),
+                                    
+                                    column(12,
+                                           box(
+                                             title = 'AIC',
+                                             width = 12,
+                                             status = 'primary',
+                                             DT::dataTableOutput('aic_table')))
+                                  ),
+                                  fluidRow(
+                                    column(6,
+                                           plotOutput('rag_ratings'))
+                                  ),
+                                  fluidRow(
+                                    column(6,
+                                           plotOutput('dist_plot')),
+                                    column(6,
+                                           plotOutput('grouped_plot'))
+                                  )
+                                  
+                                  
+                                ),
 
                        tabPanel("Output",
                                 br(),
-                                fluidRow(
-                                  column(3,
-                                         radioButtons('bubble_line', 'Choose chart type', choices = c('Bubble and Pie', 'Line and Candle')))
-                                ),
-                    
+                              
+                                # 
                                 bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1', 
                                           content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expecto to happend every five years (ie 20% probability). Similarly, a 1 in 10 year is the estimated annual loss expectedto happen every 10 years (ie 10% probability.", 
                                           placement = "middle", trigger = "hover"),
@@ -297,70 +337,16 @@ server <- function(input, output) {
     new_cc <- cc + 1
     counter(new_cc)
     message('new counter is ', new_cc)
-  })
-
-  observeEvent(input$advanced_2,{
-    cc <- counter()
-    message('current counter is ', cc)
-    new_cc <- cc + 1
-    counter(new_cc)
-    message('new counter is ', new_cc)
-  })
-  
-  output$simulation_ui <- renderUI({
-    cc <- counter()
-    if(cc == 0){
-      message('cc is zero and not showing anything')
-      actionButton("advanced_2", "Use Basic Settings")
+    if(cc %% 2 == 0){
+      hideTab(inputId = 'Navbar', target = 'simulations')
       
     } else {
-      tabPanel(#title = "Simulations",
-               #value = 'simulations',
-               fluidRow(
-                 column(6,
-                        uiOutput('prob_dis')) # advanced user only
-               ),
-               
-               fluidRow(
-                 column(6,
-                        box(
-                          title = 'Peril data',
-                          width = 12,
-                          status = 'primary',
-                          plotOutput('hist_plot'))),
-                 column(6,
-                        box(
-                          title = 'Simulation data',
-                          width = 12,
-                          status = 'primary',
-                          plotOutput('sim_plot')))
-               ),
-               fluidRow(
-                 br(),
-                 
-                 column(12,
-                        box(
-                          title = 'AIC',
-                          width = 12,
-                          status = 'primary',
-                          DT::dataTableOutput('aic_table')))
-               ),
-               fluidRow(
-                 column(6,
-                        plotOutput('rag_ratings'))
-               ),
-               fluidRow(
-                 column(6,
-                        plotOutput('dist_plot')),
-                 column(6,
-                        plotOutput('grouped_plot'))
-               )
-               
-               
-      )
+      showTab(inputId = 'Navbar', target = 'simulations')
+      
     }
-    
   })
+  
+
   # create a uioutput for when data type == cost per person
   output$cost_per_person <- renderUI({
     if(input$damage_type != 'Cost per person'){
@@ -742,8 +728,7 @@ server <- function(input, output) {
       if(dat$Distribution == 'Log normal'){
         if(any(is.na(dat$AIC))){
           sim <- NA
-        } 
-        else {
+        }  else {
           sim <- rlnorm(n = 15000, meanlog = dat$`MLE 1`, sdlog = dat$`MLE 2`)
         }
       } else if (dat$Distribution == 'Gamma'){
@@ -796,13 +781,13 @@ server <- function(input, output) {
     data <- selected_country()
     
     ggplot(data, aes(data$Loss)) +
-      geom_histogram(bins = 5, fill = 'black', alpha = 0.6) + 
+      geom_histogram(bins = 5, fill = 'black', color = 'blue', alpha = 0.6) + 
       labs(x = 'Loss', 
            y = 'Counts') +
-      theme_bw() +
-      theme(axis.text.x = element_text(angle = 0, size = 12),
-            axis.text.y = element_text(size = 12),
-            axis.title = element_text(size = 12)) 
+      theme_clean() +
+      theme(axis.text.x = element_text(angle = 0, size = 15),
+            axis.text.y = element_text(size = 15),
+            axis.title = element_text(size = 15)) 
     
   })
   output$sim_plot <- renderPlot({
@@ -812,13 +797,14 @@ server <- function(input, output) {
       dat_sim <- run_best_simulation()
       dat_sim <- as.data.frame(dat_sim)
       names(dat_sim) <- 'Simulated loss'
-      ggplot(dat_sim, aes(`Simulated loss`)) +
-        geom_density(fill = 'black', alpha = 0.5) +
+     g =  ggplot(dat_sim, aes(`Simulated loss`)) +
+        geom_density(fill = 'black', color = 'blue', alpha = 0.5) +
         labs(y = 'Density') +
-        theme_bw() +
-        theme(axis.text.x = element_text(angle = 0, size = 12),
-              axis.text.y = element_text(size = 12),
-              axis.title = element_text(size = 12)) 
+        theme_clean() +
+        theme(axis.text.x = element_text(angle = 0, size = 15),
+              axis.text.y = element_text(size = 15),
+              axis.title = element_text(size = 15)) 
+      return(g)
     }
     
     
@@ -826,54 +812,19 @@ server <- function(input, output) {
   
   ##############################################################################################
   # radioButtons('bubble_line', 'Choose chart type', choices = c('Bubble and Pie', 'Line and Candle')))
+# 
 
-  # annual loss exhibit 1
-  output$annual_loss <- renderPlot({
-    
-    # get country data
-    data <- selected_country()
-    data <- data[order(data$Year, decreasing = FALSE),]
-    # get country input for plot title
-    plot_title <- input$country
-    if(plot_title == 'Afghanistan'){
-      scale_by = 1
-    } else {
-      scale_by = 1000000
-    }
-    # get best distirbution 
-    dat_sim <- run_best_simulation()
-    # get quaintles 
-    output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99)) 
-    annual_avg <- mean(dat_sim)
-    
-    # create data frame dat to store output with chart labels 
-    dat <- data_frame(`Annual average` = annual_avg, 
-                      `1 in 5 Years` = output[1],
-                      `1 in 10 Years` = output[2],
-                      `1 in 25 Years` = output[3],
-                      `1 in 50 Years` = output[4],
-                      `1 in 100 Years` = output[5],
-                      `Highest historical annual loss` = max(data$Loss),
-                      `Most recent annual loss` = data$Loss[nrow(data)])
-    
-    # melt the data frame to get value and variable 
-    dat <- melt(dat)
-    
-    plot_bar(temp_dat = dat, 
-             bar_color = 'black', 
-             border_color = 'black', 
-             alpha = 0.8,
-             plot_title = plot_title)
-    
-    
-  })
+
   
   # annual loss exhibit 1
   output$annual_loss_plotly <- renderPlotly({
-    if(is.null(run_best_simulation())){
+    
+    # get best distirbution 
+    dat_sim <- run_best_simulation()
+    if(any(is.na(dat_sim))){
       NULL
     } else {
-      if(input$bubble_line != 'Bubble and Pie'){
+     
         # get country data
         data <- selected_country()
         data <- data[order(data$Year, decreasing = FALSE),]
@@ -884,10 +835,9 @@ server <- function(input, output) {
         } else {
           scale_by = 1000000
         }
-        # get best distirbution 
-        dat_sim <- run_best_simulation()
+       
         # get quaintles 
-        output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99)) 
+        output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99), na.rm = TRUE) 
         annual_avg <- mean(dat_sim)
         
         # create data frame dat to store output with chart labels 
@@ -931,71 +881,11 @@ server <- function(input, output) {
         
         
         return(g_plot)
-      } else {
-        
-        # get country data
-        data <- selected_country()
-        data <- data[order(data$Year, decreasing = FALSE),]
-        # get country input for plot title
-        plot_title <- input$country
-        if(plot_title == 'Afghanistan'){
-          scale_by = 1
-        } else {
-          scale_by = 1000000
-        }
-        # get best distirbution 
-        dat_sim <- run_best_simulation()
-        # get quaintles 
-        output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99)) 
-        annual_avg <- mean(dat_sim)
-        
-        # create data frame dat to store output with chart labels 
-        dat <- data_frame(`Annual average` = annual_avg, 
-                          `1 in 5 Years` = output[1],
-                          `1 in 10 Years` = output[2],
-                          `1 in 25 Years` = output[3],
-                          `1 in 50 Years` = output[4],
-                          `1 in 100 Years` = output[5],
-                          `Highest historical annual loss` = max(data$Loss),
-                          `Most recent annual loss` = data$Loss[nrow(data)])
-        
-        # melt the data frame to get value and variable 
-        dat <- melt(dat)
-        
-        f <- list(
-          family = "Ubuntu",
-          size = 20,
-          color = "white"
-        )
-        
-        dat$variable <- factor(dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years', 
-                                                        'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
-        dat$value <- round(dat$value, 2)
-        p <-plot_ly(dat,labels = ~variable, 
-                    values = ~value,
-                    type ='pie',
-                    hole = 0.2,
-                    textposition = 'outiside',
-                    textinfo = 'value+label',
-                    insidetextfont = f,
-                    hoverinfo = 'label+value')  %>%
-          
-          plotly:: config(displayModeBar = F) %>%
-          
-          layout(title ='' , font = '', showlegend = F,
-                 annotations = list(
-                   showarrow = FALSE,
-                   text = '',
-                   font = list(color = '#1F2023',
-                               family = 'sans serif')), 
-                 xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                 yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
-        return(p)
-      }
-    }
    
-    
-    
+        
+        
+    }
+ 
   })
   
  
@@ -1003,88 +893,12 @@ server <- function(input, output) {
   
   # exhibit 2
   
-  
-  output$loss_exceedance <- renderPlot({
-    
 
-    data <- selected_country()
-    country_name <- unique(data$Country)
-    
-    data <- data[order(data$Year, decreasing = FALSE),]
-    largest_loss_num <- max(data$Loss)
-    largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
-    
-    # get country input for plot title
-    plot_title <- input$country
-    if(plot_title == 'Afghanistan'){
-      scale_by = 1
-    } else {
-      scale_by = 1000000
-    }
-    # get best distirbution 
-    dat_sim <- run_best_simulation()
-    peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
-    peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
-    rownames(peril_exceedance_curve) <- NULL
-    names(peril_exceedance_curve)[1] <- 'y'
-    
-    # remove percent and turn numeric
-    peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
-    peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
-    
-    # divide y by 100k, so get data in millions 
-    plot_line(temp_dat = peril_exceedance_curve, 
-              line_color = 'black', 
-              line_size = 2, 
-              alpha = 0.7, 
-              exhibit_2 = TRUE, 
-              largest_loss_num = largest_loss_num,
-              largest_loss_year= largest_loss_year,
-              plot_title = plot_title)
-  })
-  
   
   output$loss_exceedance_plotly <- renderPlotly({
-    
-    
-    if(input$bubble_line != 'Bubble and Pie'){
-      
-      data <- selected_country()
-      country_name <- unique(data$Country)
-      
-      data <- data[order(data$Year, decreasing = FALSE),]
-      largest_loss_num <- max(data$Loss)
-      largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
-      
-      # get country input for plot title
-      plot_title <- input$country
-      if(plot_title == 'Afghanistan'){
-        scale_by = 1
-      } else {
-        scale_by = 1000000
-      }
-      # get best distirbution 
-      dat_sim <- run_best_simulation()
-      peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
-      peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
-      rownames(peril_exceedance_curve) <- NULL
-      names(peril_exceedance_curve)[1] <- 'y'
-      
-      # remove percent and turn numeric
-      peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
-      peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
-      names(peril_exceedance_curve)[1] <- 'Loss'
-      names(peril_exceedance_curve)[2] <- 'Probability'
-      
-      
-      
-      p <- plot_ly(peril_exceedance_curve, x = ~`Probability`, y = ~Loss, type = 'scatter', mode = 'lines',  line = list(color = 'rgb(205, 12, 24)', width = 4)) %>%
-        layout(shapes=list(type='line', x0= 50, x1= 100, y0=largest_loss_num, y1=largest_loss_num, line=list(dash='dot', width=1)),
-               title = 'Loss exceedance curve',
-               xaxis = list(showgrid = FALSE),
-               yaxis = list(showgrid = FALSE)) 
-      
-      return(p)
+    dat_sim <- run_best_simulation()
+    if(any(is.na(dat_sim))){
+     return(NULL)
     } else {
       data <- selected_country()
       country_name <- unique(data$Country)
@@ -1101,8 +915,8 @@ server <- function(input, output) {
         scale_by = 1000000
       }
       # get best distirbution 
-      dat_sim <- run_best_simulation()
-      peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
+      
+      peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
       peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
       rownames(peril_exceedance_curve) <- NULL
       names(peril_exceedance_curve)[1] <- 'y'
@@ -1110,20 +924,23 @@ server <- function(input, output) {
       # remove percent and turn numeric
       peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
       peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
+      peril_exceedance_curve$x <- peril_exceedance_curve$x/100
       names(peril_exceedance_curve)[1] <- 'Total Loss'
       names(peril_exceedance_curve)[2] <- 'Probability'
       
       
       p <- plot_ly(peril_exceedance_curve, x = ~Probability, y = ~`Total Loss`, text = ~`Total Loss`, type = 'scatter', mode = 'markers', color = ~`Total Loss`, colors = 'Reds',
                    marker = list(size = ~(`Total Loss`/30)^1.2, opacity = 0.6)) %>%
-        layout(shapes=list(type='line', x0= 50, x1= 100, y0=largest_loss_num, y1=largest_loss_num, line=list(dash='dot', width=1)),
+        layout(shapes=list(type='line', x0= 0.5, x1= 1, y0=largest_loss_num, y1=largest_loss_num, line=list(dash='dot', width=1)),
                title = 'Loss exceedance curve',
                xaxis = list(showgrid = FALSE),
                yaxis = list(showgrid = FALSE)) 
       
       return(p)
+      
+      
     }
-    
+      
     
     
   })
@@ -1131,107 +948,15 @@ server <- function(input, output) {
   
   ##############################################################################
   
-  # annual loss (exhibit 3)
-  output$annual_loss_gap <- renderPlot({
-    
-    
-    data <- selected_country()
-    data <- data[order(data$Year, decreasing = FALSE),]
-    # get country input for plot title
-    plot_title <- input$country
-    if(plot_title == 'Afghanistan'){
-      scale_by = 1
-    } else {
-      scale_by = 1000000
-    }
-    # get best distirbution 
-    dat_sim <- run_best_simulation()
-    # get quaintles 
-    output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99)) 
-    annual_avg <- mean(dat_sim)
-    
-    # create data frame dat to store output with chart labels 
-    dat <- data_frame(`Average` = annual_avg, 
-                      `Severe` = output[2],
-                      `Extreme` = output[5])
-    
-    # melt the data frame to get value and variable 
-    dat <- melt(dat)
-    
-    # divide valueb by 100k
-    dat$value <- dat$value/scale_by
-    
-    plot_bar(temp_dat = dat, 
-             bar_color = 'black', 
-             border_color = 'black', 
-             alpha = 0.8,
-             plot_title = plot_title)
-    
-  })
-  
-  
+ 
   output$annual_loss_gap_plotly <- renderPlotly({
     
+    dat_sim <- run_best_simulation()
     
-    if(is.null(run_best_simulation())){
+    if(any(is.na(dat_sim))){
       NULL 
     } else {
-      if(input$bubble_line == 'Bubble and Pie'){
-        
-        
-        data <- selected_country()
-        data <- data[order(data$Year, decreasing = FALSE),]
-        # get country input for plot title
-        plot_title <- input$country
-        if(plot_title == 'Afghanistan'){
-          scale_by = 1
-        } else {
-          scale_by = 1000000
-        }
-        # get best distirbution 
-        dat_sim <- run_best_simulation()
-        # get quaintles 
-        output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99)) 
-        annual_avg <- mean(dat_sim)
-        
-        # create data frame dat to store output with chart labels 
-        dat <- data_frame(`Average` = annual_avg, 
-                          `Severe` = output[2],
-                          `Extreme` = output[5])
-        
-        # melt the data frame to get value and variable 
-        dat <- melt(dat)
-        
-        # # divide valueb by 100k
-        # dat$value <- dat$value/scale_by
-        
-        f <- list(
-          family = "Ubuntu",
-          size = 20,
-          color = "white"
-        )
-        
-        p <-plot_ly(dat,labels = ~variable, 
-                    values = ~value,
-                    type ='pie',
-                    hole = 0.2,
-                    textposition = 'outiside',
-                    textinfo = 'value+label',
-                    insidetextfont = f,
-                    hoverinfo = 'label+value')  %>%
-          
-          plotly::config(displayModeBar = F) %>%
-          
-          layout(title ='' , font = '', showlegend = F,
-                 annotations = list(
-                   showarrow = FALSE,
-                   text = '',
-                   font = list(color = '#1F2023',
-                               family = 'sans serif')), 
-                 xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                 yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
-        return(p)
-      } else {
+    
         # get country data
         
         data <- selected_country()
@@ -1244,7 +969,6 @@ server <- function(input, output) {
           scale_by = 1000000
         }
         # get best distirbution 
-        dat_sim <- run_best_simulation()
         # get quaintles 
         output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99)) 
         annual_avg <- mean(dat_sim)
@@ -1287,7 +1011,7 @@ server <- function(input, output) {
         return(g_plot)
       }
       
-    }
+    
     
   
     
@@ -1297,136 +1021,58 @@ server <- function(input, output) {
   ############################################################################
   # exhibit 4
   
-  output$loss_exceedance_gap <- renderPlot({
-    
-    data <- selected_country()
-    data <- data[order(data$Year, decreasing = FALSE),]
-    largest_loss_num <- max(data$Loss)
-    largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
-    
-    # get country input for plot title
-    plot_title <- input$country
-    if(plot_title == 'Afghanistan'){
-      scale_by = 1
-    } else {
-      scale_by = 1000000
-    }
-    # get best distirbution 
-    dat_sim <- run_best_simulation()
-    funding_gap_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
-    funding_gap_curve$x <- rownames(funding_gap_curve)
-    rownames(funding_gap_curve) <- NULL
-    names(funding_gap_curve)[1] <- 'y'
-    
-    # remove percent and turn numeric
-    funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
-    funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
-    
-    # divide y by 100k, so get data in millions 
-    funding_gap_curve$x <- (1 - funding_gap_curve$x)
-    funding_gap_curve$y <- funding_gap_curve$y/scale_by
-    
-    plot_line(temp_dat = funding_gap_curve, 
-              line_color = 'black', 
-              line_size = 2, 
-              alpha = 0.7, 
-              exhibit_2 = FALSE, 
-              plot_title = plot_title)
-    
-    
-    
-  })
-  
-  
+ 
   
   output$loss_exceedance_gap_plotly <- renderPlotly({
     
-    
-    if(input$bubble_line == 'Bubble and Pie'){
-      data <- selected_country()
-      data <- data[order(data$Year, decreasing = FALSE),]
-      largest_loss_num <- max(data$Loss)
-      largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
-      
-      # get country input for plot title
-      plot_title <- input$country
-      if(plot_title == 'Afghanistan'){
-        scale_by = 1
-      } else {
-        scale_by = 1000000
-      }
-      # get best distirbution 
       dat_sim <- run_best_simulation()
-      funding_gap_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
-      funding_gap_curve$x <- rownames(funding_gap_curve)
-      rownames(funding_gap_curve) <- NULL
-      names(funding_gap_curve)[1] <- 'y'
-      
-      # remove percent and turn numeric
-      funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
-      funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
-      
-      # divide y by 100k, so get data in millions 
-      funding_gap_curve$x <- (1 - funding_gap_curve$x)
-      # funding_gap_curve$y <- funding_gap_curve$y/scale_by
-      
-      names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
-      names(funding_gap_curve)[1] <- 'Funding gap'
-      
-      
-      p <- plot_ly(funding_gap_curve, x = ~`Probability of exceeding loss`, y = ~`Funding gap`, text = ~`Funding gap`, type = 'scatter', mode = 'markers', color = ~`Funding gap`, colors = 'Reds',
-                   marker = list(size = ~(`Funding gap`/30)^1.2, opacity = 0.6)) %>%
-        layout(
-          title = 'Loss exceedance gap',
-          xaxis = list(showgrid = FALSE),
-          yaxis = list(showgrid = FALSE)) 
-      
-      return(p)
-    } else {
-      data <- selected_country()
-      data <- data[order(data$Year, decreasing = FALSE),]
-      largest_loss_num <- max(data$Loss)
-      largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
-      
-      # get country input for plot title
-      plot_title <- input$country
-      if(plot_title == 'Afghanistan'){
-        scale_by = 1
+    
+      if(any(is.na(dat_sim))){
+        NULL
       } else {
-        scale_by = 1000000
+        data <- selected_country()
+        data <- data[order(data$Year, decreasing = FALSE),]
+        largest_loss_num <- max(data$Loss)
+        largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
+        
+        # get country input for plot title
+        plot_title <- input$country
+        if(plot_title == 'Afghanistan'){
+          scale_by = 1
+        } else {
+          scale_by = 1000000
+        }
+        # get best distirbution 
+        dat_sim <- run_best_simulation()
+        funding_gap_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
+        funding_gap_curve$x <- rownames(funding_gap_curve)
+        rownames(funding_gap_curve) <- NULL
+        names(funding_gap_curve)[1] <- 'y'
+        
+        # remove percent and turn numeric
+        funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
+        funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
+        
+        # divide y by 100k, so get data in millions 
+        funding_gap_curve$x <- (1 - funding_gap_curve$x)
+        # funding_gap_curve$y <- funding_gap_curve$y/scale_by
+        
+        names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
+        names(funding_gap_curve)[1] <- 'Funding gap'
+        
+        
+        p <- plot_ly(funding_gap_curve, x = ~`Probability of exceeding loss`, y = ~`Funding gap`, text = ~`Funding gap`, type = 'scatter', mode = 'markers', color = ~`Funding gap`, colors = 'Reds',
+                     marker = list(size = ~(`Funding gap`/30)^1.2, opacity = 0.6)) %>%
+          layout(
+            title = 'Loss exceedance gap',
+            xaxis = list(showgrid = FALSE),
+            yaxis = list(showgrid = FALSE)) 
+        
+        return(p)
+        
+        
       }
-      # get best distirbution 
-      dat_sim <- run_best_simulation()
-      funding_gap_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
-      funding_gap_curve$x <- rownames(funding_gap_curve)
-      rownames(funding_gap_curve) <- NULL
-      names(funding_gap_curve)[1] <- 'y'
-      
-      # remove percent and turn numeric
-      funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
-      funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
-      
-      # divide y by 100k, so get data in millions 
-      funding_gap_curve$x <- (1 - funding_gap_curve$x)
-      funding_gap_curve$y <- funding_gap_curve$y/scale_by
-      
-      names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
-      names(funding_gap_curve)[1] <- 'Funding gap'
-      
-      
-      p <- plot_ly(funding_gap_curve, x = funding_gap_curve$`Probability of exceeding loss`, y = funding_gap_curve$`Funding gap`, 
-                   type = 'scatter', mode = 'lines',  line = list(color = 'rgb(205, 12, 24)', width = 4)) %>%
-        layout(
-          title = 'Loss exceedance gap',
-          xaxis = list(showgrid = FALSE),
-          yaxis = list(showgrid = FALSE)) 
-      
-      return(p)
-      
-      
-    }
-    
-    
+     
   })
   
   
