@@ -181,7 +181,7 @@ ui <- shinyUI(
                                 bsPopover(id = "further_detrend", title = '', 
                                           content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
                                           placement = "middle", trigger = "hover", options = list(container ='body'))
-                         ), 
+                         )
                        
                          
                        ),
