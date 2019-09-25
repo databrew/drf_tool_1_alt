@@ -157,8 +157,7 @@ ui <- shinyUI(
                                           placement = "middle", trigger = "hover", options = list(container ='body')),
                                 bsPopover(id = "currency", title = '', 
                                           content = "If other is chosen, please select a currency code and exchange rate.", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body'))
-                                )),
+                                          placement = "middle", trigger = "hover", options = list(container ='body')))),
                        fluidRow(
                          column(5,
                                 div(class = 'well',
@@ -173,16 +172,15 @@ ui <- shinyUI(
                                 actionButton('upload', 'Upload Scaling Data'),
                                 br(),
                                 br(),
-                                actionButton('further_detrend', 'Remove Trends From Data'),
-                                bsPopover(id = "upload", title = '', 
-                                          content = "Upload user data and scale by either Population, GDP, or Inflation", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body')),
-                                
-                                bsPopover(id = "further_detrend", title = '', 
-                                          content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body'))
+                                actionButton('further_detrend', 'Remove trends from data')
                          ), 
-                       
+                         bsPopover(id = "upload", title = '', 
+                                   content = "Upload user data and scale by either Population, GDP, or Inflation", 
+                                   placement = "middle", trigger = "hover", options = list(container ='body')),
+                         
+                         bsPopover(id = "further_detrend", title = '', 
+                                   content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
+                                   placement = "middle", trigger = "hover", options = list(container ='body'))
                          
                        ),
                        
@@ -215,7 +213,7 @@ ui <- shinyUI(
                                   title = 'Simulation data',
                                   width = 12,
                                   status = 'primary',
-                                  plotOutput('sim_plot')))
+                                  plotOutput('sim_plot'))),
                          
                        ),
                        
@@ -227,7 +225,7 @@ ui <- shinyUI(
                                   title = 'AIC',
                                   width = 12,
                                   status = 'primary',
-                                  DT::dataTableOutput('aic_table')))
+                                  DT::dataTableOutput('aic_table'))),
                        ),
                        
                        fluidRow(
