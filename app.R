@@ -112,8 +112,9 @@ ui <- shinyUI(
                                     # input for country
                                     selectInput("country", 
                                                 "Choose a country",
-                                                choices = c("Afghanistan","Malaysia")),
+                                                choices = c("Afghanistan")), # only one choice currently, but building in the others
                                     tags$p(tags$b("Click on buttons below download preloaded datasets or upload user perild data")),
+                                    # download buttons
                                     fluidRow(column(12,
                                                     downloadButton("download_data",
                                                                    "Download Peril Data"),
@@ -121,11 +122,11 @@ ui <- shinyUI(
                                                     actionButton("upload_data",
                                                                  "Upload Peril Data"))
                                     )),
-                                
+                                # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
+                                # and creates popup boxes with any content specified in 'content' argument
                                 bsPopover(id = "advanced", title = '', 
                                           content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
                                           placement = "middle", trigger = "hover", options = list(container ='body')),
-                                
                                 bsPopover(id = "upload_data", title = '', 
                                           content = "To use your own dataset, push the 'Upload Peril Data' button", 
                                           placement = "middle", trigger = "hover", options = list(container ='body')),
@@ -138,7 +139,7 @@ ui <- shinyUI(
                                           content = "If you wish to upload your own data, please select the upload peril button", 
                                           placement = "middle", trigger = "hover", options = list(container ='body'))
                          ),
-                         
+                         # start a column that takes almost half the page. This column contains inputs for damage_type, currency, and the probability distribution.
                          column(5, 
                                 div(class = 'well',
                                     radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
@@ -151,11 +152,14 @@ ui <- shinyUI(
                                                  choices = currencies,
                                                  selected = 'USD',
                                                  inline = TRUE),
-                                    fluidRow(
+                                    fluidRow( 
                                       column(6,
-                                             uiOutput('prob_dis')) # advanced user only
-                                    )
+                                             # advanced user only - the uiOutput function creates this input on the server side because it only appears for advanced users and thus 
+                                             # dependent on whether someone checks the box.
+                                             uiOutput('prob_dis'))
+                                    ) 
                                 ),
+                                # popups for the inputs damage_type, currency.Need to add one on the server side for prob_dis
                                 bsPopover(id = "damage_type", title = '', 
                                           content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD", 
                                           placement = "middle", trigger = "hover", options = list(container ='body')),
@@ -163,6 +167,7 @@ ui <- shinyUI(
                                           content = "If other is chosen, please select a currency code and exchange rate.", 
                                           placement = "middle", trigger = "hover", options = list(container ='body'))
                          )),# end row
+                       # begin row that contains inputs for scaling, uploading data, removing trends,
                        fluidRow(
                          column(5,
                                 div(class = 'well',
@@ -174,22 +179,23 @@ ui <- shinyUI(
                                                 selected = 'Population'))
                          ),
                          column(3,
+                                # button for scaling data
                                 actionButton('upload', 'Upload Scaling Data'),
                                 br(),
                                 br(),
                                 actionButton('further_detrend', 'Remove Trends From Data'),
+                                # popus for the upload the further detrend inputs
                                 bsPopover(id = "upload", title = '', 
                                           content = "Upload user data and scale by either Population, GDP, or Inflation", 
                                           placement = "middle", trigger = "hover", options = list(container ='body')),
-                                
                                 bsPopover(id = "further_detrend", title = '', 
                                           content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
                                           placement = "middle", trigger = "hover", options = list(container ='body'))
                          )
                          
                          
-                       ),
-                       
+                       ),# end row
+                       # this columns are floating outside any row - won't make a difference though.
                        column(3,
                               uiOutput('cost_per_person')),
                        column(2, 
@@ -197,17 +203,18 @@ ui <- shinyUI(
                        column(2, 
                               uiOutput('code')),
                        
-                       fluidRow(
+                       fluidRow(# begin row for the table of data at the bottom of the user inputs page
                          column(12,
                                 DT::dataTableOutput('data_table'))
-                       )
+                       )# end row
                        
                        
               ), # end user inputs tab panel
               
+              # being the section (tab panel) for simulations
               tabPanel(title = 'Simulations',
                        value = 'simulations',
-                       
+                       # being a row that that two plots: the histogram 
                        fluidRow(
                          column(6,
                                 box(
