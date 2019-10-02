@@ -1,21 +1,4 @@
-# library(lubridate)
-# library(officer)
-# library(tidyr)
-# library(dplyr)
-# library(zoo)
-# library(plotly)
-# library(leaflet)
-# library(ggplot2)
-# library(sp)
-# library(rgdal)
-# library(rgeos)
-# library(maptools)
-# library(rmapshaper)
-# library(mapview)
-# library(webshot)
-# library(htmltools)
-# library(quantmod)
-# library(gapminder)
+
 library(shiny)
 library(shinydashboard)
 library(DT)
@@ -42,18 +25,20 @@ library(Hmisc)
 # library(ExtDist)
 
 
-
+# run the functions script when this script is called by app.R
 source('functions.R')
+# remove scientific notation in plots
 options(scipen = '999')
 
-countries <- c('Afghanistan', 
-               #'Somalia', 
-               'Malaysia', 
-               'Senegal')
+##########
+# create vectors to store choices for inputs in the app.r script
+##########
+
+# create a countries vector 
+countries <- c('Afghanistan')
 
 # create a vector of countries without scaling data
-no_scale_countries <- c('Afghanistan', 'Malaysia')
-
+# no_scale_countries <- c('Malaysia')
 
 # define a vector of countries and currencies to be used in the dropdown (add more later)
 currencies <- c('USD', 'Other')
@@ -68,17 +53,6 @@ basic_parametric <- c('Log normal', 'Beta', 'Gamma',
 advanced_parametric <- c('Log normal', 'Beta', 'Gamma', 
                          'Frechet', 'Gumbel', 'Weibull',
                          'Pareto')
-
-##########
-# read in earthquake data
-##########
-# earth_quake <- read.csv('data/earthquake-deaths.csv')
-# 
-# # get only years after 1980
-# earth_q
-# 
-# # subset albania
-# alb <- earth_quake[earth_quake$Code == 'ALB',]
 
 ##########
 # Afghanistan

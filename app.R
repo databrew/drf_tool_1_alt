@@ -8,32 +8,32 @@ source('global.R')
 # Define UI for application that draws a histogram
 ui <- shinyUI(
   fluidPage(theme = "bootstrap.css",
-            
-            tags$head( tags$style( " .title { background:url('banner.jpg'); background-repeat: no-repeat; background-size: 50% 200%; color: white;
-                               font-family: Optima, Segoe, 'Segoe UI', Candara, Calibri, Arial, sans-serif;
-	                                font-size: 24px;
-                                 font-style: normal;
-                                 font-variant: normal;
-                                 font-weight: 2000;
-                                 line-height: 26.4px} " ) ), 
+            # begin html tags for app aesthetic - picture for banner included
+            tags$head(tags$style(".title {background:url('banner.jpg'); 
+            background-repeat: no-repeat;
+            background-size: 50% 200%; color: white;
+            font-family: Optima, Segoe, 'Segoe UI', Candara, Calibri, Arial, sans-serif;
+            font-size: 24px;
+            font-style: normal;
+            font-variant: normal;
+            font-weight: 2000;
+            line-height: 26.4px}")), #tag end 
             tags$head(tags$style(
               type="text/css",
-              "#image img {max-width: 100%; width: auto; height: auto}"
-            )),
-            
+              "image img {max-width: 100%; width: auto; height: auto}"
+            )), # tag end
             tags$head(tags$style(HTML('
-      .modal.in .modal-dialog{
-        width:100%;
-        height:100%;
-        margin:0px;
-      }
-
-      .modal-content{
-        width:100%;
-        height:100%;
-      }
-    '))),
+            .modal.in .modal-dialog{
+            width:100%; 
+            height:100%;
+            margin:0px;
+            }
+            .modal-content{
+            width:100%;
+            height:100%;}'
+                                      ))),# tag end
             
+            # begin title panel - this sets the parameters for the banner photo as well ass the title. 
             titlePanel(windowTitle = "Disaster Risk Financin Tool 1)",
                        title =
                          div(
@@ -43,72 +43,76 @@ ui <- shinyUI(
                              width = 0,
                              style = "margin:100px 100px"
                            ),
-                           "DCMS Tourism Dashboard (alpha v1.0)",
                            class = 'title'
-                         )                  
-            ),
+                         ) # div end               
+            ), # titlePanel end 
             
+            # being navbar - the is includes the entire UI - the only higher levels are 'gluidPage' and 'ShinyUI'
             navbarPage(
               id = "Navbar",
               fluid = TRUE,
-              theme = shinythemes::shinytheme("spacelab"),
-              footer = helpText(
+              theme = shinythemes::shinytheme("spacelab"), # includes theme
+              footer = helpText(#, feedback button
                 "Please send feedback to",
                 a(href="blah", target="_blank", "here")
-              ),
+              ), # end footer for feedback 
               tags$style(type="text/css", "body {padding-top: 0px;}"),
               
-              # Show a plot of the generated distribution
-              
+              # begins the about section (tab)
               tabPanel("About",
-                       
-                       fluidRow(
-                         
+                       fluidRow(# starting row
                          #column(3,div(tags$style(
                          #type="text/css",
                          # "#image img {max-width: auto; max-height: auto}"
                          # ),div(img(src = "Sidepanel.png"), id = "image")),tags$br()),
-                         
-                         column(12,tags$p(class = "intro",
-                                          "The development of this Tool was led by the Disaster Risk Financing and Insurance 
+                         # Set column width to 12, the max number, taking up the entire page.
+                         column(12,
+                                tags$p(class = "intro",
+                                "The development of this Tool was led by the Disaster Risk Financing and Insurance 
                                   Program (DRFIP), a partnership of the World Bank Group's Finance Competitiveness and 
                                   Innovation Global Practice and the Global Facility for Disaster Reduction and Recovery 
-                                  (GFDRR)."),
+                                  (GFDRR)."), 
                                 tags$br("The World Bank invests substantial resources in the development of its models, 
                                   modelling methodologies and databases. This Tool contains proprietary and confidential 
                                   information and is intended for the exclusive use of World Bank partners with whom this 
                                   Tool has been shared. Any user is subject to the restrictions of the confidentiality 
-                                  provisions set forth in license and other nondisclosure agreements."))),
-                       
-                       fluidRow(
+                                  provisions set forth in license and other nondisclosure agreements."))), # ending row
+                       # beginning a new row
+                       fluidRow(# set more HTML aesthetics
                          tags$hr(style="border-color: red;border-top: 3px solid #F511BC;",
                                  tags$p("To get started navigate to the 
                                                  User inputs tab to choose a country. If an advanced user, please select the 
                                                  Advanced Settings option below for more statistical flexibility.")
                          )
-                       ),
+                       ),# end row
+                       # New row - meaning under the last row, create a checkbox for advanced setting
                        fluidRow(
                          awesomeCheckbox("advanced", "Use Advanced Settings")
-                       )),
+                       )), # end tab panel for about section
               
+              # new tab for user inputs
               tabPanel("User inputs",
-                       fluidRow(tags$hr(style="border-color: black;border-top: 3px solid #F511BC;",
-                                        
+                       # start new roww for boarder color
+                       fluidRow(# border color
+                         # begin tags for 'notes' in top right of this tab 
+                         tags$hr(style="border-color: black;border-top: 3px solid #F511BC;",
                                         tags$p(class = "intro-divider", tags$b("Notes:"),
                                                tags$p("First choose a country to examine and the type of data you're using (loss values in coster per person or total damage)"),
                                                tags$p("Hover over inputs for further directions."),
                                                tags$p("Once you have selected your inputs (you can leave them as default), proceed to the simulations and output"))),
-                                tags$p(class = "intro-divider",tags$b("Sources:"),
-                                       htmlOutput("EconomicSources")
-                                )),
+                                tags$p(class = "intro-divider",
+                                       tags$b("Sources:"),
+                                       htmlOutput("Put sources here")
+                                )), #end row
                        
+                       #  start new row that encompasses inputs for country, download buttons, damage type, and currency
                        fluidRow(
-                         column(4,
+                         column(4, # one third of page
                                 div(class = "well",
+                                    # input for country
                                     selectInput("country", 
                                                 "Choose a country",
                                                 choices = c("Afghanistan","Malaysia")),
-                                    uiOutput("overall_rng"),
                                     tags$p(tags$b("Click on buttons below download preloaded datasets or upload user perild data")),
                                     fluidRow(column(12,
                                                     downloadButton("download_data",
@@ -158,7 +162,7 @@ ui <- shinyUI(
                                 bsPopover(id = "currency", title = '', 
                                           content = "If other is chosen, please select a currency code and exchange rate.", 
                                           placement = "middle", trigger = "hover", options = list(container ='body'))
-                                )),
+                         )),# end row
                        fluidRow(
                          column(5,
                                 div(class = 'well',
@@ -182,7 +186,7 @@ ui <- shinyUI(
                                           content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
                                           placement = "middle", trigger = "hover", options = list(container ='body'))
                          )
-                       
+                         
                          
                        ),
                        
@@ -199,7 +203,8 @@ ui <- shinyUI(
                        )
                        
                        
-              ),
+              ), # end user inputs tab panel
+              
               tabPanel(title = 'Simulations',
                        value = 'simulations',
                        
@@ -232,20 +237,20 @@ ui <- shinyUI(
                        
                        fluidRow(
                          column(6,
-                                plotOutput('rag_ratings')),
-                         bsPopover(id = "hist_plot", title = '', 
-                                   content = "This chart shows the historic distribution of 'Loss' from perils.", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                         
-                         bsPopover(id = "sim_plot", title = '', 
-                                   content = "This chart shows the simulated distribution of 'Loss' using the best fit distribution, or if in advanced settings, the distribution chosen on the previous page. 15k simulations, with 1k representing one full year", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                         
-                         bsPopover(id = "aic_table", title = '', 
-                                   content = "This table shows the AIC scores for each parametric distribution. NAs are a result of the non convergence in the optimization algorithm. The table also shows the Maximum Likelihood Estimators for each distribution.", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body'))
+                                plotOutput('rag_ratings'))
                          
                        ),
+                       bsPopover(id = "hist_plot", title = '', 
+                                 content = "This chart shows the historic distribution of 'Loss' from perils.", 
+                                 placement = "middle", trigger = "hover", options = list(container ='body')),
+                       
+                       bsPopover(id = "sim_plot", title = '', 
+                                 content = "This chart shows the simulated distribution of 'Loss' using the best fit distribution, or if in advanced settings, the distribution chosen on the previous page. 15k simulations, with 1k representing one full year", 
+                                 placement = "bottom", trigger = "hover", options = list(container ='body')),
+                       
+                       bsPopover(id = "aic_table", title = '', 
+                                 content = "This table shows the AIC scores for each parametric distribution. NAs are a result of the non convergence in the optimization algorithm. The table also shows the Maximum Likelihood Estimators for each distribution.", 
+                                 placement = "bottom", trigger = "hover", options = list(container ='body')),
                        fluidRow(
                          column(6,
                                 plotOutput('dist_plot')),
@@ -265,14 +270,14 @@ ui <- shinyUI(
                                  placement = "middle", trigger = "hover", options = list(container ='body')),
                        
                        bsPopover(id = "loss_exceedance_plotly", title = 'Exhibit 2', content = "This graph shows the probability of a year taking place that exceeds the aggregate annual loss amount on the y-axis. The probability of exceeding the available budget is represented by the probability where the available budget line and the loss exceedance curve cross.",
-                                 placement = "middle", trigger = "hover", options = list(container ='body')),
+                                 placement = "left", trigger = "hover", options = list(container ='body')),
                        # 
                        bsPopover(id = 'annual_loss_gap_plotly', title = 'Exhibit 3', content = "The funding gap is the difference between the available federal budget and the estimated annual loss at the return period. A loss value below the red budget line represents an estimated surplus (if above, it would be a deficit)",
                                  placement = "middle", trigger = "hover", options = list(container ='body')),
                        # 
                        # 
                        bsPopover(id = 'loss_exceedance_gap_plotly', title = 'Exhibit 4', content = "The graph shows the probability of experiencing different sized funding gaps/surpluses. When the line is above the x-axis, it indicates a funding surplus - if below, it indicates a funding deficit.",
-                                 placement = "middle", trigger = "hover", options = list(container ='body')),
+                                 placement = "left", trigger = "hover", options = list(container ='body')),
                        # 
                        column(6,div(class = "well",tags$h5(tags$b("Estimated Average Annual Loss by Time Period")),
                                     tags$hr(style="border-color: red;border-top: 3px solid #F511BC;",
@@ -326,7 +331,7 @@ ui <- shinyUI(
               
               
               
-            )
+            ) #end navbar
             
             
   )
@@ -810,7 +815,7 @@ server <- function(input, output) {
   output$hist_plot <- renderPlot({
     data <- selected_country()
     
-    ggplot(data, aes(data$Loss)) +
+    g <- ggplot(data, aes(data$Loss)) +
       geom_histogram(bins = 5, fill = 'black', color = 'blue', alpha = 0.6) + 
       labs(x = 'Loss', 
            y = 'Counts') +
@@ -818,6 +823,7 @@ server <- function(input, output) {
       theme(axis.text.x = element_text(angle = 0, size = 15),
             axis.text.y = element_text(size = 15),
             axis.title = element_text(size = 15)) 
+    return(g)
     
   })
   output$sim_plot <- renderPlot({
