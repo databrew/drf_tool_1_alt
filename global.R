@@ -35,7 +35,7 @@ options(scipen = '999')
 ##########
 
 # create a countries vector 
-countries <- c('Afghanistan')
+countries <- c('Sri Lanka')
 
 # create a vector of countries without scaling data
 # no_scale_countries <- c('Malaysia')
@@ -55,79 +55,99 @@ advanced_parametric <- c('Log normal', 'Beta', 'Gamma',
                          'Pareto')
 
 ##########
-# Afghanistan
+# Sri Lanka
 ##########
 
-# read in prepopulated raw data 
-raw_data_af <- read.csv('data/Afghanistan/raw_data_all.csv', header = FALSE)
+# read in loss data
+sri_lanka_loss <- read.csv('data/Sri Lanka/raw_data_loss.csv')
 
-# rename columns
-names(raw_data_af) <- c('Country', 'Year', 'Peril', 'Loss')
+names(sri_lanka_loss) <- c('Country', 'Year', 'Peril', 'Loss')
 
-# round
-raw_data_af$Loss <- round(raw_data_af$Loss, 2)
+# read in cost data
+sri_lanka_cost <- read.csv('data/Sri Lanka/raw_data_cost.csv')
 
-##########
-# Somalia
-##########
+names(sri_lanka_cost) <- c('Country', 'Year', 'Peril', 'Affected')
 
-# set scaling number
-scale_by = 1000000
+# read in population data
+sri_lanka_pop <- read.csv('data/Sri Lanka/raw_data_pop.csv')
 
-# read in prepopulated raw data 
-raw_data_som <- read.csv('data/Somalia/raw_data_all.csv', header = TRUE)
+# make a data frame to store information about data
+sri_lanka_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, inflation = FALSE, gdp = FALSE)
 
-# rename columns
-names(raw_data_som) <- c('Country', 'Year', 'Peril', 'Loss')
-
-# scale data to work
-raw_data_som$Loss_scaled <- raw_data_som$Loss/scale_by
-
-# round
-raw_data_som$Loss <- round(raw_data_som$Loss, 2)
-
-
-
-##########
-# malaysia
-##########
-# set scaling number
-# scale_by = 1000
-
-# read in prepopulated raw data 
-raw_data_malay <- read.csv('data/Malaysia/raw_data_flood.csv', header = TRUE)
-
-# rename columns
-names(raw_data_malay) <- c('Country', 'Year', 'Peril', 'Loss')
-
-# divide loss by 1000
-# raw_data_malay$Loss_scaled <- raw_data_malay$Loss/scale_by
-
-# round
-raw_data_malay$Loss <- round(raw_data_malay$Loss, 2)
-
-
-##########
-# senegal
-##########
-
-# set scaling number
-# scale_by = 1000
-
-# read in prepopulated raw data 
-raw_data_sen <- read.csv('data/Senegal/raw_data_flood.csv', header = TRUE)
-
-# rename columns
-names(raw_data_sen) <- c('Country', 'Year', 'Peril', 'Loss')
-
-# remove rows with 0
-raw_data_sen <- raw_data_sen[raw_data_sen$Loss != 0,]
-
-# scale data down
-# raw_data_sen$Loss_scaled <- raw_data_sen$Loss/scale_by
-
-# round
-raw_data_sen$Loss <- round(raw_data_sen$Loss, 2)
-
+# ##########
+# # Afghanistan
+# ##########
+# 
+# # read in prepopulated raw data 
+# raw_data_af <- read.csv('data/Afghanistan/raw_data_all.csv', header = FALSE)
+# 
+# # rename columns
+# names(raw_data_af) <- c('Country', 'Year', 'Peril', 'Loss')
+# 
+# # round
+# raw_data_af$Loss <- round(raw_data_af$Loss, 2)
+# 
+# ##########
+# # Somalia
+# ##########
+# 
+# # set scaling number
+# scale_by = 1000000
+# 
+# # read in prepopulated raw data 
+# raw_data_som <- read.csv('data/Somalia/raw_data_all.csv', header = TRUE)
+# 
+# # rename columns
+# names(raw_data_som) <- c('Country', 'Year', 'Peril', 'Loss')
+# 
+# # scale data to work
+# raw_data_som$Loss_scaled <- raw_data_som$Loss/scale_by
+# 
+# # round
+# raw_data_som$Loss <- round(raw_data_som$Loss, 2)
+# 
+# 
+# 
+# ##########
+# # malaysia
+# ##########
+# # set scaling number
+# # scale_by = 1000
+# 
+# # read in prepopulated raw data 
+# raw_data_malay <- read.csv('data/Malaysia/raw_data_flood.csv', header = TRUE)
+# 
+# # rename columns
+# names(raw_data_malay) <- c('Country', 'Year', 'Peril', 'Loss')
+# 
+# # divide loss by 1000
+# # raw_data_malay$Loss_scaled <- raw_data_malay$Loss/scale_by
+# 
+# # round
+# raw_data_malay$Loss <- round(raw_data_malay$Loss, 2)
+# 
+# 
+# ##########
+# # senegal
+# ##########
+# 
+# # set scaling number
+# # scale_by = 1000
+# 
+# # read in prepopulated raw data 
+# raw_data_sen <- read.csv('data/Senegal/raw_data_flood.csv', header = TRUE)
+# 
+# # rename columns
+# names(raw_data_sen) <- c('Country', 'Year', 'Peril', 'Loss')
+# 
+# # remove rows with 0
+# raw_data_sen <- raw_data_sen[raw_data_sen$Loss != 0,]
+# 
+# # scale data down
+# # raw_data_sen$Loss_scaled <- raw_data_sen$Loss/scale_by
+# 
+# # round
+# raw_data_sen$Loss <- round(raw_data_sen$Loss, 2)
+# 
 
 

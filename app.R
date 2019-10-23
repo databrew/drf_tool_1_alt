@@ -10,27 +10,27 @@ ui <- shinyUI(
   fluidPage(theme = "bootstrap.css",
             # begin html tags for app aesthetic - picture for banner included
             tags$head(tags$style(".title {background:url('banner.jpg'); 
-            background-repeat: no-repeat;
-            background-size: 50% 200%; color: white;
-            font-family: Optima, Segoe, 'Segoe UI', Candara, Calibri, Arial, sans-serif;
-            font-size: 24px;
-            font-style: normal;
-            font-variant: normal;
-            font-weight: 2000;
-            line-height: 26.4px}")), #tag end 
+                                 background-repeat: no-repeat;
+                                 background-size: 50% 200%; color: white;
+                                 font-family: Optima, Segoe, 'Segoe UI', Candara, Calibri, Arial, sans-serif;
+                                 font-size: 24px;
+                                 font-style: normal;
+                                 font-variant: normal;
+                                 font-weight: 2000;
+                                 line-height: 26.4px}")), #tag end 
             tags$head(tags$style(
               type="text/css",
               "image img {max-width: 100%; width: auto; height: auto}"
             )), # tag end
             tags$head(tags$style(HTML('
-            .modal.in .modal-dialog{
-            width:100%; 
-            height:100%;
-            margin:0px;
-            }
-            .modal-content{
-            width:100%;
-            height:100%;}'
+                                      .modal.in .modal-dialog{
+                                      width:100%; 
+                                      height:100%;
+                                      margin:0px;
+                                      }
+                                      .modal-content{
+                                      width:100%;
+                                      height:100%;}'
             ))),# tag end
             
             # begin title panel - this sets the parameters for the banner photo as well ass the title. 
@@ -69,27 +69,74 @@ ui <- shinyUI(
                          column(12,
                                 tags$p(class = "intro",
                                        "The development of this Tool was led by the Disaster Risk Financing and Insurance 
-                                  Program (DRFIP), a partnership of the World Bank Group's Finance Competitiveness and 
-                                  Innovation Global Practice and the Global Facility for Disaster Reduction and Recovery 
-                                  (GFDRR)."), 
+                                       Program (DRFIP), a partnership of the World Bank Group's Finance Competitiveness and 
+                                       Innovation Global Practice and the Global Facility for Disaster Reduction and Recovery 
+                                       (GFDRR)."), 
                                 tags$br("The World Bank invests substantial resources in the development of its models, 
-                                  modelling methodologies and databases. This Tool contains proprietary and confidential 
-                                  information and is intended for the exclusive use of World Bank partners with whom this 
-                                  Tool has been shared. Any user is subject to the restrictions of the confidentiality 
-                                  provisions set forth in license and other nondisclosure agreements."))), # ending row
+                                        modelling methodologies and databases. This Tool contains proprietary and confidential 
+                                        information and is intended for the exclusive use of World Bank partners with whom this 
+                                        Tool has been shared. Any user is subject to the restrictions of the confidentiality 
+                                        provisions set forth in license and other nondisclosure agreements."))), # ending row
                        # beginning a new row
                        fluidRow(# set more HTML aesthetics
                          tags$hr(style="border-color: red;border-top: 3px solid #F511BC;",
                                  tags$p("To get started navigate to the 
-                                                 User inputs tab to choose a country. If an advanced user, please select the 
-                                                 Advanced Settings option below for more statistical flexibility.")
-                         )
-                       ),# end row
+                                        User inputs tab to choose a country. If an advanced user, please select the 
+                                        Advanced Settings option below for more statistical flexibility.")
+                                 )
+                                 ),# end row
                        # New row - meaning under the last row, create a checkbox for advanced setting
                        fluidRow(
                          awesomeCheckbox("advanced", "Use Advanced Settings")
                        )), # end tab panel for about section
-              
+              tabPanel('Data',
+                      
+                       fluidRow(
+                        
+                         column(6,
+                                div(class = 'well',
+                                awesomeCheckbox('further_detrend', 'Remove Trends From Data', value = FALSE, status = 'danger'),
+                                h4('Preloaded peril data'),
+                                DT::dataTableOutput('raw_data_table')
+                                
+                         )),
+                         column(6, 
+                                div(class = 'well',
+                                    # button for scaling data
+                                    awesomeCheckbox('upload_other_data', 'Upload additional data',value = FALSE, status = 'danger'),
+                                    DT::dataTableOutput('upload_data_table')
+                                ))),
+                         fluidRow(
+                           column(6,
+                                  div(class = "well",
+                                      h4('Preloaded scaling data'),
+                                      uiOutput('raw_scaled_data'))),
+                           column(6,
+                                  div(class = 'well',
+                                      awesomeCheckbox('upload_scaled_data', 'Upload Scaling Data', value = FALSE, status = 'danger')
+                                  ))
+                                      
+                           # selectInput('scale_by',
+                           #             'Scale by',
+                           #             choices = c('Population', 
+                           #                         'GDP',
+                           #                         'Inflation'),
+                           #             selected = 'Population')
+                         ),
+                        
+                                    
+                                   
+                         # popus for the upload the further detrend inputs
+                         bsPopover(id = "upload", title = '', 
+                                   content = "Upload user data and scale by either Population, GDP, or Inflation", 
+                                   placement = "middle", trigger = "hover", options = list(container ='body')),
+                         bsPopover(id = "further_detrend", title = '', 
+                                   content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
+                                   placement = "middle", trigger = "hover", options = list(container ='body'))
+                         
+                       
+                       
+              ),
               # new tab for user inputs
               tabPanel("User inputs",
                        #  start new row that encompasses inputs for country, download buttons, damage type, and currency
@@ -105,56 +152,34 @@ ui <- shinyUI(
                                     fluidRow(
                                       column(12,
                                              downloadButton("download_data",
-                                                            "Download Peril Data"),
-                                             br(), br(),
-                                             actionButton("upload_data",
-                                                          "Upload Peril Data"))
+                                                            "Download Peril Data")),
+                                             br(), br()
+                              
                                     ))),
-                         column(4,
-                                div(class = "well",
-                                    # advanced user only - the uiOutput function creates this input on the server side because it only appears for advanced users and thus 
-                                    # dependent on whether someone checks the box.
-                                    uiOutput('prob_dis'),
-                                fluidRow(
-                                  column(12,
-                                         selectInput('scale_by',
-                                                         'Scale by',
-                                                         choices = c('Population', 
-                                                                     'GDP',
-                                                                     'Inflation'),
-                                                         selected = 'Population'),
-                                             
-                                             # button for scaling data
-                                             actionButton('upload', 'Upload Scaling Data'),
-                                             
-                                             actionButton('further_detrend', 'Remove Trends From Data')),
-                                         # popus for the upload the further detrend inputs
-                                         bsPopover(id = "upload", title = '', 
-                                                   content = "Upload user data and scale by either Population, GDP, or Inflation", 
-                                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                                         bsPopover(id = "further_detrend", title = '', 
-                                                   content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
-                                                   placement = "middle", trigger = "hover", options = list(container ='body'))
-                                         
-                                  )
-                                )),
-                         # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
-                         # and creates popup boxes with any content specified in 'content' argument
-                         bsPopover(id = "advanced", title = '', 
-                                   content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                         bsPopover(id = "upload_data", title = '', 
-                                   content = "To use your own dataset, push the 'Upload Peril Data' button", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                         
-                         bsPopover(id = "download_data", title = '', 
-                                   content = "Download the peril data for the country selected", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                         
-                         bsPopover(id = "country", title = '', 
-                                   content = "If you wish to upload your own data, please select the upload peril button", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body'))
+                         column(4, 
+                                div(class = 'well',
+                                    actionBttn('run_tool', 'Run tool')),
+                                uiOutput('prob_dis')
+                         )
                        ),
+                       
+                       # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
+                       # and creates popup boxes with any content specified in 'content' argument
+                       bsPopover(id = "advanced", title = '', 
+                                 content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
+                                 placement = "middle", trigger = "hover", options = list(container ='body')),
+                       bsPopover(id = "upload_data", title = '', 
+                                 content = "To use your own dataset, push the 'Upload Peril Data' button", 
+                                 placement = "middle", trigger = "hover", options = list(container ='body')),
+                       
+                       bsPopover(id = "download_data", title = '', 
+                                 content = "Download the peril data for the country selected", 
+                                 placement = "middle", trigger = "hover", options = list(container ='body')),
+                       
+                       bsPopover(id = "country", title = '', 
+                                 content = "If you wish to upload your own data, please select the upload peril button", 
+                                 placement = "middle", trigger = "hover", options = list(container ='body')),
+                       
                        # start a column that takes almost half the page. This column contains inputs for damage_type, currency, and the probability distribution.
                        fluidRow(
                          column(6, 
@@ -171,7 +196,11 @@ ui <- shinyUI(
                                                  inline = TRUE)
                                     
                                 )),
+                         
                          # popups for the inputs damage_type, currency.Need to add one on the server side for prob_dis
+                         bsPopover(id = "run_tool", title = '', 
+                                   content ="After selecting all inputs, click this button to run the tool. It will generate simulation based on the best fitted distribution.", 
+                                   placement = "right", trigger = "hover", options = list(container ='body')),
                          bsPopover(id = "damage_type", title = '', 
                                    content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD", 
                                    placement = "middle", trigger = "hover", options = list(container ='body')),
@@ -179,23 +208,20 @@ ui <- shinyUI(
                                    content = "If other is chosen, please select a currency code and exchange rate.", 
                                    placement = "middle", trigger = "hover", options = list(container ='body'))
                        ),
-                       # begin row that contains inputs for scaling, uploading data, removing trends,
+                       
+                       fluidRow(
+                         # this columns are floating outside any row - won't make a difference though.
+                         column(1,
+                                uiOutput('cost_per_person')),
+                         column(1, 
+                                uiOutput('rate')),
+                         column(1, 
+                                uiOutput('code'))
+                       )
                        
                        
                        
                        
-                       # this columns are floating outside any row - won't make a difference though.
-                       column(3,
-                              uiOutput('cost_per_person')),
-                       column(2, 
-                              uiOutput('rate')),
-                       column(2, 
-                              uiOutput('code')),
-                       
-                       fluidRow(# begin row for the table of data at the bottom of the user inputs page
-                         column(12,
-                                DT::dataTableOutput('data_table'))
-                       )# end row
                        
                        
               ), # end user inputs tab panel
@@ -260,6 +286,10 @@ ui <- shinyUI(
               tabPanel("Output",
                        br(),
                        
+                       fluidRow(
+                         column(3,
+                                numericInput('budget', 'Budget', value = 0))
+                       ),
                        # 
                        bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1', 
                                  content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happend every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expectedto happen every 10 years (ie 10% probability.", 
@@ -327,12 +357,12 @@ ui <- shinyUI(
               
               
               
-            ) #end navbar
+                       ) #end navbar
             
             
-  )
+                                )
   
-)
+            )
 
 
 
@@ -357,7 +387,7 @@ server <- function(input, output) {
       br(),
       p('This tool does not imply and judgement of endorsement on the part of the World Bank. In no event will GAD or the World Bank be liable for any form of damage arising from the 
         application or misapplication of the tool, or any other associated materials.')
-    ))
+      ))
   })
   
   counter <- reactiveVal(value = 0)
@@ -442,6 +472,8 @@ server <- function(input, output) {
       country_data <- raw_data_sen
     } else {
       country_data <- raw_data_som
+    } else {
+      country_data <- sri_lanka_loss
     }
     return(country_data)
   })
@@ -688,6 +720,7 @@ server <- function(input, output) {
     
   }) 
   
+  
   # make a reactive object that grabs the name of the best distribution
   get_best_dis <- reactive({
     # get aic_mle_data
@@ -706,7 +739,6 @@ server <- function(input, output) {
   
   # ui for prob_dis
   output$prob_dis <- renderUI({
-    
     # get aic_mle_data
     dat <- get_aic_mle()
     # for now remove beta
@@ -716,9 +748,25 @@ server <- function(input, output) {
     # # subset my index
     dat <- dat[aic_min_ind,]    
     best_dis <- dat$Distribution
-    selectInput('prob_dis', 'Choose distribution (default is best fit)', 
-                choices = advanced_parametric,
-                selected = best_dis)
+    message(input$run_tool)
+    run_tool <- input$run_tool
+    if(input$run_tool %% 2 == 0) {
+      NULL
+      rm(run_tool)
+      
+    } else {
+      if(input$advanced){
+        selectInput('prob_dis', 'Choose distribution (default is best fit)', 
+                    choices = advanced_parametric,
+                    selected = best_dis)
+      } else {
+        selectInput('prob_dis', 'Default is best fit', 
+                    choices = best_dis,
+                    selected = best_dis)
+      }
+    }
+    
+    
   })
   
   
@@ -1073,6 +1121,7 @@ server <- function(input, output) {
       data <- data[order(data$Year, decreasing = FALSE),]
       largest_loss_num <- max(data$Loss)
       largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
+      budget <- input$budget
       
       # get country input for plot title
       plot_title <- input$country
@@ -1098,6 +1147,9 @@ server <- function(input, output) {
       
       names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
       names(funding_gap_curve)[1] <- 'Funding gap'
+      funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` - budget
+      
+      # implement budget
       
       
       p <- plot_ly(funding_gap_curve, 
@@ -1105,14 +1157,11 @@ server <- function(input, output) {
                    y = ~`Funding gap`, 
                    text = ~`Funding gap`, 
                    type = 'scatter', 
-                   mode = 'markers', 
-                   color = ~`Funding gap`, 
-                   colors = 'Reds',
-                   marker = list(size = ~(`Funding gap`/30)^1.2, opacity = 0.6)) %>%
+                   mode = 'lines') %>%
         layout(
           title = '',
-          xaxis = list(title = 'Probability of exceeding loss'),
-          yaxis = list(title = 'Funding gap'),
+          xaxis = list(title = 'Probability of exceeding loss', autorange = 'reversed'),
+          yaxis = list(title = 'Funding gap', autorange = 'reversed'),
           # annotations = list(yref='paper',xref="paper", text = 'dndfs lknsdfs ', showarrow = F, x = 1.3, y = 1, legendtitle = TRUE),
           xaxis = list(showgrid = FALSE),
           yaxis = list(showgrid = FALSE)) 
@@ -1127,47 +1176,26 @@ server <- function(input, output) {
   })
   
   
-  
-  
-  # # create table for aic
-  # output$mle_table <- renderDataTable({
-  #   
-  #     country_data <- selected_country()
-  #     mle_data <- country_data[[2]]
-  #     mle_data <- apply(mle_data, 2, function(x) as.numeric(x))
-  #     mle_data <- apply(mle_data, 2, function(x) round(x, 4))
-  #     DT::datatable(mle_data, options = list(dom = 't'))
-  #     
-  #   
-  # }) 
   # 
   # create an amendable table for table_1 if input$
-  output$data_table_peril <- renderDataTable({
-    amend_upload <- input$amend_upload
-    if(amend_upload == 'Use preloaded data' | amend_upload == 'Amend preloaded data'){
-      country_data <- selected_country()
-      DT::datatable(country_data)
+  output$upload_data_table <- DT::renderDataTable({
+    message(input$upload_other_data)
+    if(!input$upload_other_data){
+     NULL
     } else {
-      NULL
+      #write code to add data
+      
     }
   })  
   
-  # uioutput to give action button 
-  output$upload_data <- renderUI({
-    amend_upload <- input$amend_upload
-    if(amend_upload == 'Use preloaded data' | amend_upload == 'Amend preloaded data'){
-      NULL
-    } else {
-      actionButton('uplod_data',
-                   'Upload data')
-    }
-  })
-  
+ 
   # create a data table  
-  output$data_table <- DT::renderDataTable({
+  output$raw_data_table <- DT::renderDataTable({
     country_data <- selected_country()
     datatable(country_data, options = list(dom='t',ordering=F))
   })
+  
+  
   
   # create a data plot
   output$data_plot <- renderPlot({
@@ -1191,7 +1219,7 @@ server <- function(input, output) {
   })
   
   
-}
+  }
 
 # Run the application 
 shinyApp(ui = ui, server = server)
