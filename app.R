@@ -31,7 +31,7 @@ ui <- shinyUI(
             .modal-content{
             width:100%;
             height:100%;}'
-                                      ))),# tag end
+            ))),# tag end
             
             # begin title panel - this sets the parameters for the banner photo as well ass the title. 
             titlePanel(windowTitle = "Disaster Risk Financin Tool 1)",
@@ -68,7 +68,7 @@ ui <- shinyUI(
                          # Set column width to 12, the max number, taking up the entire page.
                          column(12,
                                 tags$p(class = "intro",
-                                "The development of this Tool was led by the Disaster Risk Financing and Insurance 
+                                       "The development of this Tool was led by the Disaster Risk Financing and Insurance 
                                   Program (DRFIP), a partnership of the World Bank Group's Finance Competitiveness and 
                                   Innovation Global Practice and the Global Facility for Disaster Reduction and Recovery 
                                   (GFDRR)."), 
@@ -92,22 +92,9 @@ ui <- shinyUI(
               
               # new tab for user inputs
               tabPanel("User inputs",
-                       # start new roww for boarder color
-                       fluidRow(# border color
-                         # begin tags for 'notes' in top right of this tab 
-                         tags$hr(style="border-color: black;border-top: 3px solid #F511BC;",
-                                        tags$p(class = "intro-divider", tags$b("Notes:"),
-                                               tags$p("First choose a country to examine and the type of data you're using (loss values in coster per person or total damage)"),
-                                               tags$p("Hover over inputs for further directions."),
-                                               tags$p("Once you have selected your inputs (you can leave them as default), proceed to the simulations and output"))),
-                                tags$p(class = "intro-divider",
-                                       tags$b("Sources:"),
-                                       htmlOutput("Put sources here")
-                                )), #end row
-                       
                        #  start new row that encompasses inputs for country, download buttons, damage type, and currency
                        fluidRow(
-                         column(4, # one third of page
+                         column(6, # one third of page
                                 div(class = "well",
                                     # input for country
                                     selectInput("country", 
@@ -115,35 +102,65 @@ ui <- shinyUI(
                                                 choices = c("Afghanistan")), # only one choice currently, but building in the others
                                     tags$p(tags$b("Click on buttons below download preloaded datasets or upload user perild data")),
                                     # download buttons
-                                    fluidRow(column(12,
-                                                    downloadButton("download_data",
-                                                                   "Download Peril Data"),
-                                                    br(), br(),
-                                                    actionButton("upload_data",
-                                                                 "Upload Peril Data"))
-                                    )),
-                                # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
-                                # and creates popup boxes with any content specified in 'content' argument
-                                bsPopover(id = "advanced", title = '', 
-                                          content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body')),
-                                bsPopover(id = "upload_data", title = '', 
-                                          content = "To use your own dataset, push the 'Upload Peril Data' button", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body')),
-                                
-                                bsPopover(id = "download_data", title = '', 
-                                          content = "Download the peril data for the country selected", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body')),
-                                
-                                bsPopover(id = "country", title = '', 
-                                          content = "If you wish to upload your own data, please select the upload peril button", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body'))
-                         ),
-                         # start a column that takes almost half the page. This column contains inputs for damage_type, currency, and the probability distribution.
-                         column(5, 
+                                    fluidRow(
+                                      column(12,
+                                             downloadButton("download_data",
+                                                            "Download Peril Data"),
+                                             br(), br(),
+                                             actionButton("upload_data",
+                                                          "Upload Peril Data"))
+                                    ))),
+                         column(4,
+                                div(class = "well",
+                                    # advanced user only - the uiOutput function creates this input on the server side because it only appears for advanced users and thus 
+                                    # dependent on whether someone checks the box.
+                                    uiOutput('prob_dis'),
+                                fluidRow(
+                                  column(12,
+                                         selectInput('scale_by',
+                                                         'Scale by',
+                                                         choices = c('Population', 
+                                                                     'GDP',
+                                                                     'Inflation'),
+                                                         selected = 'Population'),
+                                             
+                                             # button for scaling data
+                                             actionButton('upload', 'Upload Scaling Data'),
+                                             
+                                             actionButton('further_detrend', 'Remove Trends From Data')),
+                                         # popus for the upload the further detrend inputs
+                                         bsPopover(id = "upload", title = '', 
+                                                   content = "Upload user data and scale by either Population, GDP, or Inflation", 
+                                                   placement = "middle", trigger = "hover", options = list(container ='body')),
+                                         bsPopover(id = "further_detrend", title = '', 
+                                                   content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
+                                                   placement = "middle", trigger = "hover", options = list(container ='body'))
+                                         
+                                  )
+                                )),
+                         # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
+                         # and creates popup boxes with any content specified in 'content' argument
+                         bsPopover(id = "advanced", title = '', 
+                                   content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
+                                   placement = "middle", trigger = "hover", options = list(container ='body')),
+                         bsPopover(id = "upload_data", title = '', 
+                                   content = "To use your own dataset, push the 'Upload Peril Data' button", 
+                                   placement = "middle", trigger = "hover", options = list(container ='body')),
+                         
+                         bsPopover(id = "download_data", title = '', 
+                                   content = "Download the peril data for the country selected", 
+                                   placement = "middle", trigger = "hover", options = list(container ='body')),
+                         
+                         bsPopover(id = "country", title = '', 
+                                   content = "If you wish to upload your own data, please select the upload peril button", 
+                                   placement = "middle", trigger = "hover", options = list(container ='body'))
+                       ),
+                       # start a column that takes almost half the page. This column contains inputs for damage_type, currency, and the probability distribution.
+                       fluidRow(
+                         column(6, 
                                 div(class = 'well',
                                     radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
-                                                 'Data type',
+                                                 'Choose how you want to view the loss',
                                                  choices = c('Total damage', 'Cost per person'),
                                                  selected = 'Total damage',
                                                  inline = FALSE),
@@ -151,50 +168,22 @@ ui <- shinyUI(
                                                  'Choose a currency',
                                                  choices = currencies,
                                                  selected = 'USD',
-                                                 inline = TRUE),
-                                    fluidRow( 
-                                      column(6,
-                                             # advanced user only - the uiOutput function creates this input on the server side because it only appears for advanced users and thus 
-                                             # dependent on whether someone checks the box.
-                                             uiOutput('prob_dis'))
-                                    ) 
-                                ),
-                                # popups for the inputs damage_type, currency.Need to add one on the server side for prob_dis
-                                bsPopover(id = "damage_type", title = '', 
-                                          content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body')),
-                                bsPopover(id = "currency", title = '', 
-                                          content = "If other is chosen, please select a currency code and exchange rate.", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body'))
-                         )),# end row
+                                                 inline = TRUE)
+                                    
+                                )),
+                         # popups for the inputs damage_type, currency.Need to add one on the server side for prob_dis
+                         bsPopover(id = "damage_type", title = '', 
+                                   content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD", 
+                                   placement = "middle", trigger = "hover", options = list(container ='body')),
+                         bsPopover(id = "currency", title = '', 
+                                   content = "If other is chosen, please select a currency code and exchange rate.", 
+                                   placement = "middle", trigger = "hover", options = list(container ='body'))
+                       ),
                        # begin row that contains inputs for scaling, uploading data, removing trends,
-                       fluidRow(
-                         column(5,
-                                div(class = 'well',
-                                    selectInput('scale_by',
-                                                'Scale by',
-                                                choices = c('Population', 
-                                                            'GDP',
-                                                            'Inflation'),
-                                                selected = 'Population'))
-                         ),
-                         column(3,
-                                # button for scaling data
-                                actionButton('upload', 'Upload Scaling Data'),
-                                br(),
-                                br(),
-                                actionButton('further_detrend', 'Remove Trends From Data'),
-                                # popus for the upload the further detrend inputs
-                                bsPopover(id = "upload", title = '', 
-                                          content = "Upload user data and scale by either Population, GDP, or Inflation", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body')),
-                                bsPopover(id = "further_detrend", title = '', 
-                                          content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
-                                          placement = "middle", trigger = "hover", options = list(container ='body'))
-                         )
-                         
-                         
-                       ),# end row
+                       
+                       
+                       
+                       
                        # this columns are floating outside any row - won't make a difference though.
                        column(3,
                               uiOutput('cost_per_person')),
