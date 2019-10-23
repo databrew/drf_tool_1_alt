@@ -35,7 +35,7 @@ options(scipen = '999')
 ##########
 
 # create a countries vector 
-countries <- c('Sri Lanka')
+countries <- c('Sri Lanka', 'South Africa', 'Philippines', 'Mozambique')
 
 # create a vector of countries without scaling data
 # no_scale_countries <- c('Malaysia')
@@ -59,95 +59,82 @@ advanced_parametric <- c('Log normal', 'Beta', 'Gamma',
 ##########
 
 # read in loss data
-sri_lanka_loss <- read.csv('data/Sri Lanka/raw_data_loss.csv')
+sri_lanka_loss <- read.csv('data/Sri Lanka/data_loss.csv')
 
 names(sri_lanka_loss) <- c('Country', 'Year', 'Peril', 'Loss')
 
 # read in cost data
-sri_lanka_cost <- read.csv('data/Sri Lanka/raw_data_cost.csv')
+sri_lanka_cost <- read.csv('data/Sri Lanka/data_cost.csv')
 
 names(sri_lanka_cost) <- c('Country', 'Year', 'Peril', 'Affected')
 
 # read in population data
-sri_lanka_pop <- read.csv('data/Sri Lanka/raw_data_pop.csv')
+sri_lanka_pop <- read.csv('data/Sri Lanka/data_pop.csv')
 
 # make a data frame to store information about data
 sri_lanka_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, inflation = FALSE, gdp = FALSE)
 
-# ##########
-# # Afghanistan
-# ##########
-# 
-# # read in prepopulated raw data 
-# raw_data_af <- read.csv('data/Afghanistan/raw_data_all.csv', header = FALSE)
-# 
-# # rename columns
-# names(raw_data_af) <- c('Country', 'Year', 'Peril', 'Loss')
-# 
-# # round
-# raw_data_af$Loss <- round(raw_data_af$Loss, 2)
-# 
-# ##########
-# # Somalia
-# ##########
-# 
-# # set scaling number
-# scale_by = 1000000
-# 
-# # read in prepopulated raw data 
-# raw_data_som <- read.csv('data/Somalia/raw_data_all.csv', header = TRUE)
-# 
-# # rename columns
-# names(raw_data_som) <- c('Country', 'Year', 'Peril', 'Loss')
-# 
-# # scale data to work
-# raw_data_som$Loss_scaled <- raw_data_som$Loss/scale_by
-# 
-# # round
-# raw_data_som$Loss <- round(raw_data_som$Loss, 2)
-# 
-# 
-# 
-# ##########
-# # malaysia
-# ##########
-# # set scaling number
-# # scale_by = 1000
-# 
-# # read in prepopulated raw data 
-# raw_data_malay <- read.csv('data/Malaysia/raw_data_flood.csv', header = TRUE)
-# 
-# # rename columns
-# names(raw_data_malay) <- c('Country', 'Year', 'Peril', 'Loss')
-# 
-# # divide loss by 1000
-# # raw_data_malay$Loss_scaled <- raw_data_malay$Loss/scale_by
-# 
-# # round
-# raw_data_malay$Loss <- round(raw_data_malay$Loss, 2)
-# 
-# 
-# ##########
-# # senegal
-# ##########
-# 
-# # set scaling number
-# # scale_by = 1000
-# 
-# # read in prepopulated raw data 
-# raw_data_sen <- read.csv('data/Senegal/raw_data_flood.csv', header = TRUE)
-# 
-# # rename columns
-# names(raw_data_sen) <- c('Country', 'Year', 'Peril', 'Loss')
-# 
-# # remove rows with 0
-# raw_data_sen <- raw_data_sen[raw_data_sen$Loss != 0,]
-# 
-# # scale data down
-# # raw_data_sen$Loss_scaled <- raw_data_sen$Loss/scale_by
-# 
-# # round
-# raw_data_sen$Loss <- round(raw_data_sen$Loss, 2)
-# 
+##########
+# South Africa
+##########
+
+# read in loss data
+south_africa_loss <- read.csv('data/South Africa/data_loss.csv')
+
+names(south_africa_loss) <- c('Country', 'Year', 'Peril', 'Loss')
+
+# read in cost data
+south_africa_cost <- read.csv('data/South Africa/data_cost.csv')
+
+names(south_africa_cost) <- c('Country', 'Year', 'Peril', 'Affected')
+
+# read in population data
+south_africa_pop <- read.csv('data/South Africa/data_pop.csv')
+
+# make a data frame to store information about data
+south_africa_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, inflation = FALSE, gdp = FALSE)
+
+##########
+# Philippines
+##########
+
+# read in loss data
+philippines_loss <- read.csv('data/Philippines/data_loss.csv')
+
+names(philippines_loss) <- c('Country', 'Year', 'Peril', 'Loss')
+
+# read in cost data
+philippines_cost <- read.csv('data/Philippines/data_cost.csv')
+
+names(philippines_cost) <- c('Country', 'Year', 'Peril', 'Affected')
+
+# read in population data
+philippines_pop <- read.csv('data/Philippines/data_pop.csv')
+
+# make a data frame to store information about data
+philippines_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, inflation = FALSE, gdp = FALSE)
+
+##########
+# Mozambique
+##########
+
+# read in loss data
+mozambique_loss <- read.csv('data/Mozambique/data_loss.csv')
+
+names(mozambique_loss) <- c('Country', 'Year', 'Peril', 'Loss')
+
+# read in cost data
+mozambique_cost <- read.csv('data/Mozambique/data_cost.csv')
+
+names(mozambique_cost) <- c('Country', 'Year', 'Peril', 'Affected')
+
+# read in population data
+mozambique_pop <- read.csv('data/Mozambique/data_pop.csv')
+
+# make a data frame to store information about data
+mozambique_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, inflation = FALSE, gdp = FALSE)
+
+#### add more countries
+
 
 
