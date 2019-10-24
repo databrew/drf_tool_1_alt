@@ -89,54 +89,7 @@ ui <- shinyUI(
                        fluidRow(
                          awesomeCheckbox("advanced", "Use Advanced Settings")
                        )), # end tab panel for about section
-              tabPanel('Data',
-                      
-                       fluidRow(
-                        
-                         column(6,
-                                div(class = 'well',
-                                awesomeCheckbox('further_detrend', 'Remove Trends From Data', value = FALSE, status = 'danger'),
-                                h4('Preloaded peril data'),
-                                DT::dataTableOutput('raw_data_table')
-                                
-                         )),
-                         column(6, 
-                                div(class = 'well',
-                                    # button for scaling data
-                                    awesomeCheckbox('upload_other_data', 'Upload additional data',value = FALSE, status = 'danger'),
-                                    DT::dataTableOutput('upload_data_table')
-                                ))),
-                         fluidRow(
-                           column(6,
-                                  div(class = "well",
-                                      h4('Preloaded scaling data'),
-                                      uiOutput('raw_scaled_data'))),
-                           column(6,
-                                  div(class = 'well',
-                                      awesomeCheckbox('upload_scaled_data', 'Upload Scaling Data', value = FALSE, status = 'danger')
-                                  ))
-                                      
-                           # selectInput('scale_by',
-                           #             'Scale by',
-                           #             choices = c('Population', 
-                           #                         'GDP',
-                           #                         'Inflation'),
-                           #             selected = 'Population')
-                         ),
-                        
-                                    
-                                   
-                         # popus for the upload the further detrend inputs
-                         bsPopover(id = "upload", title = '', 
-                                   content = "Upload user data and scale by either Population, GDP, or Inflation", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                         bsPopover(id = "further_detrend", title = '', 
-                                   content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body'))
-                         
-                       
-                       
-              ),
+              
               # new tab for user inputs
               tabPanel("User inputs",
                        #  start new row that encompasses inputs for country, download buttons, damage type, and currency
@@ -146,7 +99,7 @@ ui <- shinyUI(
                                     # input for country
                                     selectInput("country", 
                                                 "Choose a country",
-                                                choices = c("Afghanistan")), # only one choice currently, but building in the others
+                                                choices = countries), # only one choice currently, but building in the others
                                     tags$p(tags$b("Click on buttons below download preloaded datasets or upload user perild data")),
                                     # download buttons
                                     fluidRow(
@@ -225,6 +178,55 @@ ui <- shinyUI(
                        
                        
               ), # end user inputs tab panel
+              tabPanel('Data',
+                       
+                       fluidRow(
+                         
+                         column(6,
+                                div(class = 'well',
+                                    awesomeCheckbox('further_detrend', 'Remove Trends From Data', value = FALSE, status = 'danger'),
+                                    h4('Preloaded peril data'),
+                                    DT::dataTableOutput('raw_data_table')
+                                    
+                                )),
+                         column(6, 
+                                div(class = 'well',
+                                    # button for scaling data
+                                    awesomeCheckbox('upload_other_data', 'Upload additional data',value = FALSE, status = 'danger'),
+                                    uiOutput('select_scale'),
+                                    DT::dataTableOutput('upload_data_table')
+                                ))),
+                       fluidRow(
+                         column(6,
+                                div(class = "well",
+                                    h4('Preloaded scaling data'),
+                                    DT::dataTableOutput('raw_scaled_data'))),
+                         column(6,
+                                div(class = 'well',
+                                    awesomeCheckbox('upload_scaled_data', 'Upload Scaling Data', value = FALSE, status = 'danger')
+                                ))
+                         
+                         # selectInput('scale_by',
+                         #             'Scale by',
+                         #             choices = c('Population', 
+                         #                         'GDP',
+                         #                         'Inflation'),
+                         #             selected = 'Population')
+                       ),
+                       
+                       
+                       
+                       # popus for the upload the further detrend inputs
+                       bsPopover(id = "upload", title = '', 
+                                 content = "Upload user data and scale by either Population, GDP, or Inflation", 
+                                 placement = "middle", trigger = "hover", options = list(container ='body')),
+                       bsPopover(id = "further_detrend", title = '', 
+                                 content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
+                                 placement = "middle", trigger = "hover", options = list(container ='body'))
+                       
+                       
+                       
+              ),
               
               # being the section (tab panel) for simulations
               tabPanel(title = 'Simulations',
@@ -457,27 +459,100 @@ server <- function(input, output) {
     }
     
   })
-  ###  OUTPUT page
   
   # get a reactive object that selects country data (list) based on imput
   selected_country <- reactive({
     
+    # store input country
     country_name <- input$country
     
-    if(country_name == 'Afghanistan'){
-      country_data <- raw_data_af
-    } else if (country_name == 'Malaysia'){
-      country_data <- raw_data_malay
-    } else if (country_name == 'Senegal'){
-      country_data <- raw_data_sen
-    } else {
-      country_data <- raw_data_som
-    } else {
-      country_data <- sri_lanka_loss
-    }
+    # get a list called country data
+    country_data <- list()
+    
+    # the first spot in the list is for loss data, second spot for cost data, and third spot for population. If available, 4th will be inflation, 5th sill be gdp
+    if(country_name == 'Sri Lanka'){
+      country_data[[1]] <- sri_lanka_loss
+      country_data[[2]] <- sri_lanka_cost
+      country_data[[3]] <- sri_lanka_pop
+    } else if (country_name == 'South Africa'){
+      country_data[[1]] <- south_africa_loss
+      country_data[[2]] <- south_africa_cost
+      country_data[[3]] <- south_africa_pop
+    } else if (country_name == 'Philippines'){
+      country_data[[1]] <- philippines_loss
+      country_data[[2]] <- philippines_cost
+      country_data[[3]] <- philippines_pop
+    } else if(country_name == 'Mozambique') {
+      country_data[[1]] <- mozambique_loss
+      country_data[[2]] <- mozambique_cost
+      country_data[[3]] <- mozambique_pop    
+    } 
     return(country_data)
   })
   
+  
+  ### Data page
+  
+  # create a reactive object to get country info
+  selected_country_info <- reactive({
+    country_name <- input$country
+    
+    if(country_name == 'Sri Lanka'){
+       country_info <- sri_lanka_info
+      
+    } else if (country_name == 'South Africa'){
+      country_info <- south_africa_info
+    } else if (country_name == 'Philippines'){
+      country_info <- philippines_info
+      
+    } else if(country_name == 'Mozambique') {
+      country_info <- mozambique_info
+        
+    } 
+    return(country_data)
+    
+  })
+  # 
+  # output$select_scale <- renderUI({
+  #   
+  #   # data <- selected_country()
+  #   # data_info <- selected_country_info()
+  #   
+  #     data <- country_data
+  #     data_info <- country_info
+  # 
+  #     # check if scaled data exists
+  #     scaled_data <- data_info[, c('population','inflation','gdp')]
+  #     scaled_data <- scaled_data[,apply(scaled_data, 2, function(x) isTRUE(x))]
+  #     scaled_data <- names(scaled_data)
+  # 
+  #     if(!input$advanced){
+  #       NULL
+  #     } else {
+  #       selectInput('select_scale', 'Choose from preloaded scaling data',
+  #                   choices = scaled_data,
+  #                   selected = scaled_data[1])
+  #     }
+  # 
+  # })
+  
+  # # output for scaling data if available 
+  # output$raw_scaled_data <- renderDataTable({
+  #   data <- country_data
+  #   data_info <- country_info
+  #   
+  #   # check if scaled data exists
+  #   
+  #   if(!input$advanced |  )
+  #   
+  #   # data <- selected_country()
+  #   # data_info <- selected_country_info()
+  #   
+  # })
+  
+  ###  OUTPUT page
+  
+ 
   # DONT DO ANYTHING WITH BERNOULLI UNTILL YOU GET MORE INFO
   # # The basic user will not see this, only the advanced user
   # frequency_distribution_bernoulli <- reactive({
@@ -511,8 +586,23 @@ server <- function(input, output) {
   # CREATE A REACTIVE OBJECT THAT GETS AIC SCORES FOR EACH PARAMETRIC LOSS DISTRIBUTION
   get_aic_mle <- reactive({
     
+    # data <- country_data
     # get country data
     data  <- selected_country()
+    
+    head(data)
+    # determine if we are doing total damage or cost per person 
+    damage_type <- input$damage_type
+    
+    if(damage_type == 'Cost per person'){
+      data <- data[[2]]
+      names(data)[which(names(data) == 'Affected')] <- 'Loss'
+    } else {
+      data <- data[[1]]
+    }
+   
+    # remove obsevations with 0, if any
+    data <- data[data$Loss > 0,]
     
     ##########
     # fit lognormal
@@ -907,6 +997,17 @@ server <- function(input, output) {
       
       # get country data
       data <- selected_country()
+      damage_type <- input$damage_type
+      if(damage_type == 'Cost per person'){
+        data <- data[[2]]
+        names(data)[which(names(data) == 'Affected')] <- 'Loss'
+      } else {
+        data <- data[[1]]
+      }
+      
+      # remove obsevations with 0, if any
+      data <- data[data$Loss > 0,]
+      
       data <- data[order(data$Year, decreasing = FALSE),]
       # get country input for plot title
       plot_title <- input$country
@@ -982,6 +1083,14 @@ server <- function(input, output) {
       return(NULL)
     } else {
       data <- selected_country()
+      
+      damage_type <- input$damage_type
+      if(damage_type == 'Cost per person'){
+        data <- data[[2]]
+        names(data)[which(names(data) == 'Affected')] <- 'Loss'
+      } else {
+        data <- data[[1]]
+      }
       country_name <- unique(data$Country)
       
       data <- data[order(data$Year, decreasing = FALSE),]
@@ -1043,6 +1152,18 @@ server <- function(input, output) {
       # get country data
       
       data <- selected_country()
+      damage_type <- input$damage_type
+      
+      if(damage_type == 'Cost per person'){
+        data <- data[[2]]
+        names(data)[which(names(data) == 'Affected')] <- 'Loss'
+      } else {
+        data <- data[[1]]
+      }
+      
+      # remove obsevations with 0, if any
+      data <- data[data$Loss > 0,]
+      
       data <- data[order(data$Year, decreasing = FALSE),]
       # get country input for plot title
       plot_title <- input$country
@@ -1118,6 +1239,13 @@ server <- function(input, output) {
       NULL
     } else {
       data <- selected_country()
+      damage_type <- input$damage_type
+      if(damage_type == 'Cost per person'){
+        data <- data[[2]]
+        names(data)[which(names(data) == 'Affected')] <- 'Loss'
+      } else {
+        data <- data[[1]]
+      }
       data <- data[order(data$Year, decreasing = FALSE),]
       largest_loss_num <- max(data$Loss)
       largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
@@ -1192,6 +1320,12 @@ server <- function(input, output) {
   # create a data table  
   output$raw_data_table <- DT::renderDataTable({
     country_data <- selected_country()
+    damage_type <- input$damage_type
+    if(damage_type == 'Cost per person'){
+      country_data <- country_data[[2]]
+    } else {
+      country_data <- country_data[[1]]
+    }
     datatable(country_data, options = list(dom='t',ordering=F))
   })
   
