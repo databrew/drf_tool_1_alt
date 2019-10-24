@@ -37,8 +37,8 @@ options(scipen = '999')
 # create a countries vector 
 countries <- c('Sri Lanka', 'South Africa', 'Philippines', 'Mozambique')
 
-# create a vector of countries without scaling data
-# no_scale_countries <- c('Malaysia')
+# create a vector for scaling choices
+scaled_data <- c('Population', 'GDP', 'Inflation')
 
 # define a vector of countries and currencies to be used in the dropdown (add more later)
 currencies <- c('USD', 'Other')
