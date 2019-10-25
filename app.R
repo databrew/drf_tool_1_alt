@@ -516,7 +516,8 @@ server <- function(input, output) {
     }
   })
   
-  # # output for scaling data if available 
+  # output for scaling data if available - the 3rd, 4th, and 5th index in the data list are scaling data. Population is 3rd
+  # gdp 4th, inflation 5th
   output$raw_scaled_data <- renderDataTable({
     select_scale <- input$select_scale
     data <- selected_country()
@@ -527,39 +528,33 @@ server <- function(input, output) {
       if(data_info$population) {
         data <- data[[3]]
         datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-        
       } else {
         data <- data_frame('Population data is not available for this country')
         names(data) <- NULL
         datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-        
       }
     } else if(select_scale == 'GDP'){
       if(data_info$gdp) {
         data <- data[[4]]
         datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-        
       } else {
         data <- data_frame('GDP data is not available for this country')
         names(data) <- NULL
         datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-        
       }
     } else if(select_scale == 'Inflation'){
       if(data_info$gdp) {
         data <- data[[5]]
         datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-        
       } else {
         data <- data_frame('Inflation data is not available for this country')
         names(data) <- NULL
         datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-        
       }
     }
-    
   })
-  # make a reactive object that grabs the name of the best distribution
+  
+  # make a reactive object that grabs the name of the best distribution - this is the default for basic users. Advanced users can choose a new one
   get_best_dis <- reactive({
     if(is.null(get_aic_mle())){
       return(NULL)
@@ -570,33 +565,26 @@ server <- function(input, output) {
       # dat <- dat[dat$Distribution != 'Beta',]
       # get index for minimum aic
       aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
-      # # subset my index
+      # # subset by best aic index
       dat <- dat[aic_min_ind,]    
       best_dis <- dat$Distribution
-      
       return(best_dis)
     }
-    
   })
-  
-  
-  # ui for prob_dis
+
+  # ui for prob_dis - right now the output is dependent on the best distribution
+  # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
   output$prob_dis <- renderUI({
     # get aic_mle_data
     dat <- get_aic_mle()
-    # for now remove beta
-    # dat <- dat[dat$Distribution != 'Beta',]
     # get index for minimum aic
     aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
     # # subset my index
     dat <- dat[aic_min_ind,]    
     best_dis <- dat$Distribution
-    message(input$run_tool)
     run_tool <- input$run_tool
     if(input$run_tool %% 2 == 0) {
       NULL
-      rm(run_tool)
-      
     } else {
       if(input$advanced){
         selectInput('prob_dis', 'Choose distribution (default is best fit)', 
@@ -608,23 +596,18 @@ server <- function(input, output) {
                     selected = best_dis)
       }
     }
-    
-    
   })
-  
   
   ################
   # Simulations tab 
   ################
   
   get_aic_mle <- reactive({
-    
     if(is.null(selected_damage_type())){
       return(NULL)
     } else {
       # data <- country_data
       data <- selected_damage_type()
-      
       # remove obsevations with 0, if any
       data <- data[data$Loss > 0,]
       message(head(data))
@@ -656,10 +639,6 @@ server <- function(input, output) {
                                     mle_1 = log_normal$estimate[1],
                                     mle_2 = log_normal$estimate[2])
       
-      
-      
-      # fit beta (only one not replicating)
-      # normalize data to 0, 1
       beta <- try(eBeta_ab(data$Loss, method = "numerical.MLE"), silent = TRUE)
       if(class(beta) == 'try-error'){
         beta <- NULL
@@ -830,11 +809,8 @@ server <- function(input, output) {
   
   # create table for aic
   output$aic_table <- renderDataTable({
-    
     aic_mle_data <- get_aic_mle()
     DT::datatable(aic_mle_data, options = list(dom = 't'))
-    
-    
   }) 
   
   # 
@@ -860,9 +836,7 @@ server <- function(input, output) {
       } else {
         # dat <- dat[dat$Distribution != 'Beta',]
         dat <- dat[dat$Distribution ==  input$prob_dis,]
-        
       }
-      
       
       # set conditions for each distribution
       if(dat$Distribution == 'Log normal'){
@@ -916,11 +890,8 @@ server <- function(input, output) {
   
   # create a ouput plot that draws a density of the distribution over the 
   # histogram of raw data
-  
   output$hist_plot <- renderPlot({
     data <- selected_damage_type()
-    
-    
     g <- ggplot(data, aes(data$Loss)) +
       geom_histogram(bins = 5, fill = 'black', color = 'blue', alpha = 0.6) + 
       labs(x = 'Loss', 
@@ -949,18 +920,13 @@ server <- function(input, output) {
       return(g)
     }
     
-    
   })
-  
-  
   
   ################
   # Output tab
   ################
   
-  
-  
-  # annual loss exhibit 1
+  # OUTPUT 4
   output$annual_loss_plotly <- renderPlot({
     
     # get best distirbution 
@@ -968,15 +934,13 @@ server <- function(input, output) {
     if(any(is.na(dat_sim))){
       NULL
     } else {
-      
       # get country data
       data <- selected_damage_type()
       
-      
       # remove obsevations with 0, if any
       data <- data[data$Loss > 0,]
-      
       data <- data[order(data$Year, decreasing = FALSE),]
+      
       # get country input for plot title
       plot_title <- input$country
       if(plot_title == 'Afghanistan'){
@@ -1011,8 +975,8 @@ server <- function(input, output) {
       dat$variable <- factor(dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years', 
                                                       'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
       dat$value <- round(dat$value, 2)
-      # Plot
       
+      # Plot
       g <- ggplot(dat, aes(x=variable, 
                            y=value,
                            text = value)) + 
@@ -1026,25 +990,11 @@ server <- function(input, output) {
         theme(axis.text.x = element_text(angle = 45, 
                                          hjust = 1)) +
         labs(title='', x = '', y = ' ') 
-      
-      # g_plot <- plotly::ggplotly(g, tooltip = 'text')  %>% plotly::config(displayModeBar = F) 
-      
-      
       return(g)
-      
-      
-      
     }
-    
   })
   
-  
-  ########################################################################################
-  
-  # exhibit 2
-  
-  
-  
+  # OUTPUT 3
   output$loss_exceedance_plotly <- renderPlotly({
     dat_sim <- run_best_simulation()
     if(any(is.na(dat_sim))){
@@ -1065,8 +1015,7 @@ server <- function(input, output) {
       } else {
         scale_by = 1000000
       }
-      # get best distirbution 
-      
+
       peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
       peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
       rownames(peril_exceedance_curve) <- NULL
@@ -1079,29 +1028,18 @@ server <- function(input, output) {
       names(peril_exceedance_curve)[1] <- 'Total Loss'
       names(peril_exceedance_curve)[2] <- 'Probability'
       
-      
       p <- plot_ly(peril_exceedance_curve, x = ~Probability, y = ~`Total Loss`, text = ~`Total Loss`, type = 'scatter', mode = 'markers', color = ~`Total Loss`, colors = 'Reds',
                    marker = list(size = ~(`Total Loss`/30)^1.2, opacity = 0.6)) %>%
         layout(shapes=list(type='line', x0= 0.5, x1= 1, y0=largest_loss_num, y1=largest_loss_num, line=list(dash='dot', width=1)),
                title = '',
                xaxis = list(showgrid = FALSE),
                yaxis = list(showgrid = FALSE)) 
-      
-      p
-      
       return(p)
-      
-      
     }
-    
-    
-    
   })
   
   
-  ##############################################################################
-  
-  
+  # OUTPUT 3
   output$annual_loss_gap_plotly <- renderPlot({
     
     dat_sim <- run_best_simulation()
@@ -1109,10 +1047,8 @@ server <- function(input, output) {
     if(any(is.na(dat_sim))){
       NULL 
     } else {
-      
       # get country data
       data <- selected_damage_type()
-      
       
       # remove obsevations with 0, if any
       data <- data[data$Loss > 0,]
@@ -1125,7 +1061,6 @@ server <- function(input, output) {
       } else {
         scale_by = 1000000
       }
-      # get best distirbution 
       # get quaintles 
       output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99)) 
       annual_avg <- mean(dat_sim)
@@ -1147,9 +1082,7 @@ server <- function(input, output) {
         color = "white"
       )
       
-      
-      # Plot
-      
+      # plot
       g <- ggplot(dat, aes(x=variable, 
                            y=value,
                            text = value)) + 
@@ -1163,29 +1096,15 @@ server <- function(input, output) {
         theme(axis.text.x = element_text(angle = 45, 
                                          hjust = 1)) +
         labs(title='', x = '', y = ' ') 
-      # 
-      # g_plot <- plotly::ggplotly(g, tooltip = 'text')  %>% plotly::config(displayModeBar = F) 
-      # 
-      
+
       return(g)
-      
-      
+     
     }
-    
-    
-    
-    
-    
+  
   })
   
-  
-  ############################################################################
-  # exhibit 4
-  
-  
-  
+  # OUTPUT 4
   output$loss_exceedance_gap_plotly <- renderPlotly({
-    
     dat_sim <- run_best_simulation()
     
     if(any(is.na(dat_sim))){
@@ -1223,10 +1142,7 @@ server <- function(input, output) {
       names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
       names(funding_gap_curve)[1] <- 'Funding gap'
       funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` - budget
-      
-      # implement budget
-      
-      
+     
       p <- plot_ly(funding_gap_curve, 
                    x = ~`Probability of exceeding loss`, 
                    y = ~`Funding gap`, 
@@ -1240,14 +1156,8 @@ server <- function(input, output) {
           # annotations = list(yref='paper',xref="paper", text = 'dndfs lknsdfs ', showarrow = F, x = 1.3, y = 1, legendtitle = TRUE),
           xaxis = list(showgrid = FALSE),
           yaxis = list(showgrid = FALSE)) 
-      
-      p
-      
       return(p)
-      
-      
     }
-    
   })
  
   # DONT DO ANYTHING WITH BERNOULLI UNTILL YOU GET MORE INFO
