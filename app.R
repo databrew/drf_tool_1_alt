@@ -102,14 +102,9 @@ ui <- shinyUI(
                                                 choices = countries),
                                     br(), 
                                     # a uioutput that gives choices for perils based on country input
-                                    uiOutput('peril_type')
-                                )),
-                         column(4, 
-                                div(class = 'well',
-                                    # ultimately want this button to run everything
-                                    actionBttn('run_tool', 'Run tool')),
-                                uiOutput('prob_dis')
-                         )
+                                    uiOutput('peril_type'),
+                                    uiOutput('prob_dis')
+                                ))
                        ),
                        
                        # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
@@ -582,10 +577,7 @@ server <- function(input, output) {
     # # subset my index
     dat <- dat[aic_min_ind,]    
     best_dis <- dat$Distribution
-    run_tool <- input$run_tool
-    if(input$run_tool %% 2 == 0) {
-      NULL
-    } else {
+
       if(input$advanced){
         selectInput('prob_dis', 'Choose distribution (default is best fit)', 
                     choices = advanced_parametric,
@@ -595,7 +587,6 @@ server <- function(input, output) {
                     choices = best_dis,
                     selected = best_dis)
       }
-    }
   })
   
   ################
