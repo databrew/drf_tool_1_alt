@@ -103,7 +103,16 @@ ui <- shinyUI(
                                     br(), 
                                     # a uioutput that gives choices for perils based on country input
                                     uiOutput('peril_type'),
-                                    uiOutput('prob_dis')
+                                    uiOutput('prob_dis'),
+                                    radioButtons('upload_or_auto',
+                                                 'What kind of data do you want to use?',
+                                                 choices = c('Pre-loaded data',
+                                                             'User-supplied data'),
+                                                 selected = 'Pre-loaded data',
+                                                 inline = TRUE),
+                                    uiOutput('ui_upload_type'),
+                                    uiOutput('ui_upload_type_text'),
+                                    uiOutput('ui_upload_data')
                                 ))
                        ),
                        
@@ -168,7 +177,7 @@ ui <- shinyUI(
                        fluidRow(
                          column(6,
                                 div(class = 'well',
-                                    h4('Preloaded peril data'),
+                                    h4('Peril data'),
                                     awesomeCheckbox('further_detrend', 'Remove Trends From Data', value = FALSE, status = 'danger'),
                                     DT::dataTableOutput('raw_data_table'),
                                     br(),
@@ -182,7 +191,7 @@ ui <- shinyUI(
                                 )),
                          column(6,
                                 div(class = "well",
-                                    h4('Preloaded scaling data'),
+                                    h4('Scaling data'),
                                     selectInput('select_scale', 
                                                 'Choose from preloaded scaling data',
                                                 choices = scaled_data,
@@ -196,19 +205,6 @@ ui <- shinyUI(
                                       
                                     ))
                          )
-                       ),
-                       fluidRow(
-                         
-                         column(6, 
-                                div(class = 'well',
-                                    # button for scaling data
-                                    awesomeCheckbox('upload_other_data', 'Upload additional data',value = FALSE, status = 'danger'),
-                                    DT::dataTableOutput('upload_data_table')
-                                )),
-                         column(6,
-                                div(class = 'well',
-                                    awesomeCheckbox('upload_scaled_data', 'Upload Scaling Data', value = FALSE, status = 'danger')
-                                ))
                        ),
                        # popus for the upload the further detrend inputs
                        bsPopover(id = "upload", title = '', 
@@ -313,6 +309,49 @@ ui <- shinyUI(
 
 server <- function(input, output) {
   
+  # Reactive dataset
+  input_data <- reactive({
+    user_supplied <- input$upload_or_auto
+    if(user_supplied != 'User-supplied data'){
+      NULL
+    } else {
+      message('Going to try to read user-supplied data!')
+      inFile <- input$upload_csv
+      if (is.null(inFile)){
+       NULL 
+      } else {
+        out <- read.csv(inFile$datapath)
+        if(is.null(out)){
+          NULL
+        } else {
+          out
+        }
+      }
+    }
+  })
+
+  
+  # Download controls
+  output$download_peril_data <- downloadHandler(
+    filename = function() {
+      paste("data-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      the_data <- selected_damage_type()
+      write.csv(the_data, file)
+    }
+  )
+  output$download_scaled_data <- downloadHandler(
+    filename = function() {
+      paste("data-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      the_data <- raw_scaled_data()
+      write.csv(the_data, file)
+    }
+  )
+  
+  
   ################
   # about tab
   ################
@@ -343,6 +382,51 @@ server <- function(input, output) {
   
   # define a counting object to be used to determine when the 'simulations' tab should be shown
   counter <- reactiveVal(value = 0)
+  
+  # Define the upload type options if upload is user-supplied
+  output$ui_upload_type <- renderUI({
+    if(input$upload_or_auto == 'User-supplied data'){
+      radioButtons('upload_type',
+                   'Type of data',
+                   choices = c('Loss', 'Cost', 'Population'),
+                   inline = TRUE,
+                   selected = 'Loss')
+    } else {
+      NULL
+    }
+  })
+  
+  output$ui_upload_type_text <- renderUI({
+    if(input$upload_or_auto == 'User-supplied data'){
+      typey <- input$upload_type
+      if(is.null(typey)){
+        return(NULL)
+      } else {
+        if(typey == 'Loss'){
+          helpText('Upload a csv with the following 4 column headers: "Country", "Year", "Peril", "Loss')
+        } else if(typey == 'Cost'){
+          helpText('Upload a csv with the following 4 column headers: "Country", "Year", "Peril", "Affected')
+        } else if(typey == 'Population'){
+          helpText('Upload a csv with the following 3 column headers: "Country", "Year", "Population"')
+        }
+      }
+    } else {
+      NULL
+    }
+  })
+  
+  output$ui_upload_data <- renderUI({
+    if(input$upload_or_auto == 'User-supplied data'){
+      fileInput(inputId = 'upload_csv', label = 'Choose a CSV file',accept = c(
+        "text/csv",
+        "text/comma-separated-values,text/plain",
+        ".csv")
+      )
+    } else {
+      NULL
+    }
+    
+  })
   
   observeEvent(input$advanced,{
     cc <- counter()
@@ -390,6 +474,33 @@ server <- function(input, output) {
       country_data[[2]] <- mozambique_cost
       country_data[[3]] <- mozambique_pop    
     } 
+    
+    # If user-supplied, overwrite some data
+    user_supplied <- input$upload_or_auto
+    if(user_supplied == 'User-supplied data'){
+      the_data <- input_data()
+      if(!is.null(the_data)){
+        # Define which index to overwrite
+        typey <- input$upload_type
+        if(typey == 'Loss'){
+          the_index <- 1
+        } else if(typey == 'Cost'){
+          the_index <- 2
+        } else if(typey == 'Population'){
+          the_index <- 3
+        }
+        message('the_index is ')
+        print(the_index)
+        
+        # Overwrite the auto data with user-supplied data
+        country_data[[the_index]] <- the_data
+      }
+    }
+    
+    message('selected_country() is ')
+    print(head(country_data[[1]]))
+    print(head(country_data[[2]]))
+    print(head(country_data[[3]]))
     return(country_data)
   })
 
@@ -429,7 +540,7 @@ server <- function(input, output) {
       NULL
     } else {
       numericInput('cost_per_person',
-                   'Enter coster per person USD', 
+                   'Enter cost per person USD', 
                    min = 1,
                    max = 1000,
                    step = 10,
@@ -470,6 +581,7 @@ server <- function(input, output) {
       NULL
     } else {
       data  <- selected_country()
+      
       cost <- input$cost_per_person
       peril_type <- input$peril_type
       # determine if we are doing total damage or cost per person 
@@ -501,6 +613,8 @@ server <- function(input, output) {
   output$raw_data_table <- DT::renderDataTable({
     min_obs = 4
     data <- selected_damage_type()
+    message('selected_damage_type() is: ')
+    print(head(data))
     num_obs <- nrow(data)
     if(num_obs < min_obs){
       data <- data_frame('Not enough observations to run simulations')
