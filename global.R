@@ -35,7 +35,16 @@ options(scipen = '999')
 ##########
 
 # create a countries vector 
-countries <- c('Sri Lanka', 'South Africa', 'Philippines', 'Mozambique')
+countries <- c('','Sri Lanka', 'South Africa', 'Philippines', 'Mozambique')
+
+# create a vector of archetype data
+archetypes <- c('',
+                'High risk middle income country, exposed to storms, floods, and earthquakes',
+                'Middle income country, exposed to floods',
+                'Upper-middle income country, exposed to storms, floods, and earthquakes',
+                'Drought-prone low income country',
+                'Low income conutry, exposed to storms, floods, and earthquakes',
+                'Low income country, exposed to droughts, floods, and storms')
 
 # create a vector for scaling choices
 scaled_data <- c('Population', 'GDP', 'Inflation')
@@ -53,6 +62,41 @@ basic_parametric <- c('Log normal', 'Beta', 'Gamma',
 advanced_parametric <- c('Log normal', 'Beta', 'Gamma', 
                          'Frechet', 'Gumbel', 'Weibull',
                          'Pareto')
+
+##########
+# Archetype data
+##########
+
+# Hig risk middle income country, storms, floods, and earthquakes
+high_risk_mid_income_storms_floods_earthquakes <- read.csv('data/Archetypes/high_risk_middle_income_storms_floods_earthquakes.csv')
+
+names(high_risk_mid_income_storms_floods_earthquakes) <- c('Archetype', 'Year', 'Peril', 'Affected')
+
+# low income droughts
+low_income_droughts <- read.csv('data/Archetypes/low_income_drought.csv')
+
+names(low_income_droughts) <- c('Archetype', 'Year', 'Peril', 'Affected')
+
+# low income droughts, floods, storms
+low_income_droughts_floods_storms <- read.csv('data/Archetypes/low_income_storms_floods_earthquakes.csv')
+
+names(low_income_droughts) <- c('Archetype', 'Year', 'Peril', 'Affected')
+
+# low income storms, floods, earthquakes
+low_income_storms_floods_earthquakes <- read.csv('data/Archetypes/low_income_storms_floods_earthquakes.csv')
+
+names(low_income_storms_floods_earthquakes) <- c('Archetype', 'Year', 'Peril', 'Affected')
+
+# middle income flood
+middle_income_flood <- read.csv('data/Archetypes/middle_income_flood.csv')
+
+names(middle_income_flood) <- c('Archetype', 'Year', 'Peril', 'Affected')
+
+# upper middle income storms floods earthquakes
+upper_middle_income_storms_floods_earthquakes <- read.csv('data/Archetypes/upper_middle_income_storms_floods_earthquakes.csv')
+
+names(upper_middle_income_storms_floods_earthquakes) <- c('Archetype', 'Year', 'Peril', 'Affected')
+
 
 ##########
 # Sri Lanka
