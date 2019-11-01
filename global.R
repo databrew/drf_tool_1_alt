@@ -22,6 +22,7 @@ library(actuar)
 library(extraDistr)
 library(ParetoPosStable)
 library(Hmisc)
+library(boot)
 # library(ExtDist)
 
 
