@@ -836,21 +836,21 @@ server <- function(input, output) {
           log_normal_aic <- NA
           log_normal$estimate[1] <- NA
           log_normal$estimate[2] <- NA
-          log_norma$upper_mle_1 <- NA
-          log_normal$lower_mle_1 <- NA
-          log_norma$upper_mle_2 <- NA
-          log_normal$lower_mle_2 <- NA
-          
+          # log_norma$upper_mle_1 <- NA
+          # log_normal$lower_mle_1 <- NA
+          # log_norma$upper_mle_2 <- NA
+          # log_normal$lower_mle_2 <- NA
+          # 
         } else {
           # get aic
           log_normal_aic <- round(AIC(log_normal), 4)
-          
-          # upper and lower bound for each estimate 
-          log_normal_upper_mle_1 <- log_normal$estimate[1] + log_normal$sd[1]
-          log_normal_lower_mle_1 <- log_normal$estimate[1] - log_normal$sd[1]
-          
-          log_normal_upper_mle_2 <- log_normal$estimate[2] + log_normal$sd[2]
-          log_normal_lower_mle_2 <- log_normal$estimate[2] - log_normal$sd[2]
+          # 
+          # # upper and lower bound for each estimate 
+          # log_normal_upper_mle_1 <- log_normal$estimate[1] + log_normal$sd[1]
+          # log_normal_lower_mle_1 <- log_normal$estimate[1] - log_normal$sd[1]
+          # 
+          # log_normal_upper_mle_2 <- log_normal$estimate[2] + log_normal$sd[2]
+          # log_normal_lower_mle_2 <- log_normal$estimate[2] - log_normal$sd[2]
           
           # if there is an error, fill object with NA
           message('log normal AIC is ', log_normal_aic)
@@ -863,11 +863,11 @@ server <- function(input, output) {
         log_normal_data <- data_frame(name = 'log_normal',
                                       aic = log_normal_aic, 
                                       mle_1 = log_normal$estimate[1],
-                                      mle_2 = log_normal$estimate[2],
-                                      upper_mle_1 = log_normal_upper_mle_1,
-                                      lower_mle_1 = log_normal_lower_mle_1,
-                                      upper_mle_2 = log_normal_upper_mle_2,
-                                      lower_mle_2 = log_normal_lower_mle_2)
+                                      mle_2 = log_normal$estimate[2])
+                                      # upper_mle_1 = log_normal_upper_mle_1,
+                                      # lower_mle_1 = log_normal_lower_mle_1,
+                                      # upper_mle_2 = log_normal_upper_mle_2,
+                                      # lower_mle_2 = log_normal_lower_mle_2)
         
         beta <- try(eBeta_ab(data$Loss, method = "numerical.MLE"), silent = TRUE)
         if(class(beta) == 'try-error'){
@@ -911,12 +911,12 @@ server <- function(input, output) {
           message('gamma AIC is ', gamma_aic)
           
           # upper and lower bound for each estimate 
-          gamma_upper_mle_1 <- gamma$estimate[1] + gamma$sd[1]
-          gamm_lower_mle_1 <- gamma$estimate[1] - gamma$sd[1]
-          
-          gamma_upper_mle_2 <- gamma$estimate[2] + gamma$sd[2]
-          gamma_lower_mle_2 <- gamma$estimate[2] - gamma$sd[2]
-          
+          # gamma_upper_mle_1 <- gamma$estimate[1] + gamma$sd[1]
+          # gamm_lower_mle_1 <- gamma$estimate[1] - gamma$sd[1]
+          # 
+          # gamma_upper_mle_2 <- gamma$estimate[2] + gamma$sd[2]
+          # gamma_lower_mle_2 <- gamma$estimate[2] - gamma$sd[2]
+          # 
           # get mle 
           gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
           message('gamme mle is ', gamma_mle)
@@ -924,11 +924,11 @@ server <- function(input, output) {
         gamma_data <- data_frame(name = 'gamma',
                                  aic = gamma_aic, 
                                  mle_1 = gamma$estimate[1],
-                                 mle_2 = gamma$estimate[2], 
-                                 upper_mle_1 = log_normal_upper_mle_1,
-                                 lower_mle_1 = log_normal_lower_mle_1,
-                                 upper_mle_2 = log_normal_upper_mle_2,
-                                 lower_mle_2 = log_normal_lower_mle_2)
+                                 mle_2 = gamma$estimate[2])
+                                 # upper_mle_1 = log_normal_upper_mle_1,
+                                 # lower_mle_1 = log_normal_lower_mle_1,
+                                 # upper_mle_2 = log_normal_upper_mle_2,
+                                 # lower_mle_2 = log_normal_lower_mle_2)
         
         
         
@@ -1335,6 +1335,8 @@ server <- function(input, output) {
                                                         'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
         dat$value <- round(dat$value, 2)
         
+        mean_sim <- mean(dat_sim)
+        
         # Plot
         g <- ggplot(dat, aes(x=variable, 
                              y=value,
@@ -1361,7 +1363,7 @@ server <- function(input, output) {
   
   
   output$loss_exceedance_plotly <- renderPlot({
-    
+    geom_ribbon(data=dd,aes(x=date, y=value, ymin=lwr,ymax=upr, group=variable),alpha=0.3)
     if(is.null(selected_damage_type()) | is.na(input$budget)){
       NULL
     } else {
