@@ -105,10 +105,8 @@ ui <- shinyUI(
                                 div(class = "well",
                                     # input for country
                                     uiOutput('country'),
-                                    br(), 
                                     # a uioutput that gives choices for perils based on country input
                                     uiOutput('peril_type'),
-                                    uiOutput('prob_dis'),
                                     radioButtons('upload_or_auto',
                                                  'What kind of data do you want to use?',
                                                  choices = c('Pre-loaded data',
@@ -147,8 +145,8 @@ ui <- shinyUI(
                                                  'Choose a currency',
                                                  choices = currencies,
                                                  selected = 'USD',
-                                                 inline = TRUE)
-                                    
+                                                 inline = TRUE),
+                                    uiOutput('prob_dis')
                                 ),
                                 column(3,
                                        uiOutput('cost_per_person')),
@@ -274,7 +272,10 @@ ui <- shinyUI(
                                     numericInput('budget', 'Budget', value = 0),
                                     checkboxInput('ci', 
                                                   'Show confidence intervals',
-                                                  value = FALSE)))
+                                                  value = FALSE))),
+                         column(3,
+                                div(class = 'well',
+                                    numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = FALSE)))
                        ),
                       
                        
@@ -299,7 +300,7 @@ ui <- shinyUI(
                          column(6,div(class = "well",tags$h5(tags$b("Loss Exceedance Curve")),
                                       tags$hr(style="border-color: red;border-top: 3px solid #F511BC;",
                                               tags$ol(class = "intro-divider")
-                                      ),  plotlyOutput('loss_exceedance_plotly')))
+                                      ),  plotOutput('loss_exceedance_plotly')))
                        ),
                        
                        fluidRow(
@@ -311,7 +312,7 @@ ui <- shinyUI(
                          # output 4
                          column(6,div(class = "well",tags$h5(tags$b("Funding Gap")),
                                       tags$hr(style="border-color: red;border-top: 3px solid #F511BC;"),
-                                      plotlyOutput('loss_exceedance_gap_plotly')))
+                                      plotOutput('loss_exceedance_gap_plotly')))
                        )
                       
                       )
@@ -763,7 +764,7 @@ server <- function(input, output) {
   # output for scaling data if available - the 3rd, 4th, and 5th index in the data list are scaling data. Population is 3rd
   # gdp 4th, inflation 5th
   output$raw_scaled_data <- renderDataTable({
-    if(input$data_type == 'Archetype' | input$country == ''){
+    if(input$data_type == 'Archetype' | input$country == '' | is.null(selected_country_info())){
       data <- data_frame('Scaling data unavailable for data selected')
       names(data) <- NULL
       datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
@@ -1182,12 +1183,87 @@ server <- function(input, output) {
   # Output tab
   ################
   
-  # OUTPUT 1
-  output$annual_loss_plotly <- renderPlot({
+  # make reactive object to store probability of exceeding budget
+  probability_of_exceeding <- reactive({
     
     if(is.null(selected_damage_type())){
       NULL
     } else {
+      dat_sim <- run_best_simulation()
+      if(any(is.na(dat_sim))){
+        return(NULL)
+      } else {
+        
+        # get budget
+        budget <- input$budget
+        peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
+        peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
+        rownames(peril_exceedance_curve) <- NULL
+        names(peril_exceedance_curve)[1] <- 'y'
+        
+        # remove percent and turn numeric
+        peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
+        peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
+        peril_exceedance_curve$x <- peril_exceedance_curve$x/100
+        names(peril_exceedance_curve)[1] <- 'Total Loss'
+        names(peril_exceedance_curve)[2] <- 'Probability'
+        peril_exceedance_curve$Probability <- 1 - peril_exceedance_curve$Probability
+        
+        # find where budget equals curve
+        prob_exceed <- peril_exceedance_curve$Probability[which.min(abs(peril_exceedance_curve$`Total Loss` - budget))]
+        return(prob_exceed)
+      }
+    }
+    
+    
+  })
+  
+  # create a reactive object that takes new input 
+  probability_of_exceeding_suplus_deficit <- reactive({
+    
+    if(is.null(selected_damage_type())){
+      NULL
+    } else {
+      dat_sim <- run_best_simulation()
+      if(any(is.na(dat_sim))){
+        return(NULL)
+      } else {
+        
+        # get budget
+        budget <- input$budget
+        exceed_budget <- input$exceed_budget
+        budget <- exceed_budget + budget
+        peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
+        peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
+        rownames(peril_exceedance_curve) <- NULL
+        names(peril_exceedance_curve)[1] <- 'y'
+        
+        # remove percent and turn numeric
+        peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
+        peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
+        peril_exceedance_curve$x <- peril_exceedance_curve$x/100
+        names(peril_exceedance_curve)[1] <- 'Total Loss'
+        names(peril_exceedance_curve)[2] <- 'Probability'
+        peril_exceedance_curve$Probability <- 1 - peril_exceedance_curve$Probability
+        
+        # find where budget equals curve
+        prob_exceed_surplus_deficit <- peril_exceedance_curve$Probability[which.min(abs(peril_exceedance_curve$`Total Loss` - budget))]
+        return(prob_exceed_surplus_deficit)
+      }
+    }
+    
+    
+  })
+  
+  
+  
+  # OUTPUT 1
+  output$annual_loss_plotly <- renderPlot({
+    
+    if(is.null(selected_damage_type()) | is.na(input$budget)){
+      return(NULL)
+    } else {
+      message(input$budget)
       # get best distirbution 
       dat_sim <- run_best_simulation()
       if(any(is.na(dat_sim))){
@@ -1195,6 +1271,9 @@ server <- function(input, output) {
       } else {
         # get country data
         data <- selected_damage_type()
+        
+        # get budget
+        budget <- input$budget
         
         # remove obsevations with 0, if any
         data <- data[data$Loss > 0,]
@@ -1220,12 +1299,6 @@ server <- function(input, output) {
         # melt the data frame to get value and variable 
         dat <- melt(dat)
         
-        f <- list(
-          family = "Ubuntu",
-          size = 20,
-          color = "white"
-        )
-        
         dat$variable <- factor(dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years', 
                                                         'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
         dat$value <- round(dat$value, 2)
@@ -1238,12 +1311,12 @@ server <- function(input, output) {
                    fill = '#5B84B1FF',
                    col = '#FC766AFF', 
                    alpha = 0.6) + 
-          geom_text(aes(label=round(value, 5)), position=position_dodge(width=0.9), vjust=-0.35) +
+          geom_hline(yintercept = budget) +
           theme_bw(base_size = 14, 
                    base_family = 'Ubuntu')  +
           theme(axis.text.x = element_text(angle = 45, 
                                            hjust = 1)) +
-          labs(title='', x = '', y = ' ') 
+          ggtitle(plot_title)
         return(g)
       }
     }
@@ -1253,15 +1326,17 @@ server <- function(input, output) {
 
   ############ OUTPUT 2
   
-  output$loss_exceedance_plotly <- renderPlotly({
+  
+  output$loss_exceedance_plotly <- renderPlot({
     
-    if(is.null(selected_damage_type())){
+    if(is.null(selected_damage_type()) | is.na(input$budget)){
       NULL
     } else {
       dat_sim <- run_best_simulation()
       if(any(is.na(dat_sim))){
         return(NULL)
       } else {
+        
         data <- selected_damage_type()
         
         country_name <- unique(data$Country)
@@ -1272,8 +1347,11 @@ server <- function(input, output) {
         
         # get country input for plot title
         plot_title <- input$country
+        exceed_budget <- paste0('Probability of exceeding budget = ', prob_exceed)
+        plot_title <- paste0(plot_title, ' : ', exceed_budget)
         
-        
+        # get budget
+        budget <- input$budget
         peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
         peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
         rownames(peril_exceedance_curve) <- NULL
@@ -1285,18 +1363,25 @@ server <- function(input, output) {
         peril_exceedance_curve$x <- peril_exceedance_curve$x/100
         names(peril_exceedance_curve)[1] <- 'Total Loss'
         names(peril_exceedance_curve)[2] <- 'Probability'
+        peril_exceedance_curve$Probability <- 1 - peril_exceedance_curve$Probability
         
-        p <- plot_ly(peril_exceedance_curve, 
-                     x = ~Probability, 
-                     y = ~`Total Loss`, 
-                     text = ~`Total Loss`, 
-                     type = 'scatter', 
-                     mode = 'lines') %>%
-          layout(shapes=list(type='line', x0= 0.5, x1= 1, y0=largest_loss_num, y1=largest_loss_num, line=list(dash='dot', width=1)),
-                 title = '',
-                 xaxis = list(showgrid = FALSE),
-                 yaxis = list(showgrid = FALSE)) 
-        return(p)
+        # find where budget equals curve
+        prob_exceed <- probability_of_exceeding()
+        
+        g <- ggplot(peril_exceedance_curve, aes(Probability, `Total Loss`)) +
+          geom_line(col = 'blue', size = 1, alpha = 0.7) + 
+          scale_x_reverse() +
+          ggtitle(plot_title) +
+          geom_hline(yintercept = largest_loss_num) +
+          geom_hline(yintercept = budget) +
+          geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
+          annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
+          annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
+          theme_bw(base_size = 14, 
+                   base_family = 'Ubuntu')
+        
+        return(g)
+       
       }
     }
     
@@ -1307,7 +1392,7 @@ server <- function(input, output) {
   ############ OUTPUT 3
   output$annual_loss_gap_plotly <- renderPlot({
     
-    if(is.null(selected_damage_type())){
+    if(is.null(selected_damage_type()) | is.na(input$budget)){
       NULL
     } else {
       dat_sim <- run_best_simulation()
@@ -1338,13 +1423,6 @@ server <- function(input, output) {
         dat <- melt(dat)
         
         # divide valueb by 100k
-        # dat$value <- dat$value/scale_by
-        
-        f <- list(
-          family = "Ubuntu",
-          size = 20,
-          color = "white"
-        )
         
         # plot
         g <- ggplot(dat, aes(x=variable, 
@@ -1354,12 +1432,11 @@ server <- function(input, output) {
                    fill = '#5B84B1FF',
                    col = '#FC766AFF', 
                    alpha = 0.6) + 
-          geom_text(aes(label=round(value, 5)), position=position_dodge(width=0.9), vjust=-0.35) +
           theme_bw(base_size = 14, 
                    base_family = 'Ubuntu')  +
           theme(axis.text.x = element_text(angle = 45, 
                                            hjust = 1)) +
-          labs(title='', x = '', y = ' ') 
+          ggtitle(plot_title)
         
         return(g)
         
@@ -1371,9 +1448,9 @@ server <- function(input, output) {
   })
   
   # OUTPUT 4
-  output$loss_exceedance_gap_plotly <- renderPlotly({
+  output$loss_exceedance_gap_plotly <- renderPlot({
     
-    if(is.null(selected_damage_type())) {
+    if(is.null(selected_damage_type()) | is.na(input$budget)) {
       NULL
     } else {
       dat_sim <- run_best_simulation()
@@ -1381,15 +1458,20 @@ server <- function(input, output) {
       if(any(is.na(dat_sim))){
         NULL
       } else {
+        
+        prob_exceed_suprplus_deficit <- probability_of_exceeding_suplus_deficit()
         data <- selected_damage_type()
         
         data <- data[order(data$Year, decreasing = FALSE),]
         largest_loss_num <- max(data$Loss)
         largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
         budget <- input$budget
+        exceed_budget <- input$exceed_budget
         
         # get country input for plot title
         plot_title <- input$country
+        exceed_surplus_deficit <- paste0('Probability of exceeding funding gap/surplus by ', exceed_budget, ' is ', prob_exceed_suprplus_deficit)
+        plot_title <- paste0(plot_title, ' : ', exceed_surplus_deficit) 
         
         # get best distirbution 
         dat_sim <- run_best_simulation()
@@ -1408,25 +1490,22 @@ server <- function(input, output) {
         
         names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
         names(funding_gap_curve)[1] <- 'Funding gap'
-        funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` - budget
+        funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
+        funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
         
-        p <- plot_ly(funding_gap_curve, 
-                     x = ~`Probability of exceeding loss`, 
-                     y = ~`Funding gap`, 
-                     text = ~`Funding gap`, 
-                     type = 'scatter', 
-                     mode = 'lines') %>%
-          layout(
-            title = '',
-            xaxis = list(title = 'Probability of exceeding loss', autorange = 'reversed'),
-            yaxis = list(title = 'Funding gap', autorange = 'reversed')
-            # annotations = list(yref='paper',xref="paper", text = 'dndfs lknsdfs ', showarrow = F, x = 1.3, y = 1, legendtitle = TRUE),
-           ) 
-        return(p)
+       g <-  ggplot(funding_gap_curve, aes(`Probability of exceeding loss`, `Funding gap`)) +
+          geom_line(col = 'blue', size = 1, alpha = 0.7) +
+         scale_x_reverse(position = 'top') +
+         geom_hline(yintercept = 0, size = 2) +
+         ggtitle(plot_title) +
+         theme_bw(base_size = 14, 
+                  base_family = 'Ubuntu')
+          
+       
+    g
+    
       }
     }
-    
-    
   })
   
   # DONT DO ANYTHING WITH BERNOULLI UNTILL YOU GET MORE INFO
