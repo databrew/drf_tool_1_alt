@@ -501,8 +501,9 @@ server <- function(input, output) {
     if(is.null(input$country)){
       NULL
     } else {
+      
       if(input$country == ''){
-        NULL
+        return(NULL)
       } else {
         # store input country
         country_name <- input$country
@@ -557,17 +558,19 @@ server <- function(input, output) {
         print(head(country_data[[3]]))
         return(country_data)
       }
-      }
       
-  
+      
+    }
+   
+    
   })
   
   # create a reactive object for archetypes 
   selected_archetype <- reactive({
     if(is.null(input$archetype)){
-      NULL
+      return(NULL)
     } else if(input$archetype == ''){
-      NULL
+      return(NULL)
     } else if(input$archetype == 'High risk middle income country, exposed to storms, floods, and earthquakes'){
       archetype_data <- high_risk_mid_income_storms_floods_earthquakes
     } else if(input$archetype == 'Middle income country, exposed to floods') {
@@ -586,18 +589,23 @@ server <- function(input, output) {
   
   # create a reactive object to get country info
   selected_country_info <- reactive({
-    country_name <- input$country
-    # get country info - a dataframe 
-    if(country_name == 'Sri Lanka'){
-      country_info <- sri_lanka_info
-    } else if (country_name == 'South Africa'){
-      country_info <- south_africa_info
-    } else if (country_name == 'Philippines'){
-      country_info <- philippines_info
-    } else if(country_name == 'Mozambique') {
-      country_info <- mozambique_info
-    } 
-    return(country_info)
+    if(input$country != 'Country'){
+      return(NULL)
+    } else {
+      country_name <- input$country
+      # get country info - a dataframe 
+      if(country_name == 'Sri Lanka'){
+        country_info <- sri_lanka_info
+      } else if (country_name == 'South Africa'){
+        country_info <- south_africa_info
+      } else if (country_name == 'Philippines'){
+        country_info <- philippines_info
+      } else if(country_name == 'Mozambique') {
+        country_info <- mozambique_info
+      } 
+      return(country_info)
+    }
+    
   })
   
   # create a uioutput for peril type  - this is dependent on the country selected.
@@ -676,32 +684,54 @@ server <- function(input, output) {
   
   # create a reactive object that gets data based on damage type - use the list of dataframes - the first index is loss data, second cost per person
   selected_damage_type <- reactive({
-    # get country data
-    if(is.null(input$peril_type) | is.null(input$damage_type)){
-      NULL
+    if(is.null(selected_country()) & is.null(selected_archetype())){
+      return(NULL)
     } else {
-      data  <- selected_country()
-      
-      cost <- input$cost_per_person
-      peril_type <- input$peril_type
-      # determine if we are doing total damage or cost per person 
-      damage_type <- input$damage_type
-      message(damage_type)
-      if(damage_type == 'Cost per person'){
-        data <- data[[2]] # get cost per person data
-        names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
-        data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-        if(peril_type != 'All'){
-          data <- data[data$Peril == peril_type,]
-        }
+      # get country data
+      if(is.null(input$peril_type) | is.null(input$damage_type)){
+        return(NULL)
       } else {
-        data <- data[[1]]
-        if(peril_type != 'All'){
-          data <- data[data$Peril == peril_type,]
+        cost <- input$cost_per_person
+        peril_type <- input$peril_type
+        # determine if we are doing total damage or cost per person 
+        damage_type <- input$damage_type
+        message(damage_type)
+        if(input$data_type == 'Country'){
+          data  <- selected_country()
+          
+         
+          if(damage_type == 'Cost per person'){
+            data <- data[[2]] # get cost per person data
+            names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
+            data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
+            if(peril_type != 'All'){
+              data <- data[data$Peril == peril_type,]
+            }
+          } else {
+            data <- data[[1]]
+            if(peril_type != 'All'){
+              data <- data[data$Peril == peril_type,]
+            }
+          }
+          return(data)
+        } else {
+          data <- selected_archetype()
+          if(is.null(data)){
+            return(NULL)
+          } else {
+            names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
+            data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
+            if(peril_type != 'All'){
+              data <- data[data$Peril == peril_type,]
+            }
+            return(data)
+          }
+         
         }
+       
       }
-      return(data)
     }
+    
   })
   
   
@@ -733,80 +763,50 @@ server <- function(input, output) {
   # output for scaling data if available - the 3rd, 4th, and 5th index in the data list are scaling data. Population is 3rd
   # gdp 4th, inflation 5th
   output$raw_scaled_data <- renderDataTable({
-    select_scale <- input$select_scale
-    data <- selected_country()
-    data_info <- selected_country_info()
-    
-    # check if scaled data exists
-    if(select_scale == 'Population'){
-      if(data_info$population) {
-        data <- data[[3]]
-        datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-      } else {
-        data <- data_frame('Population data is not available for this country')
-        names(data) <- NULL
-        datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-      }
-    } else if(select_scale == 'GDP'){
-      if(data_info$gdp) {
-        data <- data[[4]]
-        datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-      } else {
-        data <- data_frame('GDP data is not available for this country')
-        names(data) <- NULL
-        datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-      }
-    } else if(select_scale == 'Inflation'){
-      if(data_info$gdp) {
-        data <- data[[5]]
-        datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
-      } else {
-        data <- data_frame('Inflation data is not available for this country')
-        names(data) <- NULL
-        datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
+    if(input$data_type == 'Archetype' | input$country == ''){
+      data <- data_frame('Scaling data unavailable for data selected')
+      names(data) <- NULL
+      datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
+    } else {
+      select_scale <- input$select_scale
+      data <- selected_country()
+      data_info <- selected_country_info()
+      
+      # check if scaled data exists
+      if(select_scale == 'Population'){
+        if(data_info$population) {
+          data <- data[[3]]
+          datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
+        } else {
+          data <- data_frame('Population data is not available for this country')
+          names(data) <- NULL
+          datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
+        }
+      } else if(select_scale == 'GDP'){
+        if(data_info$gdp) {
+          data <- data[[4]]
+          datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
+        } else {
+          data <- data_frame('GDP data is not available for this country')
+          names(data) <- NULL
+          datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
+        }
+      } else if(select_scale == 'Inflation'){
+        if(data_info$gdp) {
+          data <- data[[5]]
+          datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
+        } else {
+          data <- data_frame('Inflation data is not available for this country')
+          names(data) <- NULL
+          datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
+        }
       }
     }
+   
   })
   
-  # make a reactive object that grabs the name of the best distribution - this is the default for basic users. Advanced users can choose a new one
-  get_best_dis <- reactive({
-    if(is.null(get_aic_mle())){
-      return(NULL)
-    } else {
-      # get aic_mle_data
-      dat <- get_aic_mle()
-      # for now remove beta
-      # dat <- dat[dat$Distribution != 'Beta',]
-      # get index for minimum aic
-      aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
-      # # subset by best aic index
-      dat <- dat[aic_min_ind,]    
-      best_dis <- dat$Distribution
-      return(best_dis)
-    }
-  })
   
-  # ui for prob_dis - right now the output is dependent on the best distribution
-  # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
-  output$prob_dis <- renderUI({
-    # get aic_mle_data
-    dat <- get_aic_mle()
-    # get index for minimum aic
-    aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
-    # # subset my index
-    dat <- dat[aic_min_ind,]    
-    best_dis <- dat$Distribution
-    
-    if(input$advanced){
-      selectInput('prob_dis', 'Choose distribution (default is best fit)', 
-                  choices = advanced_parametric,
-                  selected = best_dis)
-    } else {
-      selectInput('prob_dis', 'Default is best fit', 
-                  choices = best_dis,
-                  selected = best_dis)
-    }
-  })
+  
   
   ################
   # Simulations tab 
@@ -1015,6 +1015,52 @@ server <- function(input, output) {
       return(aic_mle_data)
     }
     
+  })
+  
+  # make a reactive object that grabs the name of the best distribution - this is the default for basic users. Advanced users can choose a new one
+  get_best_dis <- reactive({
+    if(is.null(get_aic_mle())){
+      return(NULL)
+    } else {
+      # get aic_mle_data
+      dat <- get_aic_mle()
+      # for now remove beta
+      # dat <- dat[dat$Distribution != 'Beta',]
+      # get index for minimum aic
+      aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
+      # # subset by best aic index
+      dat <- dat[aic_min_ind,]    
+      best_dis <- dat$Distribution
+      return(best_dis)
+    }
+  })
+  
+  
+  # ui for prob_dis - right now the output is dependent on the best distribution
+  # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
+  output$prob_dis <- renderUI({
+    if(is.null(get_aic_mle())){
+      return(NULL)
+    } else {
+      # get aic_mle_data
+      dat <- get_aic_mle()
+      # get index for minimum aic
+      aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
+      # # subset my index
+      dat <- dat[aic_min_ind,]    
+      best_dis <- dat$Distribution
+      
+      if(input$advanced){
+        selectInput('prob_dis', 'Choose distribution (default is best fit)', 
+                    choices = advanced_parametric,
+                    selected = best_dis)
+      } else {
+        selectInput('prob_dis', 'Default is best fit', 
+                    choices = best_dis,
+                    selected = best_dis)
+      }
+    }
+   
   })
   
   # create table for aic
