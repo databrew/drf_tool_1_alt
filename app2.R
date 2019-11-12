@@ -4,6 +4,7 @@ library(tidyverse)
 library(shinyjs)
 
 # Source the data set-up
+source('functions.R')
 source('global.R')
 
 # # Create a dictionary of tab names / numbers
@@ -59,19 +60,126 @@ body <- dashboardBody(
                    
                    fluidPage(
                      h3('Please select your preferred settings'),
-                     fluidRow(# set more HTML aesthetics
-                       p("To get started navigate to the 
-                                        User inputs tab to choose a country. If an advanced user, please select the 
-                                        Advanced Settings option below for more statistical flexibility.")
+                     fluidRow(
+                       radioButtons("advanced", "Select a type of setting. If you are an advanced user, please select the advanced settings option below for more statistical flexibility.",
+                                    choices = c('Basic', 'Advanced'),
+                                    selected = 'Basic',
+                                    inline = TRUE)
                      ),
                      fluidRow(
-                       awesomeCheckbox("advanced", "Use Advanced Settings")
+                       radioButtons("data_type", "Select Data Type",
+                                                                      choices = c('Country', 'Archetype'), selected = 'Country', inline = TRUE)
+                     ),
+                     fluidRow(uiOutput('country'))
+                     )),
+          tabPanel('INPUT',
+                   #  start new row that encompasses inputs for country, download buttons, damage type, and currency
+                   fluidRow(column(12,
+                                   uiOutput('peril_type'))),
+                   fluidRow(column(12,
+                                   uiOutput('damage_type'))),
+                   fluidRow(column(12,
+                                   radioButtons('currency',
+                                                'Choose a currency',
+                                                choices = currencies,
+                                                selected = 'USD',
+                                                inline = TRUE))),
+                   fluidRow(column(12,
+                                   uiOutput('prob_dis')))),
+          
+          
+          tabPanel('DATA',
+                   
+                   fluidPage(
+                     fluidRow(
+                       h4('Review Data Samples')
+                     ),
+                     fluidRow(
+                       radioButtons('upload_or_auto',
+                                    'Do you wish to replace pre-loaded data with user-supplied data?',
+                                    choiceValues = c('Pre-loaded data',
+                                                'User-supplied data'),
+                                    choiceNames = c('No', 'Yes'),
+                                    selected = 'Pre-loaded data',
+                                    inline = TRUE)
+                     ),
+                     fluidRow(
+                       column(9,
+                              h4('Peril data')),
+                       column(3,
+                              downloadButton("download_peril_data",
+                                             "Download Peril Data"))
+                     ),
+                     fluidRow(
+                       column(12,
+                              uiOutput('further_detrend'),
+                                  DT::dataTableOutput('raw_data_table'))),
+                     br(),
+                     fluidRow(
+                       column(9,
+                              h4('Scaling data')),
+                       column(3,
+                              downloadButton("download_scaled_data",
+                                             "Download Scaled Data"))),
+                     fluidRow(
+                       column(12,
+                              selectInput('select_scale', 
+                                              'Choose from preloaded scaling data',
+                                              choices = scaled_data,
+                                              selected = scaled_data[1]),
+                                  DT::dataTableOutput('raw_scaled_data')
+                       )
                      )
                      
-                     )),
-          tabPanel('INPUT', p('B!!!')),
-          tabPanel('DATA', p('C!!!')),
-          tabPanel('SIMULATIONS', p('D!!!')),
+                   ),
+                   
+                   fluidRow(
+                      # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
+                     # and creates popup boxes with any content specified in 'content' argument
+                     bsPopover(id = "advanced", title = '', 
+                               content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     bsPopover(id = "upload_data", title = '', 
+                               content = "To use your own dataset, push the 'Upload Peril Data' button", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     
+                     bsPopover(id = "download_data", title = '', 
+                               content = "Download the peril data for the country selected", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     
+                     bsPopover(id = "country", title = '', 
+                               content = "If you wish to upload your own data, please select the upload peril button", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     
+                     # start a column that takes almost half the page. This column contains inputs for damage_type, currency, and the probability distribution.
+                     
+                     column(6,
+                            column(3,
+                                   uiOutput('cost_per_person')),
+                            column(3, 
+                                   uiOutput('rate')),
+                            column(3, 
+                                   uiOutput('code')))
+                     
+                   ),
+                   
+                   # popups for the inputs damage_type, currency.Need to add one on the server side for prob_dis
+                   bsPopover(id = "run_tool", title = '', 
+                             content ="After selecting all inputs, click this button to run the tool. It will generate simulation based on the best fitted distribution.", 
+                             placement = "right", trigger = "hover", options = list(container ='body')),
+                   bsPopover(id = "damage_type", title = '', 
+                             content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD", 
+                             placement = "middle", trigger = "hover", options = list(container ='body')),
+                   bsPopover(id = "currency", title = '', 
+                             content = "If other is chosen, please select a currency code and exchange rate.", 
+                             placement = "middle", trigger = "hover", options = list(container ='body'))
+                   
+                   ),
+          tabPanel('SIMULATIONS', 
+                   
+                   fluidPage()
+                   
+                   ),
           tabPanel('OUTPUT', p('E!!!'))
       ),
       br(),
@@ -96,16 +204,52 @@ ui <- dashboardPage(header, sidebar, body, skin="blue")
 # Server
 server <- function(input, output, session) {
   
-  ######### Log-in
-  set.seed(122)
-  histdata <- rnorm(500)
-  observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, { 
-    # event will be called when histdata changes, which only happens once, when it is initially calculated
-    showModal(modalDialog(
-      title = "Log-in", easyClose = FALSE, footer = modalButton('Accept'),
-      p('Some text')))
-
+  # Reactive tab data
+  tab_data <- reactiveValues(data = tab_dict)
+  
+  # Reactive dataset
+  input_data <- reactive({
+    user_supplied <- input$upload_or_auto
+    if(user_supplied != 'User-supplied data'){
+      NULL
+    } else {
+      message('Going to try to read user-supplied data!')
+      inFile <- input$upload_csv
+      if (is.null(inFile)){
+        NULL 
+      } else {
+        out <- read.csv(inFile$datapath)
+        if(is.null(out)){
+          NULL
+        } else {
+          out
+        }
+      }
+    }
   })
+  
+  
+  # Download controls
+  output$download_peril_data <- downloadHandler(
+    filename = function() {
+      paste("data-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      the_data <- selected_damage_type()
+      write.csv(the_data, file)
+    }
+  )
+  output$download_scaled_data <- downloadHandler(
+    filename = function() {
+      paste("data-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      the_data <- raw_scaled_data()
+      write.csv(the_data, file)
+    }
+  )
+  
+  
   
   ##########
   # Beginning observeEvent functions for Landing page and showing the 'simulations' tab if advanced user is selected
@@ -155,8 +299,25 @@ server <- function(input, output, session) {
     ))
   })
   
+  # Upload menu
+  observeEvent(input$upload_or_auto, {
+    iu <- input$upload_or_auto
+    message('iu is ', iu)
+    if(iu == 'User-supplied data'){
+      showModal(modalDialog(
+        title = "Upload your own data", easyClose = TRUE,
+        fluidPage(uiOutput('ui_upload_type'),
+                  uiOutput('ui_upload_type_text'),
+                  uiOutput('ui_upload_data'))
+      ))
+    } 
+    
+  })
+  
   # Define a reactive value which is the currently selected tab number
   rv <- reactiveValues(page = 1)
+  
+  # Make tab dict reactive
   
   observe({
     toggleState(id = "prevBtn", condition = rv$page > 1)
@@ -183,14 +344,16 @@ server <- function(input, output, session) {
   # Observe any changes to rv$page, and update the selected tab accordingly
   observeEvent(rv$page, {
     tab_number <- rv$page
-    tab_name <- tab_dict %>% filter(number == tab_number) %>% .$name
+    td <- tab_data$data
+    tab_name <- td %>% filter(number == tab_number) %>% .$name
     updateTabsetPanel(session, inputId="tabs", selected=tab_name)
   })
   
   # Observe any click on the left tab menu, and update accordingly the rv$page object
   observeEvent(input$tabs, {
     tab_name <- input$tabs
-    tab_number <- tab_dict %>% filter(name == tab_name) %>% .$number
+    td <- tab_data$data
+    tab_number <- td %>% filter(name == tab_name) %>% .$number
     message(paste0('Selected tab is ', tab_name, '. Number: ', tab_number))
     rv$page <- tab_number
   })
@@ -201,13 +364,11 @@ server <- function(input, output, session) {
     if(input$data_type == 'Country'){
       selectInput("country", 
                   "Choose a country",
-                  choices = countries,
-                  selected = '')
+                  choices = countries)
     } else {
       selectInput("archetype", 
                   "Choose an archetype",
-                  choices = archetypes,
-                  selected = '')
+                  choices = archetypes)
     }
     
   })
@@ -216,16 +377,16 @@ server <- function(input, output, session) {
     
     if(input$data_type == 'Archetype'){
       radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
-                   'Choose how you want to view the loss',
+                   'Select how you want to view the loss',
                    choices = c('Cost per person'),
                    selected = 'Cost per person',
-                   inline = FALSE)
+                   inline = TRUE)
     } else {
       radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
-                   'Choose how you want to view the loss',
+                   'Select how you want to view the loss',
                    choices = c('Total damage', 'Cost per person'),
                    selected = 'Total damage',
-                   inline = FALSE)
+                   inline = TRUE)
     }
     
     
@@ -281,6 +442,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$advanced,{
+    
     cc <- counter()
     message('current counter is ', cc)
     new_cc <- cc + 1
@@ -288,10 +450,14 @@ server <- function(input, output, session) {
     message('new counter is ', new_cc)
     # if the counter is even, hide tab (this is the default because the counter starts at zero)
     if(cc %% 2 == 0){
-      hideTab(inputId = 'Navbar', target = 'simulations')
+      hideTab(inputId = 'tabs', target = 'SIMULATIONS')
+      x <- tab_dict[c(1:3,5),]
+      x$number <- 1:4
+      tab_data$data <- x
     } else {
       # if the counter is odd, show the tab
-      showTab(inputId = 'Navbar', target = 'simulations')
+      showTab(inputId = 'tabs', target = 'SIMULATIONS')
+      tab_data$data <- tab_dict
     }
   })
   
@@ -419,11 +585,11 @@ server <- function(input, output, session) {
     temp <- data[[1]]
     # get the peril names for choices in peril input
     peril_names <- as.character(unique(temp$Peril))
-    peril_names <- append('All', peril_names)
-    selectInput('peril_type', 
+    checkboxGroupInput('peril_type', 
                 'Choose a peril',
                 choices = peril_names,
-                selected = 'All')
+                selected = peril_names,
+                inline = TRUE)
   })
   
   # create a uioutput for when data type == cost per person
@@ -488,7 +654,7 @@ server <- function(input, output, session) {
   
   # create a uioutput for detrend
   detrend <- reactive({
-    if(!input$advanced){
+    if(input$advanced == 'Basic'){
       return(NULL)
     } else if(is.null(selected_country()) & is.null(selected_archetype())){
       return(NULL)
@@ -515,9 +681,7 @@ server <- function(input, output, session) {
             data <- data[[2]] # get cost per person data
             names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
             data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+            data <- data %>% filter(Peril %in% peril_type)
             
           } else {
             # get population data 
@@ -535,9 +699,8 @@ server <- function(input, output, session) {
             data$`Scaled loss` <- round(data$scaling_factor*data$Loss, 2)
             names(data) <- gsub('.x', '', names(data))
             data$Country.y <- NULL
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+            data <- data %>% filter(Peril %in% peril_type)
+            
             test <- trend.test(data$`Scaled loss`)$p.value
             message(test)
             return(test)
@@ -550,9 +713,8 @@ server <- function(input, output, session) {
           } else {
             names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
             data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+            data <- data %>% filter(Peril %in% peril_type)
+            
             test <- trend.test(data$`Scaled loss`)$p.value
             
             return(test)
@@ -566,7 +728,7 @@ server <- function(input, output, session) {
   
   # uitoutput
   output$further_detrend <- renderUI({
-    if(!input$advanced | is.null(detrend())){
+    if(input$advanced == 'Basic' | is.null(detrend())){
       return(NULL)
     } else if(detrend() > 0.05) {
       message(detrend())
@@ -604,9 +766,8 @@ server <- function(input, output, session) {
               data <- data[[2]] # get cost per person data
               names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
               data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-              if(peril_type != 'All'){
-                data <- data[data$Peril == peril_type,]
-              }
+              data <- data %>% filter(Peril %in% peril_type)
+              
               # if(input$further_detrend){
               #   data <- data[data$`Scaled loss` > 0,]
               #   data$`Scaled loss` <- detrend(data$`Scaled loss`, tt = 'linear')
@@ -631,9 +792,8 @@ server <- function(input, output, session) {
             data$`Scaled loss` <- round(data$scaling_factor*data$Loss, 2)
             names(data) <- gsub('.x', '', names(data))
             data$Country.y <- NULL
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+            data <- data %>% filter(Peril %in% peril_type)
+            
             # if(input$further_detrend){
             #   data <- data[data$`Scaled loss` > 0,]
             #   data$`Scaled loss` <- detrend(data$`Scaled loss`, tt = 'linear')
@@ -649,9 +809,8 @@ server <- function(input, output, session) {
           } else {
             names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
             data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+            data <- data %>% filter(Peril %in% peril_type)
+            
             return(data)
           }
           
@@ -1010,7 +1169,7 @@ server <- function(input, output, session) {
       dat <- dat[aic_min_ind,]    
       best_dis <- dat$Distribution
       
-      if(input$advanced){
+      if(input$advanced == 'Advanced'){
         selectInput('prob_dis', 'Choose distribution (default is best fit)', 
                     choices = advanced_parametric,
                     selected = best_dis)
