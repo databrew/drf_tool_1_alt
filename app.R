@@ -17,7 +17,7 @@ tab_dict <- data_frame(number = 1:5,
 n_tabs <- nrow(tab_dict)
 
 
-header <- dashboardHeader(title="Benchmarking tool")
+header <- dashboardHeader(title="World Bank Group")
 sidebar <- dashboardSidebar(
   sidebarMenu(
     id = 'side_tab',
