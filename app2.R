@@ -10,10 +10,10 @@ source('global.R')
 # # Create a dictionary of tab names / numbers
 tab_dict <- data_frame(number = 1:5,
                        name = toupper(c('Tool settings',
-                                'Input',
-                                'Data',
-                                'Simulations',
-                                'Output')))
+                                        'Input',
+                                        'Data',
+                                        'Simulations',
+                                        'Output')))
 n_tabs <- nrow(tab_dict)
 
 
@@ -68,24 +68,35 @@ body <- dashboardBody(
                      ),
                      fluidRow(
                        radioButtons("data_type", "Select Data Type",
-                                                                      choices = c('Country', 'Archetype'), selected = 'Country', inline = TRUE)
+                                    choices = c('Country', 'Archetype'), selected = 'Country', inline = TRUE)
                      ),
                      fluidRow(uiOutput('country'))
-                     )),
+                   )),
           tabPanel('INPUT',
                    #  start new row that encompasses inputs for country, download buttons, damage type, and currency
-                   fluidRow(column(12,
-                                   uiOutput('peril_type'))),
-                   fluidRow(column(12,
-                                   uiOutput('damage_type'))),
-                   fluidRow(column(12,
-                                   radioButtons('currency',
-                                                'Choose a currency',
-                                                choices = currencies,
-                                                selected = 'USD',
-                                                inline = TRUE))),
-                   fluidRow(column(12,
-                                   uiOutput('prob_dis')))),
+                   fluidPage(
+                     fluidRow(column(12,
+                                     uiOutput('peril_type'))),
+                     fluidRow(column(12,
+                                     uiOutput('damage_type_ui'))),
+                     fluidRow(column(12,
+                                     radioButtons('currency',
+                                                  'Choose a currency',
+                                                  choices = currencies,
+                                                  selected = 'USD',
+                                                  inline = TRUE))),
+                     fluidRow(
+                       column(4,
+                              uiOutput('cost_per_person_ui')
+                       ),
+                       column(4,
+                              uiOutput('rate_ui')),
+                       column(4,
+                              uiOutput('code_ui'))
+                     ),
+                     fluidRow(column(12,
+                                     uiOutput('prob_dis')))
+                   )),
           
           
           tabPanel('DATA',
@@ -98,7 +109,7 @@ body <- dashboardBody(
                        radioButtons('upload_or_auto',
                                     'Do you wish to replace pre-loaded data with user-supplied data?',
                                     choiceValues = c('Pre-loaded data',
-                                                'User-supplied data'),
+                                                     'User-supplied data'),
                                     choiceNames = c('No', 'Yes'),
                                     selected = 'Pre-loaded data',
                                     inline = TRUE)
@@ -113,7 +124,7 @@ body <- dashboardBody(
                      fluidRow(
                        column(12,
                               uiOutput('further_detrend'),
-                                  DT::dataTableOutput('raw_data_table'))),
+                              DT::dataTableOutput('raw_data_table'))),
                      br(),
                      fluidRow(
                        column(9,
@@ -124,17 +135,17 @@ body <- dashboardBody(
                      fluidRow(
                        column(12,
                               selectInput('select_scale', 
-                                              'Choose from preloaded scaling data',
-                                              choices = scaled_data,
-                                              selected = scaled_data[1]),
-                                  DT::dataTableOutput('raw_scaled_data')
+                                          'Choose from preloaded scaling data',
+                                          choices = scaled_data,
+                                          selected = scaled_data[1]),
+                              DT::dataTableOutput('raw_scaled_data')
                        )
                      )
                      
                    ),
                    
                    fluidRow(
-                      # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
+                     # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
                      # and creates popup boxes with any content specified in 'content' argument
                      bsPopover(id = "advanced", title = '', 
                                content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
@@ -153,13 +164,13 @@ body <- dashboardBody(
                      
                      # start a column that takes almost half the page. This column contains inputs for damage_type, currency, and the probability distribution.
                      
-                     column(6,
-                            column(3,
-                                   uiOutput('cost_per_person')),
-                            column(3, 
-                                   uiOutput('rate')),
-                            column(3, 
-                                   uiOutput('code')))
+                     # column(6,
+                     #        column(3,
+                     #               uiOutput('cost_per_person')),
+                     #        column(3, 
+                     #               uiOutput('rate')),
+                     #        column(3, 
+                     #               uiOutput('code')))
                      
                    ),
                    
@@ -174,22 +185,22 @@ body <- dashboardBody(
                              content = "If other is chosen, please select a currency code and exchange rate.", 
                              placement = "middle", trigger = "hover", options = list(container ='body'))
                    
-                   ),
+          ),
           tabPanel('SIMULATIONS', 
                    
                    fluidPage(
                      br(),
                      fluidRow(
-                              box(
-                                title = 'Peril data',
-                                width = 6,
-                                status = 'primary',
-                                plotOutput('hist_plot')),
-                              box(
-                                title = 'Simulation data',
-                                width = 6,
-                                status = 'primary',
-                                plotOutput('sim_plot'))
+                       box(
+                         title = 'Peril data',
+                         width = 6,
+                         status = 'primary',
+                         plotOutput('hist_plot')),
+                       box(
+                         title = 'Simulation data',
+                         width = 6,
+                         status = 'primary',
+                         plotOutput('sim_plot'))
                      ),
                      fluidRow(
                        br(),
@@ -225,13 +236,51 @@ body <- dashboardBody(
                      )
                    )
                    
-                   ),
-          tabPanel('OUTPUT', p('E!!!'))
-      ),
-      br(),
-      actionButton("prevBtn", "< Previous"),
-      actionButton("nextBtn", "Next >")
-    )),
+          ),
+          tabPanel('OUTPUT', 
+                   h4('Risk & Disaster Analysis Output'),
+                   fluidPage(
+                     br(),
+                     fluidRow(
+                       column(3,
+                              div(class = 'well',
+                                  numericInput('budget', 'Budget', value = 0),
+                                  checkboxInput('ci', 
+                                                'Show confidence intervals',
+                                                value = FALSE))),
+                       column(3,
+                              div(class = 'well',
+                                  numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0)))
+                     ),
+                     
+                     
+                     # 
+                     bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1', 
+                               content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happend every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expectedto happen every 10 years (ie 10% probability.", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     bsPopover(id = "loss_exceedance_plotly", title = 'Exhibit 2', content = "This graph shows the probability of a year taking place that exceeds the aggregate annual loss amount on the y-axis. The probability of exceeding the available budget is represented by the probability where the available budget line and the loss exceedance curve cross.",
+                               placement = "left", trigger = "hover", options = list(container ='body')),
+                     bsPopover(id = 'annual_loss_gap_plotly', title = 'Exhibit 3', content = "The funding gap is the difference between the available federal budget and the estimated annual loss at the return period. A loss value below the red budget line represents an estimated surplus (if above, it would be a deficit)",
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     bsPopover(id = 'loss_exceedance_gap_plotly', title = 'Exhibit 4', content = "The graph shows the probability of experiencing different sized funding gaps/surpluses. When the line is above the x-axis, it indicates a funding surplus - if below, it indicates a funding deficit.",
+                               placement = "left", trigger = "hover", options = list(container ='body')),
+                     
+                     fluidRow(
+                       
+                       box(title = "Estimated Average Annual Loss by Time Period",
+                           plotOutput('annual_loss_plotly')),
+                       box(title = "Estimated Average Annual Loss by Severity",
+                           plotOutput('annual_loss_gap_plotly'))),
+                     fluidRow(
+                       box(title = "Loss Exceedance Curve",
+                           plotOutput('loss_exceedance_plotly')),
+                       box(title = "Funding Gap",
+                           plotOutput('loss_exceedance_gap_plotly'))))
+          )),
+        br(),
+        actionButton("prevBtn", "< Previous"),
+        actionButton("nextBtn", "Next >")
+      )),
     tabItem(
       tabName = 'about',
       about_page
@@ -419,7 +468,7 @@ server <- function(input, output, session) {
     
   })
   
-  output$damage_type <- renderUI({
+  output$damage_type_ui <- renderUI({
     
     if(input$data_type == 'Archetype'){
       radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
@@ -632,14 +681,14 @@ server <- function(input, output, session) {
     # get the peril names for choices in peril input
     peril_names <- as.character(unique(temp$Peril))
     checkboxGroupInput('peril_type', 
-                'Choose a peril',
-                choices = peril_names,
-                selected = peril_names,
-                inline = TRUE)
+                       'Choose a peril',
+                       choices = peril_names,
+                       selected = peril_names,
+                       inline = TRUE)
   })
   
   # create a uioutput for when data type == cost per person
-  output$cost_per_person <- renderUI({
+  output$cost_per_person_ui <- renderUI({
     if(is.null(input$damage_type)){
       return(NULL)
     } else {
@@ -658,7 +707,7 @@ server <- function(input, output, session) {
   })
   
   # create uioutput code for cases where the user choses a currency other than USD
-  output$code <- renderUI({
+  output$code_ui <- renderUI({
     if(is.null(input$damage_type)){
       return(NULL)
     } else {
@@ -677,7 +726,7 @@ server <- function(input, output, session) {
   })
   
   # create uioutput rate for cases where the user choses a currency other than USD
-  output$rate <- renderUI({
+  output$rate_ui <- renderUI({
     if(is.null(input$damage_type)) {
       return(NULL)
     } else {
@@ -1314,7 +1363,7 @@ server <- function(input, output, session) {
   output$hist_plot <- renderPlot({
     data <- selected_damage_type()
     g <- ggplot(data, aes(data$Loss)) +
-      geom_histogram(bins = 5, fill = 'black', color = 'blue', alpha = 0.6) + 
+      geom_histogram(bins = 5, fill = 'black', color = 'black', alpha = 0.6) + 
       labs(x = 'Loss', 
            y = 'Counts') +
       theme_clean() +
@@ -1332,7 +1381,7 @@ server <- function(input, output, session) {
       dat_sim <- as.data.frame(dat_sim)
       names(dat_sim) <- 'Simulated loss'
       g =  ggplot(dat_sim, aes(`Simulated loss`)) +
-        geom_density(fill = 'black', color = 'blue', alpha = 0.5) +
+        geom_density(fill = 'black', color = 'black', alpha = 0.5) +
         labs(y = 'Density') +
         theme_clean() +
         theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 1, size = 12),
