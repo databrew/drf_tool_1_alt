@@ -200,4 +200,21 @@ welcome_modal <-
         application or misapplication of the tool, or any other associated materials.')
 )
 
+# Define text for the about page
+about_page <-
+  fluidPage(
+    h1('About'),
+    fluidRow(
+      column(12,
+             tags$p(class = "intro",
+                    "The development of this Tool was led by the Disaster Risk Financing and Insurance 
+                                       Program (DRFIP), a partnership of the World Bank Group's Finance Competitiveness and 
+                                       Innovation Global Practice and the Global Facility for Disaster Reduction and Recovery 
+                                       (GFDRR)."), 
+             tags$br("The World Bank invests substantial resources in the development of its models, 
+                                        modelling methodologies and databases. This Tool contains proprietary and confidential 
+                                        information and is intended for the exclusive use of World Bank partners with whom this 
+                                        Tool has been shared. Any user is subject to the restrictions of the confidentiality 
+                                        provisions set forth in license and other nondisclosure agreements.")))
+  )
 
