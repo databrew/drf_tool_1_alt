@@ -144,15 +144,30 @@ ui <- shinyUI(
                                                  'Choose a currency',
                                                  choices = currencies,
                                                  selected = 'USD',
-                                                 inline = TRUE),
-                                    uiOutput('prob_dis')
-                                ),
-                                column(3,
-                                       uiOutput('cost_per_person')),
-                                column(3, 
-                                       uiOutput('rate')),
-                                column(3, 
-                                       uiOutput('code')))
+                                                 inline = TRUE)),
+                                fluidRow(
+                                  column(3,
+                                         uiOutput('prob_dis_drought')),
+                                  column(3,
+                                         uiOutput('prob_dis_earthquake')),
+                                ), 
+                                fluidRow(
+                                  column(3,
+                                         uiOutput('prob_dis_flood')),
+                                  column(3,
+                                         uiOutput('prob_dis_storm')),
+                                ), 
+                                
+                               
+                                fluidRow(
+                                  column(3,
+                                         uiOutput('cost_per_person')),
+                                  column(3, 
+                                         uiOutput('rate')),
+                                  column(3, 
+                                         uiOutput('code')))
+                                )
+                               
                          
                        ),
                        
@@ -232,12 +247,38 @@ ui <- shinyUI(
                        fluidRow(
                          br(),
                          
-                         column(12,
+                         column(6,
                                 box(
-                                  title = 'AIC',
+                                  title = 'Droughts',
                                   width = 12,
                                   status = 'primary',
-                                  DT::dataTableOutput('aic_table')))
+                                  DT::dataTableOutput('aic_table_drought'))),
+                         
+                         column(6,
+                                box(
+                                  title = 'Earthquakes',
+                                  width = 12,
+                                  status = 'primary',
+                                  DT::dataTableOutput('aic_table_earthquake'))),
+                         
+                       ),
+                       fluidRow(
+                         br(),
+                         
+                         column(6,
+                                box(
+                                  title = 'Floods',
+                                  width = 12,
+                                  status = 'primary',
+                                  DT::dataTableOutput('aic_table_flood'))),
+                         
+                         column(6,
+                                box(
+                                  title = 'Storms',
+                                  width = 12,
+                                  status = 'primary',
+                                  DT::dataTableOutput('aic_table_storm'))),
+                         
                        ),
                        fluidRow(
                          column(6,
@@ -495,6 +536,42 @@ server <- function(input, output) {
   # User input tab 
   ################
   
+  # get frequency data separately 
+  frequency_data <- reactive({
+    if(is.null(input$country)){
+      NULL
+    } else {
+      
+      if(input$country == ''){
+        return(NULL)
+      } else {
+        # store input country
+        country_name <- input$country
+        
+        # get a list called country data
+        country_data <- list()
+        
+        # the first spot in the list is for loss data, second spot for cost data, and third spot for population. If available, 4th will be  freq, 5th inflation, 6thh sill be gdp
+        if(country_name == 'Sri Lanka'){
+          freq_data <- sri_lanka_freq
+        } else if (country_name == 'South Africa'){
+          freq_data <- south_africa_freq
+          
+        } else if (country_name == 'Philippines'){
+          freq_data <- philippines_freq
+          
+        } else if(country_name == 'Mozambique') {
+         freq_data <- mozambique_freq
+        }          
+
+        
+        return(freq_data)
+      }
+      
+      
+    }
+  })
+  
   # get a reactive object that selects country data (list) based on imput
   selected_country <- reactive({
     
@@ -511,11 +588,12 @@ server <- function(input, output) {
         # get a list called country data
         country_data <- list()
         
-        # the first spot in the list is for loss data, second spot for cost data, and third spot for population. If available, 4th will be inflation, 5th sill be gdp
+        # the first spot in the list is for loss data, second spot for cost data, and third spot for population. If available, 4th will be  freq, 5th inflation, 6thh sill be gdp
         if(country_name == 'Sri Lanka'){
           country_data[[1]] <- sri_lanka_loss
           country_data[[2]] <- sri_lanka_cost
           country_data[[3]] <- sri_lanka_pop
+          country_data[[4]] <- sri_lanka_freq
         } else if (country_name == 'South Africa'){
           country_data[[1]] <- south_africa_loss
           country_data[[2]] <- south_africa_cost
@@ -780,19 +858,17 @@ server <- function(input, output) {
       return(NULL)
     } else {
       # get country data
-      if(is.null(input$peril_type) | is.null(input$damage_type)){
+      if(is.null(input$damage_type)){
         return(NULL)
       } else {
         
         # get other inputs
         cost <- input$cost_per_person
-        peril_type <- input$peril_type
         # determine if we are doing total damage or cost per person 
         damage_type <- input$damage_type
         message(damage_type)
         if(input$data_type == 'Country'){
           data  <- selected_country()
-          
           if(damage_type == 'Cost per person'){
             if(is.null(cost)){
               return(NULL)
@@ -800,9 +876,7 @@ server <- function(input, output) {
               data <- data[[2]] # get cost per person data
               names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
               data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-              if(peril_type != 'All'){
-                data <- data[data$Peril == peril_type,]
-              }
+             
               # if(input$further_detrend){
               #   data <- data[data$`Scaled loss` > 0,]
               #   data$`Scaled loss` <- detrend(data$`Scaled loss`, tt = 'linear')
@@ -827,9 +901,7 @@ server <- function(input, output) {
             data$`Scaled loss` <- round(data$scaling_factor*data$Loss, 2)
             names(data) <- gsub('.x', '', names(data))
             data$Country.y <- NULL
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+           
             # if(input$further_detrend){
             #   data <- data[data$`Scaled loss` > 0,]
             #   data$`Scaled loss` <- detrend(data$`Scaled loss`, tt = 'linear')
@@ -845,9 +917,7 @@ server <- function(input, output) {
           } else {
             names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
             data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+           
             return(data)
           }
          
@@ -929,6 +999,39 @@ server <- function(input, output) {
    
   })
   
+  frequency_distribution_bernoulli <- reactive({
+    if(is.null(frequency_data()) | is.null(input$peril_type)){
+      return(NULL)
+    } else {
+      freq_data <- frequency_data()
+      peril_type <- input$peril_type
+      
+      # number of trials
+      num_trials <- as.numeric(as.character(max(freq_data$Year))) - min(as.numeric(as.character(freq_data$Year)))
+      num_trials <- num_trials + 1
+      
+      # get mle for each peril 
+      mle_flood <- sum(nrow(freq_data[freq_data$Flood == 1,])/num_trials)
+      mle_earthquake <- sum(nrow(freq_data[freq_data$Earthquake == 1,])/num_trials)
+      mle_drought <- sum(nrow(freq_data[freq_data$Drought == 1,])/num_trials)
+      mle_storm <- sum(nrow(freq_data[freq_data$Storm == 1,])/num_trials)
+      
+      # generate 15k uniform rv
+      uniform_dis <- runif(15000, 0, 1)
+      
+      sim_freq_data <- as.data.frame(cbind(simulation_num = 1:15000, uniform_dis = uniform_dis))
+      # create a variable to show success (mle?uniform_dis, then success)
+      
+      sim_freq_data$Flood <- ifelse(sim_freq_data$uniform_dis < mle_flood, 1, 0)
+      sim_freq_data$Earthquake <- ifelse(sim_freq_data$uniform_dis < mle_earthquake, 1, 0)
+      sim_freq_data$Storm <- ifelse(sim_freq_data$uniform_dis < mle_storm, 1, 0)
+      sim_freq_data$Drought <- ifelse(sim_freq_data$uniform_dis < mle_drought, 1, 0)
+      
+      
+      return(sim_freq_data)
+    }
+    
+  })
   
   
   # # Log normal ci
@@ -944,233 +1047,27 @@ server <- function(input, output) {
       return(NULL)
     } else {
       
-        # data <- country_data
-        data <- selected_damage_type()
-        # remove obsevations with 0, if any
-        data <- data[data$Loss > 0,]
-        message(head(data))
-        
-        ##########
-        # fit lognormal
-        #########
-        log_normal <- try(fitdistr(data$Loss, "lognormal"),silent = TRUE)
-        if(class(log_normal) == 'try-error'){
-          log_normal <- NULL
-          log_normal_aic <- NA
-          log_normal$estimate[1] <- NA
-          log_normal$estimate[2] <- NA
-          # log_norma$upper_mle_1 <- NA
-          # log_normal$lower_mle_1 <- NA
-          # log_norma$upper_mle_2 <- NA
-          # log_normal$lower_mle_2 <- NA
-          # 
-        } else {
-          # get aic
-          log_normal_aic <- round(AIC(log_normal), 4)
-          # 
-          # # upper and lower bound for each estimate 
-          # log_normal_upper_mle_1 <- log_normal$estimate[1] + log_normal$sd[1]
-          # log_normal_lower_mle_1 <- log_normal$estimate[1] - log_normal$sd[1]
-          # 
-          # log_normal_upper_mle_2 <- log_normal$estimate[2] + log_normal$sd[2]
-          # log_normal_lower_mle_2 <- log_normal$estimate[2] - log_normal$sd[2]
-          
-          # if there is an error, fill object with NA
-          message('log normal AIC is ', log_normal_aic)
-          
-          # get MLE 
-          log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
-          message('log normal mle is ', log_normal_mle)
-        }
-        # create data frame to store aic and MLEs
-        log_normal_data <- data_frame(name = 'log_normal',
-                                      aic = log_normal_aic, 
-                                      mle_1 = log_normal$estimate[1],
-                                      mle_2 = log_normal$estimate[2])
-                                      # upper_mle_1 = log_normal_upper_mle_1,
-                                      # lower_mle_1 = log_normal_lower_mle_1,
-                                      # upper_mle_2 = log_normal_upper_mle_2,
-                                      # lower_mle_2 = log_normal_lower_mle_2)
-        
-        beta <- try(eBeta_ab(data$Loss, method = "numerical.MLE"), silent = TRUE)
-        if(class(beta) == 'try-error'){
-          beta <- NULL
-          beta_aic <- NA
-          beta$shape1 <- NA
-          beta$shape2 <- NA
-          beta_mle <- c(beta$shape1, beta$shape2)
-        } else {
-          beta_ll <- lBeta_ab(X = data$Loss, params = beta, logL = TRUE)
-          beta_aic <- -(2*beta_ll + 2) 
-          beta_mle <- c(beta$shape1, beta$shape2)
-          
-          # beta_aic <- round(beta$aic, 4)
-          message('beta AIC is ', beta_aic)
-          message('beta mle is ', beta_mle)
-        }
-        beta_data <- data_frame(name = 'beta',
-                                aic = round(beta_aic, 4), 
-                                mle_1 = beta_mle[1],
-                                mle_2 = beta_mle[2])
-        
-        
-        
-        # EQUATION FOR AIC 
-        # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
-        
-        # fit gamma
-        # gamma <- fitdistr(data$Loss, 'gamma')
-        gamma <- try(fitdistrplus::fitdist(data$Loss, "gamma", start=list(shape=0.5, scale=1), method="mle"), silent = TRUE)
-        
-        if(class(gamma) == 'try-error'){
-          gamma <- NULL
-          gamma_aic <- NA
-          gamma$estimate[1] <- NA
-          gamma$estimate[2] <- NA
-          
-        } else {
-          # get aic
-          gamma_aic <- round(gamma$aic, 4)
-          message('gamma AIC is ', gamma_aic)
-          
-          # upper and lower bound for each estimate 
-          # gamma_upper_mle_1 <- gamma$estimate[1] + gamma$sd[1]
-          # gamm_lower_mle_1 <- gamma$estimate[1] - gamma$sd[1]
-          # 
-          # gamma_upper_mle_2 <- gamma$estimate[2] + gamma$sd[2]
-          # gamma_lower_mle_2 <- gamma$estimate[2] - gamma$sd[2]
-          # 
-          # get mle 
-          gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
-          message('gamme mle is ', gamma_mle)
-        }
-        gamma_data <- data_frame(name = 'gamma',
-                                 aic = gamma_aic, 
-                                 mle_1 = gamma$estimate[1],
-                                 mle_2 = gamma$estimate[2])
-                                 # upper_mle_1 = log_normal_upper_mle_1,
-                                 # lower_mle_1 = log_normal_lower_mle_1,
-                                 # upper_mle_2 = log_normal_upper_mle_2,
-                                 # lower_mle_2 = log_normal_lower_mle_2)
-        
-        
-        
-        # fit frechet
-        # dfrechet(data$Loss, lambda = 1, mu = 1, sigma = 1, log = TRUE)
-        frechet <- try(fitdistrplus::fitdist(data$Loss, "frechet", start=list(scale=0.1, shape=0.1), method="mle"), 
-                       silent = TRUE)
-        if(class(frechet) == 'try-error'){
-          frechet <- NULL
-          frechet_aic <- NA
-          frechet$estimate[1] <- NA
-          frechet$estimate[2] <- NA
-          
-        } else {
-          frechet_aic <- round(frechet$aic, 4)
-          message('frechet AIC is ', frechet_aic)
-          # get mle 
-          frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
-          message('frechet mle is ', frechet_mle) 
-        }
-        frechet_data <- data_frame(name = 'frechet',
-                                   aic = frechet_aic, 
-                                   mle_1 = frechet$estimate[1],
-                                   mle_2 = frechet$estimate[2])
-        
-        
-        
-        # git gumbel
-        gumbel_fit <- try(fit_gumbel(data$Loss), silent = TRUE)
-        if(class(gumbel_fit) == 'try-error'){
-          gumbel_fit <- NULL
-          gumbel_aic <- NA
-          gumbel_fit$estimate[1] <- NA
-          gumbel_fit$estimate[2] <- NA
-          
-        } else {
-          gumbel_aic <- round(gumbel_fit$aic, 4)
-          message('gumbel AIC is ', gumbel_aic)
-          # get mle
-          gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
-          message('gumbel mle is ', gumbel_mle)
-        }
-        gumbel_data <- data_frame(name = 'gumbel',
-                                  aic = gumbel_aic, 
-                                  mle_1 = gumbel_fit$estimate[1],
-                                  mle_2 = gumbel_fit$estimate[2])
-        
-        
-        
-        # fit weibull
-        weibull <- try(fitdistrplus::fitdist(data$Loss, "weibull", start=list(shape=0.1, scale=1), method="mle"), silent = TRUE)
-        if(class(weibull) == 'try-error'){
-          weibull <- NULL
-          weibull_aic <- NA
-          weibull$estimate[1] <- NA
-          weibull$estimate[2] <- NA
-          
-        } else {
-          weibull_aic <- round(weibull$aic, 4)
-          message('weibull AIC is ', weibull_aic)
-          
-          # get mle
-          weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
-          message('weibull mle is ', weibull_mle)
-        }
-        weibull_data <- data_frame(name = 'weibull',
-                                   aic = weibull_aic, 
-                                   mle_1 = weibull$estimate[1],
-                                   mle_2 = weibull$estimate[2])
-        
-        
-        
-        # fit pareto
-        pareto <-ParetoPosStable::pareto.fit(data$Loss, estim.method = 'MLE')
-        if(class(pareto) == 'try-error'){
-          pareto <- NULL
-          pareto_aic <- NA
-          pareto_fit$estimate[1] <- NA
-          pareto_fit$estimate[2] <- NA
-          
-        } else { 
-          pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
-          message('pareto AIC is ', pareto_aic)
-          # get mle
-          pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
-          message('pareto mle is ', pareto_mle)
-        }
-        pareto_data <- data_frame(name = 'pareto',
-                                  aic = pareto_aic, 
-                                  mle_1 = pareto$estimate[[1]],
-                                  mle_2 = pareto$estimate[[2]])
-        
-        
-        
-        
-        # create a data frame out of data results
-        aic_mle_data <- rbind(log_normal_data,
-                              gamma_data,
-                              beta_data,
-                              frechet_data,
-                              gumbel_data,
-                              weibull_data,
-                              pareto_data)
-        
-        # change names of variable
-        names(aic_mle_data) <- c('Distribution', 'AIC', 'MLE 1', 'MLE 2')
-        
-        # capitalize and remove underscore of Distribution
-        aic_mle_data$Distribution <- Hmisc::capitalize(aic_mle_data$Distribution)
-        aic_mle_data$Distribution <- gsub('_', ' ', aic_mle_data$Distribution)
-        aic_mle_data$AIC <- round(aic_mle_data$AIC, 2)
-        aic_mle_data$`MLE 1`<- round(aic_mle_data$`MLE 1`, 2)
-        aic_mle_data$`MLE 2` <- round(aic_mle_data$`MLE 2`, 2)
-        
-        return(aic_mle_data)
-      }
-      
+    final_data <- list()
+     # get data 
+    data <- selected_damage_type()
+    # remove obsevations with 0, if any
+    data <- data[data$Loss > 0,]
+    message(head(data))
     
-     
+    flood_aic <- fit_distribution(data = data, peril = 'Flood')
+    drought_aic <- fit_distribution(data = data, peril = 'Drought')
+    storm_aic <- fit_distribution(data = data, peril = 'Storm')
+    earthquake_aic <- fit_distribution(data = data, peril = 'Earthquake')
+    
+    final_data[[1]] <- drought_aic
+    final_data[[2]] <- earthquake_aic
+    final_data[[3]] <- flood_aic
+    final_data[[4]] <- storm_aic
+    
+    return(final_data)
+    
+        
+    }
   })
   
   # make a reactive object that grabs the name of the best distribution - this is the default for basic users. Advanced users can choose a new one
@@ -1178,40 +1075,48 @@ server <- function(input, output) {
     if(is.null(get_aic_mle())){
       return(NULL)
     } else {
+      final_data <- list()
       # get aic_mle_data
       dat <- get_aic_mle()
-      # for now remove beta
-      # dat <- dat[dat$Distribution != 'Beta',]
-      # get index for minimum aic
-      aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
-      # # subset by best aic index
-      dat <- dat[aic_min_ind,]    
-      best_dis <- dat$Distribution
-      return(best_dis)
+      best_drought <- get_min_aic(data, peril = 'Flood')
+      best_earthquake <- get_min_aic(data, peril = 'Flood')
+      best_flood<- get_min_aic(data, peril = 'Flood')
+      best_storm <- get_min_aic(data, peril = 'Flood')
+      
+      final_data[[1]] <- best_drought
+      final_data[[2]] <- best_earthquake
+      final_data[[3]] <- best_flood
+      final_data[[4]] <- best_storm
+      return(final_data)
     }
   })
   
   
   # ui for prob_dis - right now the output is dependent on the best distribution
   # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
-  output$prob_dis <- renderUI({
+  output$prob_dis_drought <- renderUI({
     if(is.null(get_aic_mle())){
       return(NULL)
     } else {
       # get aic_mle_data
       dat <- get_aic_mle()
+      dat <- dat[[1]]
       # get index for minimum aic
       aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
       # # subset my index
       dat <- dat[aic_min_ind,]    
       best_dis <- dat$Distribution
       
+      if(identical(best_dis, character(0))){
+        best_dis <- NA
+      }
+      
       if(input$advanced){
-        selectInput('prob_dis', 'Choose distribution (default is best fit)', 
+        selectInput('prob_dis_drought', 'Choose distribution for droughts (default is best fit)', 
                     choices = advanced_parametric,
                     selected = best_dis)
       } else {
-        selectInput('prob_dis', 'Default is best fit', 
+        selectInput('prob_dis_drought', 'Droughts: Default is best fit', 
                     choices = best_dis,
                     selected = best_dis)
       }
@@ -1219,10 +1124,126 @@ server <- function(input, output) {
    
   })
   
+  output$prob_dis_earthquake <- renderUI({
+    if(is.null(get_aic_mle())){
+      return(NULL)
+    } else {
+      # get aic_mle_data
+      dat <- get_aic_mle()
+      dat <- dat[[2]]
+      # get index for minimum aic
+      aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
+      # # subset my index
+      dat <- dat[aic_min_ind,]    
+      best_dis <- dat$Distribution
+      
+      if(identical(best_dis, character(0))){
+        best_dis <- NA
+      }
+      
+      if(input$advanced){
+        selectInput('prob_dis_earthquake', 'Choose distribution for earthquakes (default is best fit)', 
+                    choices = advanced_parametric,
+                    selected = best_dis)
+      } else {
+        selectInput('prob_dis_earthquake', 'Earthquakes: Default is best fit', 
+                    choices = best_dis,
+                    selected = best_dis)
+      }
+    }
+    
+  })
+  
+  output$prob_dis_flood <- renderUI({
+    if(is.null(get_aic_mle())){
+      return(NULL)
+    } else {
+      # get aic_mle_data
+      dat <- get_aic_mle()
+      dat <- dat[[3]]
+      # get index for minimum aic
+      aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
+      # # subset my index
+      dat <- dat[aic_min_ind,]    
+      best_dis <- dat$Distribution
+      if(identical(best_dis, character(0))){
+        best_dis <- NA
+      }
+      
+      if(input$advanced){
+        selectInput('prob_dis_flood', 'Choose distribution for floods (default is best fit)', 
+                    choices = advanced_parametric,
+                    selected = best_dis)
+      } else {
+        selectInput('prob_dis_flood', 'Floods: Default is best fit', 
+                    choices = best_dis,
+                    selected = best_dis)
+      }
+    }
+    
+  })
+  
+  output$prob_dis_storm <- renderUI({
+    if(is.null(get_aic_mle())){
+      return(NULL)
+    } else {
+      # get aic_mle_data
+      dat <- get_aic_mle()
+      dat <- dat[[4]]
+      # get index for minimum aic
+      aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
+      # # subset my index
+      dat <- dat[aic_min_ind,]    
+      best_dis <- dat$Distribution
+      if(identical(best_dis, character(0))){
+        best_dis <- NA
+      }
+      if(input$advanced){
+        selectInput('prob_dis_storm', 'Choose distribution for storms (default is best fit)', 
+                    choices = advanced_parametric,
+                    selected = best_dis)
+      } else {
+        selectInput('prob_dis_storm', 'Storms: Default is best fit', 
+                    choices = best_dis,
+                    selected = best_dis)
+      }
+    }
+    
+  })
+  
   # create table for aic
-  output$aic_table <- renderDataTable({
+  output$aic_table_drought <- renderDataTable({
     aic_mle_data <- get_aic_mle()
-    DT::datatable(aic_mle_data, options = list(dom = 't'))
+    dat <- aic_mle_data[[1]]
+    dat <- dat[complete.cases(dat),]
+    DT::datatable(dat, options = list(dom = 't'))
+  }) 
+  
+  # create table for aic
+  output$aic_table_earthquake <- renderDataTable({
+    aic_mle_data <- get_aic_mle()
+    dat <- aic_mle_data[[2]]
+    dat <- dat[complete.cases(dat),]
+    
+    DT::datatable(dat, options = list(dom = 't'))
+  }) 
+  
+  # create table for aic
+  output$aic_table_flood <- renderDataTable({
+    aic_mle_data <- get_aic_mle()
+    dat <- aic_mle_data[[3]]
+    dat <- dat[complete.cases(dat),]
+    
+    DT::datatable(dat, options = list(dom = 't'))
+  }) 
+  
+  # create table for aic
+  output$aic_table_storm <- renderDataTable({
+    aic_mle_data <- get_aic_mle()
+    dat <- aic_mle_data[[4]]
+    dat <- dat[complete.cases(dat),]
+    
+    DT::datatable(dat, options = list(dom = 't'))
   }) 
   
   # 
@@ -1238,66 +1259,15 @@ server <- function(input, output) {
       # get aic_mle_data
       dat <- get_aic_mle()
       
-      if(best_dis == input$prob_dis){
-        # for now remove beta
-        # dat <- dat[dat$Distribution != 'Beta',]
-        # get index for minimum aic
-        aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
-        # # subset my index
-        dat <- dat[aic_min_ind,]  
-      } else {
-        # dat <- dat[dat$Distribution != 'Beta',]
-        dat <- dat[dat$Distribution ==  input$prob_dis,]
-      }
+      prob_dis_drought <- input$prob_dis_drought
+      prob_dis_flood <- input$prob_dis_flood
+      prob_dis_earthquake <- input$prob_dis_earthquake
+      prob_dis_storm <- input$prob_dis_storm
+     
       
-      # set conditions for each distribution
-      if(dat$Distribution == 'Log normal'){
-        if(any(is.na(dat$AIC))){
-          sim <- NA
-        }  else {
-          sim <- rlnorm(n = 15000, meanlog = dat$`MLE 1`, sdlog = dat$`MLE 2`)
-        }
-      } else if (dat$Distribution == 'Gamma'){
-        if(any(is.na(dat$AIC))){
-          sim <- NA
-        }  else {
-          # check to see how much seed matters
-          sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = dat$`MLE 2`)
-        }
-      } else if (dat$Distribution == 'Beta'){
-        if(any(is.na(dat$AIC))){
-          sim <- NA
-        } else {
-          sim <- rbeta(n = 15000, shape1 = dat$`MLE 1`, scale2 = dat$`MLE 2`)
-        }
-      }  else if (dat$Distribution == 'Frechet'){
-        if(any(is.na(dat$AIC))){
-          sim <- NA
-        }  else {
-          sim <- rfrechet(n = 15000, loc=0, scale=dat$`MLE 1`, shape=dat$`MLE 2`)
-        }
-      } else if (dat$Distribution == 'Gumbel'){
-        if(any(is.na(dat$AIC))){
-          sim <- NA 
-        } else {
-          sim <- actuar::rgumbel(n = 15000, alpha = dat$`MLE 1`, scale = dat$`MLE 2`)
-        }
-      } else if (dat$Distribution == 'Weibull'){
-        if(any(is.na(dat$AIC))){
-          sim <- NA
-        }  else {
-          sim <- rweibull(n = 15000, shape = dat$`MLE 1`, scale = dat$`MLE 2`)
-        }
-      } else {
-        if(any(is.na(dat$AIC))){
-          sim <- NA
-        }  else {
-          sim <- extraDistr::rpareto(n = 15000, a = dat$`MLE 1`, b = dat$`MLE 2`)
-        }
-      }
-      return(sim)
+      dat_drought <- run_simulations(dat = dat, peril = 'Drought', prob_dis = prob_dis_drought)
+      
     }
-    
   })
   
   # create a ouput plot that draws a density of the distribution over the 
@@ -1762,34 +1732,7 @@ server <- function(input, output) {
     }
   })
   
-  # DONT DO ANYTHING WITH BERNOULLI UNTILL YOU GET MORE INFO
-  # # The basic user will not see this, only the advanced user
-  # frequency_distribution_bernoulli <- reactive({
-  #   # will have other options for different scales later
-  #   freq_data <- scale_by_pop()
-  #   # temporarily do simulation 
-  #   freq_data <- freq_data[complete.cases(freq_data),]
-  #   # sum of success (disaster) over sum if trials (years). 6 success in 8 years
-  #   # get trials max year minus min year
-  #   num_trials <- as.numeric(as.character(max(freq_data$Year))) - min(as.numeric(as.character(freq_data$Year)))
-  #   num_trials <- num_trials + 1
-  #   mle_bern <- sum(nrow(freq_data)/num_trials)
-  #   uniform_dis <- runif(1000, 0, 1)
-  #   sim_freq_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
-  #   # create a variable to show success (mle?uniform_dis, then success)
-  #   sim_freq_data$outcome <- ifelse(sim_freq_data$uniform_dis < mle_bern, 'success', 'fail')
-  #   
-  # })
-  # 
-  # DONT USE YET
-  
-  # 
-  # get_poisson({
-  #   # poisson <- fitdistr(data$Loss, "Poisson")
-  #   # poisson_aic <- AIC(poisson)
-  #   
-  # })
-  
+ 
 }
 
 # Run the application 

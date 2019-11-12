@@ -117,8 +117,14 @@ names(sri_lanka_cost) <- c('Country', 'Year', 'Peril', 'Affected')
 # read in population data
 sri_lanka_pop <- read.csv('data/Sri Lanka/data_pop.csv')
 
+# load frequency data
+sri_lanka_freq <- read.csv('data/Sri Lanka/data_freq.csv')
+names(sri_lanka_freq)[1] <- 'Year'
+
 # make a data frame to store information about data
 sri_lanka_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, inflation = FALSE, gdp = FALSE)
+
+
 
 ##########
 # South Africa
