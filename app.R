@@ -34,7 +34,7 @@ ui <- shinyUI(
             ))),# tag end
             
             # begin title panel - this sets the parameters for the banner photo as well ass the title. 
-            titlePanel(windowTitle = "Disaster Risk Financin Tool 1)",
+            titlePanel(windowTitle = "Disaster Risk Financing Tool 1)",
                        title =
                          div(
                            img(

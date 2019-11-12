@@ -24,7 +24,9 @@ library(extraDistr)
 library(ParetoPosStable)
 library(Hmisc)
 library(boot)
+library(shinyjs)
 # library(ExtDist)
+
 
 
 # run the functions script when this script is called by app.R
