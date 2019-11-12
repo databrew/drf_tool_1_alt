@@ -177,7 +177,53 @@ body <- dashboardBody(
                    ),
           tabPanel('SIMULATIONS', 
                    
-                   fluidPage()
+                   fluidPage(
+                     br(),
+                     fluidRow(
+                              box(
+                                title = 'Peril data',
+                                width = 6,
+                                status = 'primary',
+                                plotOutput('hist_plot')),
+                              box(
+                                title = 'Simulation data',
+                                width = 6,
+                                status = 'primary',
+                                plotOutput('sim_plot'))
+                     ),
+                     fluidRow(
+                       br(),
+                       
+                       column(12,
+                              box(
+                                title = 'AIC',
+                                width = 12,
+                                status = 'primary',
+                                DT::dataTableOutput('aic_table')))
+                     ),
+                     fluidRow(
+                       column(6,
+                              plotOutput('rag_ratings'))
+                       
+                     ),
+                     bsPopover(id = "hist_plot", title = '', 
+                               content = "This chart shows the historic distribution of 'Loss' from perils.", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     
+                     bsPopover(id = "sim_plot", title = '', 
+                               content = "This chart shows the simulated distribution of 'Loss' using the best fit distribution, or if in advanced settings, the distribution chosen on the previous page. 15k simulations, with 1k representing one full year", 
+                               placement = "bottom", trigger = "hover", options = list(container ='body')),
+                     
+                     bsPopover(id = "aic_table", title = '', 
+                               content = "This table shows the AIC scores for each parametric distribution. NAs are a result of the non convergence in the optimization algorithm. The table also shows the Maximum Likelihood Estimators for each distribution.", 
+                               placement = "bottom", trigger = "hover", options = list(container ='body')),
+                     fluidRow(
+                       column(6,
+                              plotOutput('dist_plot')),
+                       column(6,
+                              plotOutput('grouped_plot'))
+                     )
+                   )
                    
                    ),
           tabPanel('OUTPUT', p('E!!!'))
@@ -1272,9 +1318,9 @@ server <- function(input, output, session) {
       labs(x = 'Loss', 
            y = 'Counts') +
       theme_clean() +
-      theme(axis.text.x = element_text(angle = 0, size = 15),
-            axis.text.y = element_text(size = 15),
-            axis.title = element_text(size = 15)) 
+      theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 1, size = 12),
+            axis.text.y = element_text(size = 12),
+            axis.title = element_text(size = 12)) 
     return(g)
     
   })
@@ -1289,9 +1335,9 @@ server <- function(input, output, session) {
         geom_density(fill = 'black', color = 'blue', alpha = 0.5) +
         labs(y = 'Density') +
         theme_clean() +
-        theme(axis.text.x = element_text(angle = 0, size = 15),
-              axis.text.y = element_text(size = 15),
-              axis.title = element_text(size = 15)) 
+        theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 1, size = 12),
+              axis.text.y = element_text(size = 12),
+              axis.title = element_text(size = 12)) 
       return(g)
     }
     
