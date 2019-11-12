@@ -590,7 +590,7 @@ server <- function(input, output) {
   
   # create a reactive object to get country info
   selected_country_info <- reactive({
-    if(input$country != 'Country'){
+    if(input$data_type != 'Country'){
       return(NULL)
     } else {
       country_name <- input$country
@@ -1363,7 +1363,7 @@ server <- function(input, output) {
   
   
   output$loss_exceedance_plotly <- renderPlot({
-    geom_ribbon(data=dd,aes(x=date, y=value, ymin=lwr,ymax=upr, group=variable),alpha=0.3)
+    # geom_ribbon(data=dd,aes(x=date, y=value, ymin=lwr,ymax=upr, group=variable),alpha=0.3)
     if(is.null(selected_damage_type()) | is.na(input$budget)){
       NULL
     } else {
@@ -1507,9 +1507,15 @@ server <- function(input, output) {
         exceed_budget <- input$exceed_budget
         
         # get country input for plot title
-        plot_title <- input$country
-        exceed_surplus_deficit <- paste0('Probability of exceeding funding gap/surplus by ', exceed_budget, ' is ', prob_exceed_suprplus_deficit)
-        plot_title <- paste0(plot_title, ' : ', exceed_surplus_deficit) 
+        if(input$budget == 0){
+          plot_title <- input$country
+          
+        } else {
+          plot_title <- input$country
+          exceed_surplus_deficit <- paste0('Probability of exceeding funding gap/surplus by \n', exceed_budget, ' is ', prob_exceed_suprplus_deficit)
+          plot_title <- paste0(plot_title, ' : ', exceed_surplus_deficit) 
+          
+        }
         
         # get best distirbution 
         dat_sim <- run_best_simulation()
@@ -1536,6 +1542,7 @@ server <- function(input, output) {
          scale_x_reverse(position = 'top') +
          geom_hline(yintercept = 0, size = 2) +
          ggtitle(plot_title) +
+         xlab('') + ylab('Funding Gap') +
          theme_bw(base_size = 14, 
                   base_family = 'Ubuntu')
           
