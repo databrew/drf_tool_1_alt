@@ -92,26 +92,62 @@ ui <- dashboardPage(header, sidebar, body, skin="blue")
 # Server
 server <- function(input, output, session) {
   
-  ##########
-  # Beginning observeEvent functions for Landing page and showing the 'simulations' tab if advanced user is selected
-  # creates a pop up page that the user must accept to acces the app
+  ######### Log-in
   set.seed(122)
   histdata <- rnorm(500)
   observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, { 
     # event will be called when histdata changes, which only happens once, when it is initially calculated
     showModal(modalDialog(
+      title = "Log-in", easyClose = FALSE, footer = modalButton('Accept'),
+      p('Some text')))
+
+  })
+  
+  ##########
+  # Beginning observeEvent functions for Landing page and showing the 'simulations' tab if advanced user is selected
+  # creates a pop up page that the user must accept to acces the app
+  set.seed(122)
+  histdata <- rnorm(1)
+  observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, { 
+    # event will be called when histdata changes, which only happens once, when it is initially calculated
+    showModal(modalDialog(
+      title = "", easyClose = FALSE, footer = NULL,
+      
+      fluidPage(
+        fluidRow(
+          column(12, align = 'center',
+                 h2('Welcome to World Bank Group!'))
+        ),
+        fluidRow(
+          column(12, align = 'center',
+                 p('Please tell us your name, email and create a password so we can get started.'))
+        ),
+        fluidRow(
+          column(6,
+                 textInput('first_name', '',
+                           placeholder = 'First name')),
+          column(6,
+                 textInput('last_name', '',
+                           placeholder = 'Last name'))
+        ),
+        fluidRow(column(12, textInput('email', '', placeholder = 'Email'))),
+        fluidRow(column(12, textInput('password', '', placeholder = 'Password'))),
+        fluidRow(column(12, textInput('confirm_password', '', placeholder = 'Confirm password'))),
+        fluidRow(
+          column(12, align = 'center',
+                 actionButton('get_started', 'Get started'))
+        )
+      )
+    ))
+  })
+  
+  # Observe the "Get started" button on the log-in page and remove the modal
+  observeEvent(input$get_started, {
+    removeModal()
+    
+    showModal(modalDialog(
       title = "Disaster Risk Financing Tool 1", easyClose = FALSE, footer = modalButton('Accept'),
-      p('This Tool has been developed in conjunction with the World Bank in order to develop capacity of the World Bank partner countries
-        on key decisions they must take during disaster risk financing. The Tool is intended for use as outlined in the Introduction (About tab) and 
-        should not be used for any other purposes. The tool should not be used to inform real financial decisions.'),
-      br(),
-      p("Information in the Tool is provided for educational purposes only and does not constitute legal or scientific advice or service. The World Bank makes no warranties or 
-        representations, express or implied as to the accuracy or reliability of the Tool or the data contained therein. A user of the Tool should seek qualified expert advice for specific diagnosis 
-        and analysis of a particular project. Any ose thereof or reliance thereon is at the sole and independent discretion and responsibility of the user. No conclusions or inferences 
-        drawn from the Tool should be attributed to the World Bank, its Board of Executive Directors, its management, or any of its member countries."),
-      br(),
-      p('This tool does not imply and judgement of endorsement on the part of the World Bank. In no event will GAD or the World Bank be liable for any form of damage arising from the 
-        application or misapplication of the tool, or any other associated materials.')
+      welcome_modal
     ))
   })
   
@@ -151,9 +187,7 @@ server <- function(input, output, session) {
   # Observe any click on the left tab menu, and update accordingly the rv$page object
   observeEvent(input$tabs, {
     tab_name <- input$tabs
-    message('tab_name is: ', tab_name)
     tab_number <- tab_dict %>% filter(name == tab_name) %>% .$number
-    message('tab_number is: ', tab_number)
     message(paste0('Selected tab is ', tab_name, '. Number: ', tab_number))
     rv$page <- tab_number
   })
