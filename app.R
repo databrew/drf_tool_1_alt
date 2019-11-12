@@ -1,325 +1,297 @@
 library(shiny)
-library(DT)
-library(plotly)
-library(htmltools)
-library(shiny)
+library(shinydashboard)
+library(tidyverse)
+library(shinyjs)
+
+# Source the data set-up
+source('functions.R')
 source('global.R')
 
-# Define UI for application that draws a histogram
-ui <- shinyUI(
-  fluidPage(theme = "bootstrap.css",
-            # begin html tags for app aesthetic - picture for banner included
-            tags$head(tags$style(".title {background:url('banner.jpg'); 
-                                 background-repeat: no-repeat;
-                                 background-size: 50% 200%; color: white;
-                                 font-family: Optima, Segoe, 'Segoe UI', Candara, Calibri, Arial, sans-serif;
-                                 font-size: 24px;
-                                 font-style: normal;
-                                 font-variant: normal;
-                                 font-weight: 2000;
-                                 line-height: 26.4px}")), #tag end 
-            tags$head(tags$style(
-              type="text/css",
-              "image img {max-width: 100%; width: auto; height: auto}"
-            )), # tag end
-            tags$head(tags$style(HTML('
-                                      .modal.in .modal-dialog{
-                                      width:100%; 
-                                      height:100%;
-                                      margin:0px;
-                                      }
-                                      .modal-content{
-                                      width:100%;
-                                      height:100%;}'
-            ))),# tag end
-            
-            # begin title panel - this sets the parameters for the banner photo as well ass the title. 
-            titlePanel(windowTitle = "Disaster Risk Financin Tool 1)",
-                       title =
-                         div(
-                           img(
-                             src = "",
-                             height = 0,
-                             width = 0,
-                             style = "margin:100px 100px"
-                           ),
-                           class = 'title'
-                         ) # div end               
-            ), # titlePanel end 
-            
-            # being navbar - the is includes the entire UI - the only higher levels are 'gluidPage' and 'ShinyUI'
-            navbarPage(
-              id = "Navbar",
-              fluid = TRUE,
-              theme = shinythemes::shinytheme("spacelab"), # includes theme
-              footer = helpText(#, feedback button
-                "Please send feedback to",
-                a(href="blah", target="_blank", "here")
-              ), # end footer for feedback 
-              tags$style(type="text/css", "body {padding-top: 0px;}"),
-              
-              # begins the about section (tab)
-              tabPanel("About",
-                       fluidRow(# starting row
-                         #column(3,div(tags$style(
-                         #type="text/css",
-                         # "#image img {max-width: auto; max-height: auto}"
-                         # ),div(img(src = "Sidepanel.png"), id = "image")),tags$br()),
-                         # Set column width to 12, the max number, taking up the entire page.
-                         column(12,
-                                tags$p(class = "intro",
-                                       "The development of this Tool was led by the Disaster Risk Financing and Insurance 
-                                       Program (DRFIP), a partnership of the World Bank Group's Finance Competitiveness and 
-                                       Innovation Global Practice and the Global Facility for Disaster Reduction and Recovery 
-                                       (GFDRR)."), 
-                                tags$br("The World Bank invests substantial resources in the development of its models, 
-                                        modelling methodologies and databases. This Tool contains proprietary and confidential 
-                                        information and is intended for the exclusive use of World Bank partners with whom this 
-                                        Tool has been shared. Any user is subject to the restrictions of the confidentiality 
-                                        provisions set forth in license and other nondisclosure agreements."))), # ending row
-                       # beginning a new row
-                       fluidRow(# set more HTML aesthetics
-                         tags$hr(style="border-color: red;border-top: 3px solid #F511BC;",
-                                 tags$p("To get started navigate to the 
-                                        User inputs tab to choose a country. If an advanced user, please select the 
-                                        Advanced Settings option below for more statistical flexibility.")
-                         )
-                       ),# end row
-                       # New row - meaning under the last row, create a checkbox for advanced setting
-                       fluidRow(
-                         awesomeCheckbox("advanced", "Use Advanced Settings")
-                       )), # end tab panel for about section
-              
-              # new tab for user inputs
-              tabPanel("User inputs",
-                       
-                       fluidRow(
-                         column(3,
-                                div(class = 'well',
-                                    selectInput('data_type', 'Choose the data type', choices = c('Country', 'Archetype'), selected = 'Country'
-                                                  )))
-                       ),
-                       #  start new row that encompasses inputs for country, download buttons, damage type, and currency
-                       fluidRow(
-                         column(6, # one third of page
-                                div(class = "well",
-                                    # input for country
-                                    uiOutput('country'),
-                                    # a uioutput that gives choices for perils based on country input
-                                    uiOutput('peril_type'),
-                                    radioButtons('upload_or_auto',
-                                                 'What kind of data do you want to use?',
-                                                 choices = c('Pre-loaded data',
-                                                             'User-supplied data'),
-                                                 selected = 'Pre-loaded data',
-                                                 inline = TRUE),
-                                    uiOutput('ui_upload_type'),
-                                    uiOutput('ui_upload_type_text'),
-                                    uiOutput('ui_upload_data')
-                                )),
+# # Create a dictionary of tab names / numbers
+tab_dict <- data_frame(number = 1:5,
+                       name = toupper(c('Tool settings',
+                                        'Input',
+                                        'Data',
+                                        'Simulations',
+                                        'Output')))
+n_tabs <- nrow(tab_dict)
 
-                         # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
-                         # and creates popup boxes with any content specified in 'content' argument
-                         bsPopover(id = "advanced", title = '', 
-                                   content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                         bsPopover(id = "upload_data", title = '', 
-                                   content = "To use your own dataset, push the 'Upload Peril Data' button", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                         
-                         bsPopover(id = "download_data", title = '', 
-                                   content = "Download the peril data for the country selected", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                         
-                         bsPopover(id = "country", title = '', 
-                                   content = "If you wish to upload your own data, please select the upload peril button", 
-                                   placement = "middle", trigger = "hover", options = list(container ='body')),
-                         
-                         # start a column that takes almost half the page. This column contains inputs for damage_type, currency, and the probability distribution.
-                         
-                         column(6, 
-                                div(class = 'well',
-                                    uiOutput('damage_type'),
-                                    radioButtons('currency',
-                                                 'Choose a currency',
-                                                 choices = currencies,
-                                                 selected = 'USD',
-                                                 inline = TRUE),
-                                    uiOutput('prob_dis')
-                                ),
-                                column(3,
-                                       uiOutput('cost_per_person')),
-                                column(3, 
-                                       uiOutput('rate')),
-                                column(3, 
-                                       uiOutput('code')))
-                         
-                       ),
-                       
-                       # popups for the inputs damage_type, currency.Need to add one on the server side for prob_dis
-                       bsPopover(id = "run_tool", title = '', 
-                                 content ="After selecting all inputs, click this button to run the tool. It will generate simulation based on the best fitted distribution.", 
-                                 placement = "right", trigger = "hover", options = list(container ='body')),
-                       bsPopover(id = "damage_type", title = '', 
-                                 content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD", 
-                                 placement = "middle", trigger = "hover", options = list(container ='body')),
-                       bsPopover(id = "currency", title = '', 
-                                 content = "If other is chosen, please select a currency code and exchange rate.", 
-                                 placement = "middle", trigger = "hover", options = list(container ='body'))
-                       
-                       
-              ), # end user inputs tab panel
-              tabPanel('Data',
-                       fluidRow(
-                         column(6,
-                                div(class = 'well',
-                                    h4('Peril data'),
-                                    uiOutput('further_detrend'),
-                                    DT::dataTableOutput('raw_data_table'),
-                                    br(),
-                                    # download buttons
-                                    fluidRow(
-                                      column(12,
-                                             downloadButton("download_peril_data",
-                                                            "Download Peril Data"))
-                                      
-                                    )
-                                )),
-                         column(6,
-                                div(class = "well",
-                                    h4('Scaling data'),
-                                    selectInput('select_scale', 
-                                                'Choose from preloaded scaling data',
-                                                choices = scaled_data,
-                                                selected = scaled_data[1]),
-                                    DT::dataTableOutput('raw_scaled_data'),
-                                    br(),
-                                    fluidRow(
-                                      column(12,
-                                             downloadButton("download_scaled_data",
-                                                            "Download Scaled Data"))
-                                      
-                                    ))
-                         )
-                       ),
-                       # popus for the upload the further detrend inputs
-                       bsPopover(id = "upload", title = '', 
-                                 content = "Upload user data and scale by either Population, GDP, or Inflation", 
-                                 placement = "middle", trigger = "hover", options = list(container ='body')),
-                       bsPopover(id = "further_detrend", title = '', 
-                                 content = "If there is no available data to scale by, select this to detrend the data in a linear fashion.", 
-                                 placement = "middle", trigger = "hover", options = list(container ='body'))
-              ),
-              
-              # being the section (tab panel) for simulations
-              tabPanel(title = 'Simulations',
-                       value = 'simulations',
-                       # being a row that that two plots: the histogram 
-                       fluidRow(
-                         column(6,
-                                box(
-                                  title = 'Peril data',
-                                  width = 12,
-                                  status = 'primary',
-                                  plotOutput('hist_plot'))),
-                         column(6,
-                                box(
-                                  title = 'Simulation data',
-                                  width = 12,
-                                  status = 'primary',
-                                  plotOutput('sim_plot')))
-                       ),
-                       fluidRow(
-                         br(),
-                         
-                         column(12,
-                                box(
-                                  title = 'AIC',
-                                  width = 12,
-                                  status = 'primary',
-                                  DT::dataTableOutput('aic_table')))
-                       ),
-                       fluidRow(
-                         column(6,
-                                plotOutput('rag_ratings'))
-                         
-                       ),
-                       bsPopover(id = "hist_plot", title = '', 
-                                 content = "This chart shows the historic distribution of 'Loss' from perils.", 
-                                 placement = "middle", trigger = "hover", options = list(container ='body')),
-                       
-                       bsPopover(id = "sim_plot", title = '', 
-                                 content = "This chart shows the simulated distribution of 'Loss' using the best fit distribution, or if in advanced settings, the distribution chosen on the previous page. 15k simulations, with 1k representing one full year", 
-                                 placement = "bottom", trigger = "hover", options = list(container ='body')),
-                       
-                       bsPopover(id = "aic_table", title = '', 
-                                 content = "This table shows the AIC scores for each parametric distribution. NAs are a result of the non convergence in the optimization algorithm. The table also shows the Maximum Likelihood Estimators for each distribution.", 
-                                 placement = "bottom", trigger = "hover", options = list(container ='body')),
-                       fluidRow(
-                         column(6,
-                                plotOutput('dist_plot')),
-                         column(6,
-                                plotOutput('grouped_plot'))
-                       )
-              ),
-              
-              tabPanel("Output",
-                       
-                       fluidRow(
-                         column(3,
-                                div(class = 'well',
-                                    numericInput('budget', 'Budget', value = 0),
-                                    checkboxInput('ci', 
-                                                  'Show confidence intervals',
-                                                  value = FALSE))),
-                         column(3,
-                                div(class = 'well',
-                                    numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0)))
-                       ),
-                      
-                       
-                       # 
-                       bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1', 
-                                 content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happend every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expectedto happen every 10 years (ie 10% probability.", 
-                                 placement = "middle", trigger = "hover", options = list(container ='body')),
-                       bsPopover(id = "loss_exceedance_plotly", title = 'Exhibit 2', content = "This graph shows the probability of a year taking place that exceeds the aggregate annual loss amount on the y-axis. The probability of exceeding the available budget is represented by the probability where the available budget line and the loss exceedance curve cross.",
-                                 placement = "left", trigger = "hover", options = list(container ='body')),
-                       bsPopover(id = 'annual_loss_gap_plotly', title = 'Exhibit 3', content = "The funding gap is the difference between the available federal budget and the estimated annual loss at the return period. A loss value below the red budget line represents an estimated surplus (if above, it would be a deficit)",
-                                 placement = "middle", trigger = "hover", options = list(container ='body')),
-                       bsPopover(id = 'loss_exceedance_gap_plotly', title = 'Exhibit 4', content = "The graph shows the probability of experiencing different sized funding gaps/surpluses. When the line is above the x-axis, it indicates a funding surplus - if below, it indicates a funding deficit.",
-                                 placement = "left", trigger = "hover", options = list(container ='body')),
-                      
-                       fluidRow(
-                         # output 1
-                         column(6,div(class = "well",tags$h5(tags$b("Estimated Average Annual Loss by Time Period")),
-                                      tags$hr(style="border-color: red;border-top: 3px solid #F511BC;",
-                                              tags$ol(class = "intro-divider")
-                                      ), plotOutput('annual_loss_plotly'))),
-                         # output 2
-                         column(6,div(class = "well",tags$h5(tags$b("Loss Exceedance Curve")),
-                                      tags$hr(style="border-color: red;border-top: 3px solid #F511BC;",
-                                              tags$ol(class = "intro-divider")
-                                      ),  plotOutput('loss_exceedance_plotly')))
-                       ),
-                       
-                       fluidRow(
-                         # output 3
-                         column(6,div(class = "well",tags$h5(tags$b("Estimated Average Annual Loss by Severity")),
-                                      tags$hr(style="border-color: red;border-top: 3px solid #F511BC;",
-                                              tags$ol(class = "intro-divider")
-                                      ), plotOutput('annual_loss_gap_plotly'))),
-                         # output 4
-                         column(6,div(class = "well",tags$h5(tags$b("Funding Gap")),
-                                      tags$hr(style="border-color: red;border-top: 3px solid #F511BC;"),
-                                      plotOutput('loss_exceedance_gap_plotly')))
-                       )
-                      
-                      )
-            )
+
+header <- dashboardHeader(title="Benchmarking tool")
+sidebar <- dashboardSidebar(
+  sidebarMenu(
+    id = 'side_tab',
+    menuItem(
+      text="Risk & Disaster",
+      tabName="main",
+      icon=icon("crosshairs")),
+    menuItem(
+      text = 'About the Tool',
+      tabName = 'about',
+      icon = icon("info-circle")),
+    menuItem(
+      text = 'Training',
+      tabName = 'training',
+      icon = icon("book-open"))
   )
 )
 
-server <- function(input, output) {
+body <- dashboardBody(
+  tags$head(
+    tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
+  ),
+  useShinyjs(),
+  hidden(
+    lapply(seq(n_tabs), function(i) {
+      div(
+        class = "page",
+        id = paste0("step", i),
+        "Step", i
+      )
+    })
+  ),
+  tabItems(
+    tabItem(
+      tabName="main",
+      fluidPage(
+        tabsetPanel(
+          id = 'tabs',
+          tabPanel('TOOL SETTINGS', 
+                   
+                   fluidPage(
+                     h3('Please select your preferred settings'),
+                     fluidRow(
+                       radioButtons("advanced", "Select a type of setting. If you are an advanced user, please select the advanced settings option below for more statistical flexibility.",
+                                    choices = c('Basic', 'Advanced'),
+                                    selected = 'Basic',
+                                    inline = TRUE)
+                     ),
+                     fluidRow(
+                       radioButtons("data_type", "Select Data Type",
+                                    choices = c('Country', 'Archetype'), selected = 'Country', inline = TRUE)
+                     ),
+                     fluidRow(uiOutput('country'))
+                   )),
+          tabPanel('INPUT',
+                   #  start new row that encompasses inputs for country, download buttons, damage type, and currency
+                   fluidPage(
+                     fluidRow(column(12,
+                                     uiOutput('peril_type'))),
+                     fluidRow(column(12,
+                                     uiOutput('damage_type_ui'))),
+                     fluidRow(column(12,
+                                     radioButtons('currency',
+                                                  'Choose a currency',
+                                                  choices = currencies,
+                                                  selected = 'USD',
+                                                  inline = TRUE))),
+                     fluidRow(
+                       column(4,
+                              uiOutput('cost_per_person_ui')
+                       ),
+                       column(4,
+                              uiOutput('rate_ui')),
+                       column(4,
+                              uiOutput('code_ui'))
+                     ),
+                     fluidRow(column(12,
+                                     uiOutput('prob_dis')))
+                   )),
+          
+          
+          tabPanel('DATA',
+                   
+                   fluidPage(
+                     fluidRow(
+                       h4('Review Data Samples')
+                     ),
+                     fluidRow(
+                       radioButtons('upload_or_auto',
+                                    'Do you wish to replace pre-loaded data with user-supplied data?',
+                                    choiceValues = c('Pre-loaded data',
+                                                     'User-supplied data'),
+                                    choiceNames = c('No', 'Yes'),
+                                    selected = 'Pre-loaded data',
+                                    inline = TRUE)
+                     ),
+                     fluidRow(
+                       column(9,
+                              h4('Peril data')),
+                       column(3,
+                              downloadButton("download_peril_data",
+                                             "Download Peril Data"))
+                     ),
+                     fluidRow(
+                       column(12,
+                              uiOutput('further_detrend'),
+                              DT::dataTableOutput('raw_data_table'))),
+                     br(),
+                     fluidRow(
+                       column(9,
+                              h4('Scaling data')),
+                       column(3,
+                              downloadButton("download_scaled_data",
+                                             "Download Scaled Data"))),
+                     fluidRow(
+                       column(12,
+                              selectInput('select_scale', 
+                                          'Choose from preloaded scaling data',
+                                          choices = scaled_data,
+                                          selected = scaled_data[1]),
+                              DT::dataTableOutput('raw_scaled_data')
+                       )
+                     )
+                     
+                   ),
+                   
+                   fluidRow(
+                     # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
+                     # and creates popup boxes with any content specified in 'content' argument
+                     bsPopover(id = "advanced", title = '', 
+                               content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     bsPopover(id = "upload_data", title = '', 
+                               content = "To use your own dataset, push the 'Upload Peril Data' button", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     
+                     bsPopover(id = "download_data", title = '', 
+                               content = "Download the peril data for the country selected", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     
+                     bsPopover(id = "country", title = '', 
+                               content = "If you wish to upload your own data, please select the upload peril button", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     
+                     
+                   ),
+                   
+                   # popups for the inputs damage_type, currency.Need to add one on the server side for prob_dis
+                   bsPopover(id = "run_tool", title = '', 
+                             content ="After selecting all inputs, click this button to run the tool. It will generate simulation based on the best fitted distribution.", 
+                             placement = "right", trigger = "hover", options = list(container ='body')),
+                   bsPopover(id = "damage_type", title = '', 
+                             content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD", 
+                             placement = "middle", trigger = "hover", options = list(container ='body')),
+                   bsPopover(id = "currency", title = '', 
+                             content = "If other is chosen, please select a currency code and exchange rate.", 
+                             placement = "middle", trigger = "hover", options = list(container ='body'))
+                   
+          ),
+          tabPanel('SIMULATIONS', 
+                   
+                   fluidPage(
+                     br(),
+                     fluidRow(
+                       box(
+                         title = 'Peril data',
+                         width = 6,
+                         status = 'primary',
+                         plotOutput('hist_plot')),
+                       box(
+                         title = 'Simulation data',
+                         width = 6,
+                         status = 'primary',
+                         plotOutput('sim_plot'))
+                     ),
+                     fluidRow(
+                       br(),
+                       
+                       column(12,
+                              box(
+                                title = 'AIC',
+                                width = 12,
+                                status = 'primary',
+                                DT::dataTableOutput('aic_table')))
+                     ),
+                     fluidRow(
+                       column(6,
+                              plotOutput('rag_ratings'))
+                       
+                     ),
+                     bsPopover(id = "hist_plot", title = '', 
+                               content = "This chart shows the historic distribution of 'Loss' from perils.", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     
+                     bsPopover(id = "sim_plot", title = '', 
+                               content = "This chart shows the simulated distribution of 'Loss' using the best fit distribution, or if in advanced settings, the distribution chosen on the previous page. 15k simulations, with 1k representing one full year", 
+                               placement = "bottom", trigger = "hover", options = list(container ='body')),
+                     
+                     bsPopover(id = "aic_table", title = '', 
+                               content = "This table shows the AIC scores for each parametric distribution. NAs are a result of the non convergence in the optimization algorithm. The table also shows the Maximum Likelihood Estimators for each distribution.", 
+                               placement = "bottom", trigger = "hover", options = list(container ='body')),
+                     fluidRow(
+                       column(6,
+                              plotOutput('dist_plot')),
+                       column(6,
+                              plotOutput('grouped_plot'))
+                     )
+                   )
+                   
+          ),
+          tabPanel('OUTPUT', 
+                   h4('Risk & Disaster Analysis Output'),
+                   fluidPage(
+                     br(),
+                     fluidRow(
+                       column(3,
+                              div(class = 'well',
+                                  numericInput('budget', 'Budget', value = 0),
+                                  checkboxInput('ci', 
+                                                'Show confidence intervals',
+                                                value = FALSE))),
+                       column(3,
+                              div(class = 'well',
+                                  numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0)))
+                     ),
+                     
+                     
+                     # 
+                     bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1', 
+                               content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happend every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expectedto happen every 10 years (ie 10% probability.", 
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     bsPopover(id = "loss_exceedance_plotly", title = 'Exhibit 2', content = "This graph shows the probability of a year taking place that exceeds the aggregate annual loss amount on the y-axis. The probability of exceeding the available budget is represented by the probability where the available budget line and the loss exceedance curve cross.",
+                               placement = "left", trigger = "hover", options = list(container ='body')),
+                     bsPopover(id = 'annual_loss_gap_plotly', title = 'Exhibit 3', content = "The funding gap is the difference between the available federal budget and the estimated annual loss at the return period. A loss value below the red budget line represents an estimated surplus (if above, it would be a deficit)",
+                               placement = "middle", trigger = "hover", options = list(container ='body')),
+                     bsPopover(id = 'loss_exceedance_gap_plotly', title = 'Exhibit 4', content = "The graph shows the probability of experiencing different sized funding gaps/surpluses. When the line is above the x-axis, it indicates a funding surplus - if below, it indicates a funding deficit.",
+                               placement = "left", trigger = "hover", options = list(container ='body')),
+                     
+                     fluidRow(
+                       
+                       box(title = "Estimated Average Annual Loss by Time Period",
+                           plotOutput('annual_loss_plotly')),
+                       box(title = "Estimated Average Annual Loss by Severity",
+                           plotOutput('annual_loss_gap_plotly'))),
+                     fluidRow(
+                       box(title = "Loss Exceedance Curve",
+                           plotOutput('loss_exceedance_plotly')),
+                       box(title = "Funding Gap",
+                           plotOutput('loss_exceedance_gap_plotly'))))
+          )),
+        br(),
+        actionButton("prevBtn", "< Previous"),
+        actionButton("nextBtn", "Next >")
+      )),
+    tabItem(
+      tabName = 'about',
+      about_page
+    ),
+    tabItem(
+      tabName = 'training',
+      fluidPage(h1('Training'),
+                p('Placeholder page.'))
+    )
+  )
+)
+
+# UI
+ui <- dashboardPage(header, sidebar, body, skin="blue")
+
+# Server
+server <- function(input, output, session) {
+  
+  # Reactive tab data
+  tab_data <- reactiveValues(data = tab_dict)
   
   # Reactive dataset
   input_data <- reactive({
@@ -364,66 +336,145 @@ server <- function(input, output) {
   )
   
   
-  ################
-  # about tab
-  ################
-  
-  set.seed(122)
-  histdata <- rnorm(500)
   
   ##########
   # Beginning observeEvent functions for Landing page and showing the 'simulations' tab if advanced user is selected
   # creates a pop up page that the user must accept to acces the app
+  set.seed(122)
+  histdata <- rnorm(1)
   observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, { 
     # event will be called when histdata changes, which only happens once, when it is initially calculated
     showModal(modalDialog(
-      title = "Disaster Risk Financing Tool 1", easyClose = FALSE, footer = modalButton('Accept'),
-      p('This Tool has been developed in conjunction with the World Bank in order to develop capacity of the World Bank partner countries
-        on key decisions they must take during disaster risk financing. The Tool is intended for use as outlined in the Introduction (About tab) and 
-        should not be used for any other purposes. The tool should not be used to inform real financial decisions.'),
-      br(),
-      p("Information in the Tool is provided for educational purposes only and does not constitute legal or scientific advice or service. The World Bank makes no warranties or 
-        representations, express or implied as to the accuracy or reliability of the Tool or the data contained therein. A user of the Tool should seek qualified expert advice for specific diagnosis 
-        and analysis of a particular project. Any ose thereof or reliance thereon is at the sole and independent discretion and responsibility of the user. No conclusions or inferences 
-        drawn from the Tool should be attributed to the World Bank, its Board of Executive Directors, its management, or any of its member countries."),
-      br(),
-      p('This tool does not imply and judgement of endorsement on the part of the World Bank. In no event will GAD or the World Bank be liable for any form of damage arising from the 
-        application or misapplication of the tool, or any other associated materials.')
+      title = "", easyClose = FALSE, footer = NULL,
+      
+      fluidPage(
+        fluidRow(
+          column(12, align = 'center',
+                 h2('Welcome to World Bank Group!'))
+        ),
+        fluidRow(
+          column(12, align = 'center',
+                 p('Please tell us your name, email and create a password so we can get started.'))
+        ),
+        fluidRow(
+          column(6,
+                 textInput('first_name', '',
+                           placeholder = 'First name')),
+          column(6,
+                 textInput('last_name', '',
+                           placeholder = 'Last name'))
+        ),
+        fluidRow(column(12, textInput('email', '', placeholder = 'Email'))),
+        fluidRow(column(12, textInput('password', '', placeholder = 'Password'))),
+        fluidRow(column(12, textInput('confirm_password', '', placeholder = 'Confirm password'))),
+        fluidRow(
+          column(12, align = 'center',
+                 actionButton('get_started', 'Get started'))
+        )
+      )
     ))
   })
   
-  output$country <- renderUI({
+  # Observe the "Get started" button on the log-in page and remove the modal
+  observeEvent(input$get_started, {
+    removeModal()
     
-      if(input$data_type == 'Country'){
-        selectInput("country", 
-                    "Choose a country",
-                    choices = countries,
-                    selected = '')
-      } else {
-        selectInput("archetype", 
-                    "Choose an archetype",
-                    choices = archetypes,
-                    selected = '')
-      }
-      
+    showModal(modalDialog(
+      title = "Disaster Risk Financing Tool 1", easyClose = FALSE, footer = modalButton('Accept'),
+      welcome_modal
+    ))
   })
   
-  output$damage_type <- renderUI({
+  # Upload menu
+  observeEvent(input$upload_or_auto, {
+    iu <- input$upload_or_auto
+    message('iu is ', iu)
+    if(iu == 'User-supplied data'){
+      showModal(modalDialog(
+        title = "Upload your own data", easyClose = TRUE,
+        fluidPage(uiOutput('ui_upload_type'),
+                  uiOutput('ui_upload_type_text'),
+                  uiOutput('ui_upload_data'))
+      ))
+    } 
     
-      if(input$data_type == 'Archetype'){
-        radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
-                     'Choose how you want to view the loss',
-                     choices = c('Cost per person'),
-                     selected = 'Cost per person',
-                     inline = FALSE)
-      } else {
-        radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
-                     'Choose how you want to view the loss',
-                     choices = c('Total damage', 'Cost per person'),
-                     selected = 'Total damage',
-                     inline = FALSE)
-      }
-      
+  })
+  
+  # Define a reactive value which is the currently selected tab number
+  rv <- reactiveValues(page = 1)
+  
+  # Make tab dict reactive
+  
+  observe({
+    toggleState(id = "prevBtn", condition = rv$page > 1)
+    toggleState(id = "nextBtn", condition = rv$page < n_tabs)
+    hide(selector = ".page")
+  })
+  
+  # Define function for changing the tab number in one direction or the 
+  # other as a function of forward/back clicks
+  navPage <- function(direction) {
+    rv$page <- rv$page + direction
+  }
+  
+  # Observe the forward/back clicks, and update rv$page accordingly
+  observeEvent(input$prevBtn, {
+    # Update rv$page
+    navPage(-1)
+  })
+  observeEvent(input$nextBtn, {
+    # Update rv$page
+    navPage(1)
+  })
+  
+  # Observe any changes to rv$page, and update the selected tab accordingly
+  observeEvent(rv$page, {
+    tab_number <- rv$page
+    td <- tab_data$data
+    tab_name <- td %>% filter(number == tab_number) %>% .$name
+    updateTabsetPanel(session, inputId="tabs", selected=tab_name)
+  })
+  
+  # Observe any click on the left tab menu, and update accordingly the rv$page object
+  observeEvent(input$tabs, {
+    tab_name <- input$tabs
+    td <- tab_data$data
+    tab_number <- td %>% filter(name == tab_name) %>% .$number
+    message(paste0('Selected tab is ', tab_name, '. Number: ', tab_number))
+    rv$page <- tab_number
+  })
+  
+  
+  output$country <- renderUI({
+    
+    if(input$data_type == 'Country'){
+      selectInput("country", 
+                  "Choose a country",
+                  choices = countries)
+    } else {
+      selectInput("archetype", 
+                  "Choose an archetype",
+                  choices = archetypes)
+    }
+    
+  })
+  
+  output$damage_type_ui <- renderUI({
+    
+    if(input$data_type == 'Archetype'){
+      radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
+                   'Select how you want to view the loss',
+                   choices = c('Cost per person'),
+                   selected = 'Cost per person',
+                   inline = TRUE)
+    } else {
+      radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
+                   'Select how you want to view the loss',
+                   choices = c('Total damage', 'Cost per person'),
+                   selected = 'Total damage',
+                   inline = TRUE)
+    }
+    
     
     
   })
@@ -477,6 +528,7 @@ server <- function(input, output) {
   })
   
   observeEvent(input$advanced,{
+    
     cc <- counter()
     message('current counter is ', cc)
     new_cc <- cc + 1
@@ -484,10 +536,14 @@ server <- function(input, output) {
     message('new counter is ', new_cc)
     # if the counter is even, hide tab (this is the default because the counter starts at zero)
     if(cc %% 2 == 0){
-      hideTab(inputId = 'Navbar', target = 'simulations')
+      hideTab(inputId = 'tabs', target = 'SIMULATIONS')
+      x <- tab_dict[c(1:3,5),]
+      x$number <- 1:4
+      tab_data$data <- x
     } else {
       # if the counter is odd, show the tab
-      showTab(inputId = 'Navbar', target = 'simulations')
+      showTab(inputId = 'tabs', target = 'SIMULATIONS')
+      tab_data$data <- tab_dict
     }
   })
   
@@ -561,7 +617,7 @@ server <- function(input, output) {
       
       
     }
-   
+    
     
   })
   
@@ -584,7 +640,7 @@ server <- function(input, output) {
     } else if(input$archetype == 'Low income country, exposed to droughts, floods, and storms'){
       archetype_data <- low_income_droughts_floods_storms
     }
-      return(archetype_data)
+    return(archetype_data)
   })
   
   # create a reactive object to get country info
@@ -615,15 +671,15 @@ server <- function(input, output) {
     temp <- data[[1]]
     # get the peril names for choices in peril input
     peril_names <- as.character(unique(temp$Peril))
-    peril_names <- append('All', peril_names)
-    selectInput('peril_type', 
-                'Choose a peril',
-                choices = peril_names,
-                selected = 'All')
+    checkboxGroupInput('peril_type', 
+                       'Choose a peril',
+                       choices = peril_names,
+                       selected = peril_names,
+                       inline = TRUE)
   })
   
   # create a uioutput for when data type == cost per person
-  output$cost_per_person <- renderUI({
+  output$cost_per_person_ui <- renderUI({
     if(is.null(input$damage_type)){
       return(NULL)
     } else {
@@ -638,11 +694,11 @@ server <- function(input, output) {
                      value = 50)
       }
     }
-   
+    
   })
   
   # create uioutput code for cases where the user choses a currency other than USD
-  output$code <- renderUI({
+  output$code_ui <- renderUI({
     if(is.null(input$damage_type)){
       return(NULL)
     } else {
@@ -661,7 +717,7 @@ server <- function(input, output) {
   })
   
   # create uioutput rate for cases where the user choses a currency other than USD
-  output$rate <- renderUI({
+  output$rate_ui <- renderUI({
     if(is.null(input$damage_type)) {
       return(NULL)
     } else {
@@ -684,7 +740,7 @@ server <- function(input, output) {
   
   # create a uioutput for detrend
   detrend <- reactive({
-    if(!input$advanced){
+    if(input$advanced == 'Basic'){
       return(NULL)
     } else if(is.null(selected_country()) & is.null(selected_archetype())){
       return(NULL)
@@ -711,9 +767,7 @@ server <- function(input, output) {
             data <- data[[2]] # get cost per person data
             names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
             data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+            data <- data %>% filter(Peril %in% peril_type)
             
           } else {
             # get population data 
@@ -731,14 +785,13 @@ server <- function(input, output) {
             data$`Scaled loss` <- round(data$scaling_factor*data$Loss, 2)
             names(data) <- gsub('.x', '', names(data))
             data$Country.y <- NULL
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
-           test <- trend.test(data$`Scaled loss`)$p.value
-           message(test)
-           return(test)
+            data <- data %>% filter(Peril %in% peril_type)
+            
+            test <- trend.test(data$`Scaled loss`)$p.value
+            message(test)
+            return(test)
           }
-         
+          
         } else {
           data <- selected_archetype()
           if(is.null(data)){
@@ -746,9 +799,8 @@ server <- function(input, output) {
           } else {
             names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
             data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+            data <- data %>% filter(Peril %in% peril_type)
+            
             test <- trend.test(data$`Scaled loss`)$p.value
             
             return(test)
@@ -762,7 +814,7 @@ server <- function(input, output) {
   
   # uitoutput
   output$further_detrend <- renderUI({
-    if(!input$advanced | is.null(detrend())){
+    if(input$advanced == 'Basic' | is.null(detrend())){
       return(NULL)
     } else if(detrend() > 0.05) {
       message(detrend())
@@ -800,9 +852,8 @@ server <- function(input, output) {
               data <- data[[2]] # get cost per person data
               names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
               data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-              if(peril_type != 'All'){
-                data <- data[data$Peril == peril_type,]
-              }
+              data <- data %>% filter(Peril %in% peril_type)
+              
               # if(input$further_detrend){
               #   data <- data[data$`Scaled loss` > 0,]
               #   data$`Scaled loss` <- detrend(data$`Scaled loss`, tt = 'linear')
@@ -816,7 +867,7 @@ server <- function(input, output) {
             
             population_data <- data[[3]]
             data <- data[[1]]
-          
+            
             population_data <- population_data[order(population_data$Year, decreasing = TRUE),]
             
             population_data$scaling_factor <- population_data$Population[1]/population_data$Population
@@ -827,9 +878,8 @@ server <- function(input, output) {
             data$`Scaled loss` <- round(data$scaling_factor*data$Loss, 2)
             names(data) <- gsub('.x', '', names(data))
             data$Country.y <- NULL
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+            data <- data %>% filter(Peril %in% peril_type)
+            
             # if(input$further_detrend){
             #   data <- data[data$`Scaled loss` > 0,]
             #   data$`Scaled loss` <- detrend(data$`Scaled loss`, tt = 'linear')
@@ -845,14 +895,13 @@ server <- function(input, output) {
           } else {
             names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
             data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
-            }
+            data <- data %>% filter(Peril %in% peril_type)
+            
             return(data)
           }
-         
+          
         }
-       
+        
       }
     }
     
@@ -881,7 +930,7 @@ server <- function(input, output) {
         datatable(data, options = list(dom='t',ordering=F))
       }
     }
-   
+    
   })
   
   # output for scaling data if available - the 3rd, 4th, and 5th index in the data list are scaling data. Population is 3rd
@@ -926,7 +975,7 @@ server <- function(input, output) {
         }
       }
     }
-   
+    
   })
   
   
@@ -944,233 +993,233 @@ server <- function(input, output) {
       return(NULL)
     } else {
       
-        # data <- country_data
-        data <- selected_damage_type()
-        # remove obsevations with 0, if any
-        data <- data[data$Loss > 0,]
-        message(head(data))
-        
-        ##########
-        # fit lognormal
-        #########
-        log_normal <- try(fitdistr(data$Loss, "lognormal"),silent = TRUE)
-        if(class(log_normal) == 'try-error'){
-          log_normal <- NULL
-          log_normal_aic <- NA
-          log_normal$estimate[1] <- NA
-          log_normal$estimate[2] <- NA
-          # log_norma$upper_mle_1 <- NA
-          # log_normal$lower_mle_1 <- NA
-          # log_norma$upper_mle_2 <- NA
-          # log_normal$lower_mle_2 <- NA
-          # 
-        } else {
-          # get aic
-          log_normal_aic <- round(AIC(log_normal), 4)
-          # 
-          # # upper and lower bound for each estimate 
-          # log_normal_upper_mle_1 <- log_normal$estimate[1] + log_normal$sd[1]
-          # log_normal_lower_mle_1 <- log_normal$estimate[1] - log_normal$sd[1]
-          # 
-          # log_normal_upper_mle_2 <- log_normal$estimate[2] + log_normal$sd[2]
-          # log_normal_lower_mle_2 <- log_normal$estimate[2] - log_normal$sd[2]
-          
-          # if there is an error, fill object with NA
-          message('log normal AIC is ', log_normal_aic)
-          
-          # get MLE 
-          log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
-          message('log normal mle is ', log_normal_mle)
-        }
-        # create data frame to store aic and MLEs
-        log_normal_data <- data_frame(name = 'log_normal',
-                                      aic = log_normal_aic, 
-                                      mle_1 = log_normal$estimate[1],
-                                      mle_2 = log_normal$estimate[2])
-                                      # upper_mle_1 = log_normal_upper_mle_1,
-                                      # lower_mle_1 = log_normal_lower_mle_1,
-                                      # upper_mle_2 = log_normal_upper_mle_2,
-                                      # lower_mle_2 = log_normal_lower_mle_2)
-        
-        beta <- try(eBeta_ab(data$Loss, method = "numerical.MLE"), silent = TRUE)
-        if(class(beta) == 'try-error'){
-          beta <- NULL
-          beta_aic <- NA
-          beta$shape1 <- NA
-          beta$shape2 <- NA
-          beta_mle <- c(beta$shape1, beta$shape2)
-        } else {
-          beta_ll <- lBeta_ab(X = data$Loss, params = beta, logL = TRUE)
-          beta_aic <- -(2*beta_ll + 2) 
-          beta_mle <- c(beta$shape1, beta$shape2)
-          
-          # beta_aic <- round(beta$aic, 4)
-          message('beta AIC is ', beta_aic)
-          message('beta mle is ', beta_mle)
-        }
-        beta_data <- data_frame(name = 'beta',
-                                aic = round(beta_aic, 4), 
-                                mle_1 = beta_mle[1],
-                                mle_2 = beta_mle[2])
-        
-        
-        
-        # EQUATION FOR AIC 
-        # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
-        
-        # fit gamma
-        # gamma <- fitdistr(data$Loss, 'gamma')
-        gamma <- try(fitdistrplus::fitdist(data$Loss, "gamma", start=list(shape=0.5, scale=1), method="mle"), silent = TRUE)
-        
-        if(class(gamma) == 'try-error'){
-          gamma <- NULL
-          gamma_aic <- NA
-          gamma$estimate[1] <- NA
-          gamma$estimate[2] <- NA
-          
-        } else {
-          # get aic
-          gamma_aic <- round(gamma$aic, 4)
-          message('gamma AIC is ', gamma_aic)
-          
-          # upper and lower bound for each estimate 
-          # gamma_upper_mle_1 <- gamma$estimate[1] + gamma$sd[1]
-          # gamm_lower_mle_1 <- gamma$estimate[1] - gamma$sd[1]
-          # 
-          # gamma_upper_mle_2 <- gamma$estimate[2] + gamma$sd[2]
-          # gamma_lower_mle_2 <- gamma$estimate[2] - gamma$sd[2]
-          # 
-          # get mle 
-          gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
-          message('gamme mle is ', gamma_mle)
-        }
-        gamma_data <- data_frame(name = 'gamma',
-                                 aic = gamma_aic, 
-                                 mle_1 = gamma$estimate[1],
-                                 mle_2 = gamma$estimate[2])
-                                 # upper_mle_1 = log_normal_upper_mle_1,
-                                 # lower_mle_1 = log_normal_lower_mle_1,
-                                 # upper_mle_2 = log_normal_upper_mle_2,
-                                 # lower_mle_2 = log_normal_lower_mle_2)
-        
-        
-        
-        # fit frechet
-        # dfrechet(data$Loss, lambda = 1, mu = 1, sigma = 1, log = TRUE)
-        frechet <- try(fitdistrplus::fitdist(data$Loss, "frechet", start=list(scale=0.1, shape=0.1), method="mle"), 
-                       silent = TRUE)
-        if(class(frechet) == 'try-error'){
-          frechet <- NULL
-          frechet_aic <- NA
-          frechet$estimate[1] <- NA
-          frechet$estimate[2] <- NA
-          
-        } else {
-          frechet_aic <- round(frechet$aic, 4)
-          message('frechet AIC is ', frechet_aic)
-          # get mle 
-          frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
-          message('frechet mle is ', frechet_mle) 
-        }
-        frechet_data <- data_frame(name = 'frechet',
-                                   aic = frechet_aic, 
-                                   mle_1 = frechet$estimate[1],
-                                   mle_2 = frechet$estimate[2])
-        
-        
-        
-        # git gumbel
-        gumbel_fit <- try(fit_gumbel(data$Loss), silent = TRUE)
-        if(class(gumbel_fit) == 'try-error'){
-          gumbel_fit <- NULL
-          gumbel_aic <- NA
-          gumbel_fit$estimate[1] <- NA
-          gumbel_fit$estimate[2] <- NA
-          
-        } else {
-          gumbel_aic <- round(gumbel_fit$aic, 4)
-          message('gumbel AIC is ', gumbel_aic)
-          # get mle
-          gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
-          message('gumbel mle is ', gumbel_mle)
-        }
-        gumbel_data <- data_frame(name = 'gumbel',
-                                  aic = gumbel_aic, 
-                                  mle_1 = gumbel_fit$estimate[1],
-                                  mle_2 = gumbel_fit$estimate[2])
-        
-        
-        
-        # fit weibull
-        weibull <- try(fitdistrplus::fitdist(data$Loss, "weibull", start=list(shape=0.1, scale=1), method="mle"), silent = TRUE)
-        if(class(weibull) == 'try-error'){
-          weibull <- NULL
-          weibull_aic <- NA
-          weibull$estimate[1] <- NA
-          weibull$estimate[2] <- NA
-          
-        } else {
-          weibull_aic <- round(weibull$aic, 4)
-          message('weibull AIC is ', weibull_aic)
-          
-          # get mle
-          weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
-          message('weibull mle is ', weibull_mle)
-        }
-        weibull_data <- data_frame(name = 'weibull',
-                                   aic = weibull_aic, 
-                                   mle_1 = weibull$estimate[1],
-                                   mle_2 = weibull$estimate[2])
-        
-        
-        
-        # fit pareto
-        pareto <-ParetoPosStable::pareto.fit(data$Loss, estim.method = 'MLE')
-        if(class(pareto) == 'try-error'){
-          pareto <- NULL
-          pareto_aic <- NA
-          pareto_fit$estimate[1] <- NA
-          pareto_fit$estimate[2] <- NA
-          
-        } else { 
-          pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
-          message('pareto AIC is ', pareto_aic)
-          # get mle
-          pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
-          message('pareto mle is ', pareto_mle)
-        }
-        pareto_data <- data_frame(name = 'pareto',
-                                  aic = pareto_aic, 
-                                  mle_1 = pareto$estimate[[1]],
-                                  mle_2 = pareto$estimate[[2]])
-        
-        
-        
-        
-        # create a data frame out of data results
-        aic_mle_data <- rbind(log_normal_data,
-                              gamma_data,
-                              beta_data,
-                              frechet_data,
-                              gumbel_data,
-                              weibull_data,
-                              pareto_data)
-        
-        # change names of variable
-        names(aic_mle_data) <- c('Distribution', 'AIC', 'MLE 1', 'MLE 2')
-        
-        # capitalize and remove underscore of Distribution
-        aic_mle_data$Distribution <- Hmisc::capitalize(aic_mle_data$Distribution)
-        aic_mle_data$Distribution <- gsub('_', ' ', aic_mle_data$Distribution)
-        aic_mle_data$AIC <- round(aic_mle_data$AIC, 2)
-        aic_mle_data$`MLE 1`<- round(aic_mle_data$`MLE 1`, 2)
-        aic_mle_data$`MLE 2` <- round(aic_mle_data$`MLE 2`, 2)
-        
-        return(aic_mle_data)
-      }
+      # data <- country_data
+      data <- selected_damage_type()
+      # remove obsevations with 0, if any
+      data <- data[data$Loss > 0,]
+      message(head(data))
       
+      ##########
+      # fit lognormal
+      #########
+      log_normal <- try(fitdistr(data$Loss, "lognormal"),silent = TRUE)
+      if(class(log_normal) == 'try-error'){
+        log_normal <- NULL
+        log_normal_aic <- NA
+        log_normal$estimate[1] <- NA
+        log_normal$estimate[2] <- NA
+        # log_norma$upper_mle_1 <- NA
+        # log_normal$lower_mle_1 <- NA
+        # log_norma$upper_mle_2 <- NA
+        # log_normal$lower_mle_2 <- NA
+        # 
+      } else {
+        # get aic
+        log_normal_aic <- round(AIC(log_normal), 4)
+        # 
+        # # upper and lower bound for each estimate 
+        # log_normal_upper_mle_1 <- log_normal$estimate[1] + log_normal$sd[1]
+        # log_normal_lower_mle_1 <- log_normal$estimate[1] - log_normal$sd[1]
+        # 
+        # log_normal_upper_mle_2 <- log_normal$estimate[2] + log_normal$sd[2]
+        # log_normal_lower_mle_2 <- log_normal$estimate[2] - log_normal$sd[2]
+        
+        # if there is an error, fill object with NA
+        message('log normal AIC is ', log_normal_aic)
+        
+        # get MLE 
+        log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
+        message('log normal mle is ', log_normal_mle)
+      }
+      # create data frame to store aic and MLEs
+      log_normal_data <- data_frame(name = 'log_normal',
+                                    aic = log_normal_aic, 
+                                    mle_1 = log_normal$estimate[1],
+                                    mle_2 = log_normal$estimate[2])
+      # upper_mle_1 = log_normal_upper_mle_1,
+      # lower_mle_1 = log_normal_lower_mle_1,
+      # upper_mle_2 = log_normal_upper_mle_2,
+      # lower_mle_2 = log_normal_lower_mle_2)
+      
+      beta <- try(eBeta_ab(data$Loss, method = "numerical.MLE"), silent = TRUE)
+      if(class(beta) == 'try-error'){
+        beta <- NULL
+        beta_aic <- NA
+        beta$shape1 <- NA
+        beta$shape2 <- NA
+        beta_mle <- c(beta$shape1, beta$shape2)
+      } else {
+        beta_ll <- lBeta_ab(X = data$Loss, params = beta, logL = TRUE)
+        beta_aic <- -(2*beta_ll + 2) 
+        beta_mle <- c(beta$shape1, beta$shape2)
+        
+        # beta_aic <- round(beta$aic, 4)
+        message('beta AIC is ', beta_aic)
+        message('beta mle is ', beta_mle)
+      }
+      beta_data <- data_frame(name = 'beta',
+                              aic = round(beta_aic, 4), 
+                              mle_1 = beta_mle[1],
+                              mle_2 = beta_mle[2])
+      
+      
+      
+      # EQUATION FOR AIC 
+      # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
+      
+      # fit gamma
+      # gamma <- fitdistr(data$Loss, 'gamma')
+      gamma <- try(fitdistrplus::fitdist(data$Loss, "gamma", start=list(shape=0.5, scale=1), method="mle"), silent = TRUE)
+      
+      if(class(gamma) == 'try-error'){
+        gamma <- NULL
+        gamma_aic <- NA
+        gamma$estimate[1] <- NA
+        gamma$estimate[2] <- NA
+        
+      } else {
+        # get aic
+        gamma_aic <- round(gamma$aic, 4)
+        message('gamma AIC is ', gamma_aic)
+        
+        # upper and lower bound for each estimate 
+        # gamma_upper_mle_1 <- gamma$estimate[1] + gamma$sd[1]
+        # gamm_lower_mle_1 <- gamma$estimate[1] - gamma$sd[1]
+        # 
+        # gamma_upper_mle_2 <- gamma$estimate[2] + gamma$sd[2]
+        # gamma_lower_mle_2 <- gamma$estimate[2] - gamma$sd[2]
+        # 
+        # get mle 
+        gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
+        message('gamme mle is ', gamma_mle)
+      }
+      gamma_data <- data_frame(name = 'gamma',
+                               aic = gamma_aic, 
+                               mle_1 = gamma$estimate[1],
+                               mle_2 = gamma$estimate[2])
+      # upper_mle_1 = log_normal_upper_mle_1,
+      # lower_mle_1 = log_normal_lower_mle_1,
+      # upper_mle_2 = log_normal_upper_mle_2,
+      # lower_mle_2 = log_normal_lower_mle_2)
+      
+      
+      
+      # fit frechet
+      # dfrechet(data$Loss, lambda = 1, mu = 1, sigma = 1, log = TRUE)
+      frechet <- try(fitdistrplus::fitdist(data$Loss, "frechet", start=list(scale=0.1, shape=0.1), method="mle"), 
+                     silent = TRUE)
+      if(class(frechet) == 'try-error'){
+        frechet <- NULL
+        frechet_aic <- NA
+        frechet$estimate[1] <- NA
+        frechet$estimate[2] <- NA
+        
+      } else {
+        frechet_aic <- round(frechet$aic, 4)
+        message('frechet AIC is ', frechet_aic)
+        # get mle 
+        frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
+        message('frechet mle is ', frechet_mle) 
+      }
+      frechet_data <- data_frame(name = 'frechet',
+                                 aic = frechet_aic, 
+                                 mle_1 = frechet$estimate[1],
+                                 mle_2 = frechet$estimate[2])
+      
+      
+      
+      # git gumbel
+      gumbel_fit <- try(fit_gumbel(data$Loss), silent = TRUE)
+      if(class(gumbel_fit) == 'try-error'){
+        gumbel_fit <- NULL
+        gumbel_aic <- NA
+        gumbel_fit$estimate[1] <- NA
+        gumbel_fit$estimate[2] <- NA
+        
+      } else {
+        gumbel_aic <- round(gumbel_fit$aic, 4)
+        message('gumbel AIC is ', gumbel_aic)
+        # get mle
+        gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
+        message('gumbel mle is ', gumbel_mle)
+      }
+      gumbel_data <- data_frame(name = 'gumbel',
+                                aic = gumbel_aic, 
+                                mle_1 = gumbel_fit$estimate[1],
+                                mle_2 = gumbel_fit$estimate[2])
+      
+      
+      
+      # fit weibull
+      weibull <- try(fitdistrplus::fitdist(data$Loss, "weibull", start=list(shape=0.1, scale=1), method="mle"), silent = TRUE)
+      if(class(weibull) == 'try-error'){
+        weibull <- NULL
+        weibull_aic <- NA
+        weibull$estimate[1] <- NA
+        weibull$estimate[2] <- NA
+        
+      } else {
+        weibull_aic <- round(weibull$aic, 4)
+        message('weibull AIC is ', weibull_aic)
+        
+        # get mle
+        weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
+        message('weibull mle is ', weibull_mle)
+      }
+      weibull_data <- data_frame(name = 'weibull',
+                                 aic = weibull_aic, 
+                                 mle_1 = weibull$estimate[1],
+                                 mle_2 = weibull$estimate[2])
+      
+      
+      
+      # fit pareto
+      pareto <-ParetoPosStable::pareto.fit(data$Loss, estim.method = 'MLE')
+      if(class(pareto) == 'try-error'){
+        pareto <- NULL
+        pareto_aic <- NA
+        pareto_fit$estimate[1] <- NA
+        pareto_fit$estimate[2] <- NA
+        
+      } else { 
+        pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
+        message('pareto AIC is ', pareto_aic)
+        # get mle
+        pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
+        message('pareto mle is ', pareto_mle)
+      }
+      pareto_data <- data_frame(name = 'pareto',
+                                aic = pareto_aic, 
+                                mle_1 = pareto$estimate[[1]],
+                                mle_2 = pareto$estimate[[2]])
+      
+      
+      
+      
+      # create a data frame out of data results
+      aic_mle_data <- rbind(log_normal_data,
+                            gamma_data,
+                            beta_data,
+                            frechet_data,
+                            gumbel_data,
+                            weibull_data,
+                            pareto_data)
+      
+      # change names of variable
+      names(aic_mle_data) <- c('Distribution', 'AIC', 'MLE 1', 'MLE 2')
+      
+      # capitalize and remove underscore of Distribution
+      aic_mle_data$Distribution <- Hmisc::capitalize(aic_mle_data$Distribution)
+      aic_mle_data$Distribution <- gsub('_', ' ', aic_mle_data$Distribution)
+      aic_mle_data$AIC <- round(aic_mle_data$AIC, 2)
+      aic_mle_data$`MLE 1`<- round(aic_mle_data$`MLE 1`, 2)
+      aic_mle_data$`MLE 2` <- round(aic_mle_data$`MLE 2`, 2)
+      
+      return(aic_mle_data)
+    }
     
-     
+    
+    
   })
   
   # make a reactive object that grabs the name of the best distribution - this is the default for basic users. Advanced users can choose a new one
@@ -1206,7 +1255,7 @@ server <- function(input, output) {
       dat <- dat[aic_min_ind,]    
       best_dis <- dat$Distribution
       
-      if(input$advanced){
+      if(input$advanced == 'Advanced'){
         selectInput('prob_dis', 'Choose distribution (default is best fit)', 
                     choices = advanced_parametric,
                     selected = best_dis)
@@ -1216,7 +1265,7 @@ server <- function(input, output) {
                     selected = best_dis)
       }
     }
-   
+    
   })
   
   # create table for aic
@@ -1305,13 +1354,13 @@ server <- function(input, output) {
   output$hist_plot <- renderPlot({
     data <- selected_damage_type()
     g <- ggplot(data, aes(data$Loss)) +
-      geom_histogram(bins = 5, fill = 'black', color = 'blue', alpha = 0.6) + 
+      geom_histogram(bins = 5, fill = 'black', color = 'black', alpha = 0.6) + 
       labs(x = 'Loss', 
            y = 'Counts') +
       theme_clean() +
-      theme(axis.text.x = element_text(angle = 0, size = 15),
-            axis.text.y = element_text(size = 15),
-            axis.title = element_text(size = 15)) 
+      theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 1, size = 12),
+            axis.text.y = element_text(size = 12),
+            axis.title = element_text(size = 12)) 
     return(g)
     
   })
@@ -1323,12 +1372,12 @@ server <- function(input, output) {
       dat_sim <- as.data.frame(dat_sim)
       names(dat_sim) <- 'Simulated loss'
       g =  ggplot(dat_sim, aes(`Simulated loss`)) +
-        geom_density(fill = 'black', color = 'blue', alpha = 0.5) +
+        geom_density(fill = 'black', color = 'black', alpha = 0.5) +
         labs(y = 'Density') +
         theme_clean() +
-        theme(axis.text.x = element_text(angle = 0, size = 15),
-              axis.text.y = element_text(size = 15),
-              axis.title = element_text(size = 15)) 
+        theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 1, size = 12),
+              axis.text.y = element_text(size = 12),
+              axis.title = element_text(size = 12)) 
       return(g)
     }
     
@@ -1496,15 +1545,15 @@ server <- function(input, output) {
             xlab('') + ylab('') +
             ggtitle(plot_title)
         }
-
+        
         
         return(g)
       }
     }
-   
+    
   })
   
-
+  
   ############ OUTPUT 2
   
   
@@ -1582,9 +1631,9 @@ server <- function(input, output) {
           
         }
         
-       
+        
         return(g)
-       
+        
       }
     }
     
@@ -1666,7 +1715,7 @@ server <- function(input, output) {
             ggtitle(plot_title)
           
         }
- 
+        
         
         return(g)
         
@@ -1754,10 +1803,10 @@ server <- function(input, output) {
             theme_bw(base_size = 14, 
                      base_family = 'Ubuntu')
         }
-          
-       
-    g
-    
+        
+        
+        g
+        
       }
     }
   })
@@ -1790,7 +1839,7 @@ server <- function(input, output) {
   #   
   # })
   
+  
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui, server)

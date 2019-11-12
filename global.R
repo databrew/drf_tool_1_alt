@@ -24,7 +24,9 @@ library(extraDistr)
 library(ParetoPosStable)
 library(Hmisc)
 library(boot)
+library(shinyjs)
 # library(ExtDist)
+
 
 
 # run the functions script when this script is called by app.R
@@ -182,5 +184,37 @@ mozambique_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, infla
 
 #### add more countries
 
+# Define the text for the welcome modal
+welcome_modal <-
+  fluidPage(
+    p('This Tool has been developed in conjunction with the World Bank in order to develop capacity of the World Bank partner countries
+        on key decisions they must take during disaster risk financing. The Tool is intended for use as outlined in the Introduction (About tab) and 
+        should not be used for any other purposes. The tool should not be used to inform real financial decisions.'),
+    br(),
+    p("Information in the Tool is provided for educational purposes only and does not constitute legal or scientific advice or service. The World Bank makes no warranties or 
+        representations, express or implied as to the accuracy or reliability of the Tool or the data contained therein. A user of the Tool should seek qualified expert advice for specific diagnosis 
+        and analysis of a particular project. Any ose thereof or reliance thereon is at the sole and independent discretion and responsibility of the user. No conclusions or inferences 
+        drawn from the Tool should be attributed to the World Bank, its Board of Executive Directors, its management, or any of its member countries."),
+    br(),
+    p('This tool does not imply and judgement of endorsement on the part of the World Bank. In no event will GAD or the World Bank be liable for any form of damage arising from the 
+        application or misapplication of the tool, or any other associated materials.')
+)
 
+# Define text for the about page
+about_page <-
+  fluidPage(
+    h1('About'),
+    fluidRow(
+      column(12,
+             tags$p(class = "intro",
+                    "The development of this Tool was led by the Disaster Risk Financing and Insurance 
+                                       Program (DRFIP), a partnership of the World Bank Group's Finance Competitiveness and 
+                                       Innovation Global Practice and the Global Facility for Disaster Reduction and Recovery 
+                                       (GFDRR)."), 
+             tags$br("The World Bank invests substantial resources in the development of its models, 
+                                        modelling methodologies and databases. This Tool contains proprietary and confidential 
+                                        information and is intended for the exclusive use of World Bank partners with whom this 
+                                        Tool has been shared. Any user is subject to the restrictions of the confidentiality 
+                                        provisions set forth in license and other nondisclosure agreements.")))
+  )
 
