@@ -117,8 +117,7 @@ ui <- shinyUI(
                                     uiOutput('ui_upload_type_text'),
                                     uiOutput('ui_upload_data')
                                 )),
-                         
-                         
+
                          # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
                          # and creates popup boxes with any content specified in 'content' argument
                          bsPopover(id = "advanced", title = '', 
@@ -175,7 +174,7 @@ ui <- shinyUI(
                          column(6,
                                 div(class = 'well',
                                     h4('Peril data'),
-                                    awesomeCheckbox('further_detrend', 'Remove Trends From Data', value = FALSE, status = 'danger'),
+                                    uiOutput('further_detrend'),
                                     DT::dataTableOutput('raw_data_table'),
                                     br(),
                                     # download buttons
@@ -590,7 +589,7 @@ server <- function(input, output) {
   
   # create a reactive object to get country info
   selected_country_info <- reactive({
-    if(input$country != 'Country'){
+    if(is.null(input$country) | input$data_type == 'Archetype'){
       return(NULL)
     } else {
       country_name <- input$country
@@ -683,6 +682,98 @@ server <- function(input, output) {
     
   })
   
+  # create a uioutput for detrend
+  detrend <- reactive({
+    if(!input$advanced){
+      return(NULL)
+    } else if(is.null(selected_country()) & is.null(selected_archetype())){
+      return(NULL)
+    } else {
+      # get country data
+      if(is.null(input$peril_type) | is.null(input$damage_type)){
+        return(NULL)
+      } else { 
+        
+        # get other inputs
+        cost <- input$cost_per_person
+        peril_type <- input$peril_type
+        # determine if we are doing total damage or cost per person 
+        damage_type <- input$damage_type
+        message(damage_type)
+        if(input$data_type == 'Country'){
+          data  <- selected_country()
+          
+          if(damage_type == 'Cost per person'){
+            if(is.null(input$cost)){
+              return(NULL)
+            }
+            message(head(data))
+            data <- data[[2]] # get cost per person data
+            names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
+            data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
+            if(peril_type != 'All'){
+              data <- data[data$Peril == peril_type,]
+            }
+            
+          } else {
+            # get population data 
+            
+            population_data <- data[[3]]
+            data <- data[[1]]
+            
+            population_data <- population_data[order(population_data$Year, decreasing = TRUE),]
+            
+            population_data$scaling_factor <- population_data$Population[1]/population_data$Population
+            
+            # Multiply the original loss population_data value by the respective scaling factor based on the year the loss population_data value is from.
+            # join peril population_data with population_data
+            data <- inner_join(population_data, data, by = 'Year')
+            data$`Scaled loss` <- round(data$scaling_factor*data$Loss, 2)
+            names(data) <- gsub('.x', '', names(data))
+            data$Country.y <- NULL
+            if(peril_type != 'All'){
+              data <- data[data$Peril == peril_type,]
+            }
+           test <- trend.test(data$`Scaled loss`)$p.value
+           message(test)
+           return(test)
+          }
+         
+        } else {
+          data <- selected_archetype()
+          if(is.null(data)){
+            return(NULL)
+          } else {
+            names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
+            data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
+            if(peril_type != 'All'){
+              data <- data[data$Peril == peril_type,]
+            }
+            test <- trend.test(data$`Scaled loss`)$p.value
+            
+            return(test)
+          }
+          
+        }
+        
+      }
+    }
+  })
+  
+  # uitoutput
+  output$further_detrend <- renderUI({
+    if(!input$advanced | is.null(detrend())){
+      return(NULL)
+    } else if(detrend() > 0.05) {
+      message(detrend())
+      return(NULL)
+    } else {
+      awesomeCheckbox('further_detrend', 'Detrend data', value = FALSE, status = 'primary')
+    }
+    
+    
+  })
+  
   # create a reactive object that gets data based on damage type - use the list of dataframes - the first index is loss data, second cost per person
   selected_damage_type <- reactive({
     if(is.null(selected_country()) & is.null(selected_archetype())){
@@ -692,6 +783,8 @@ server <- function(input, output) {
       if(is.null(input$peril_type) | is.null(input$damage_type)){
         return(NULL)
       } else {
+        
+        # get other inputs
         cost <- input$cost_per_person
         peril_type <- input$peril_type
         # determine if we are doing total damage or cost per person 
@@ -700,23 +793,53 @@ server <- function(input, output) {
         if(input$data_type == 'Country'){
           data  <- selected_country()
           
-         
           if(damage_type == 'Cost per person'){
-            data <- data[[2]] # get cost per person data
-            names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
-            data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            if(peril_type != 'All'){
-              data <- data[data$Peril == peril_type,]
+            if(is.null(cost)){
+              return(NULL)
+            } else {
+              data <- data[[2]] # get cost per person data
+              names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
+              data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
+              if(peril_type != 'All'){
+                data <- data[data$Peril == peril_type,]
+              }
+              # if(input$further_detrend){
+              #   data <- data[data$`Scaled loss` > 0,]
+              #   data$`Scaled loss` <- detrend(data$`Scaled loss`, tt = 'linear')
+              # }
+              message('here', head(data))
+              return(data)
             }
+            
           } else {
+            # get population data 
+            
+            population_data <- data[[3]]
             data <- data[[1]]
+          
+            population_data <- population_data[order(population_data$Year, decreasing = TRUE),]
+            
+            population_data$scaling_factor <- population_data$Population[1]/population_data$Population
+            
+            # Multiply the original loss population_data value by the respective scaling factor based on the year the loss population_data value is from.
+            # join peril population_data with population_data
+            data <- inner_join(population_data, data, by = 'Year')
+            data$`Scaled loss` <- round(data$scaling_factor*data$Loss, 2)
+            names(data) <- gsub('.x', '', names(data))
+            data$Country.y <- NULL
             if(peril_type != 'All'){
               data <- data[data$Peril == peril_type,]
             }
+            # if(input$further_detrend){
+            #   data <- data[data$`Scaled loss` > 0,]
+            #   data$`Scaled loss` <- detrend(data$`Scaled loss`, tt = 'linear')
+            # }
+            return(data)
+            
           }
-          return(data)
         } else {
           data <- selected_archetype()
+          message('here', head(data))
           if(is.null(data)){
             return(NULL)
           } else {
@@ -1335,23 +1458,46 @@ server <- function(input, output) {
                                                         'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
         dat$value <- round(dat$value, 2)
         
-        mean_sim <- mean(dat_sim)
+        if(input$ci){
+          y_min <- dat$value - mean(dat$value)
+          y_min <- ifelse(y_min < 0, 0, y_min)
+          
+          y_max <-  dat$value + mean(dat$value)
+          # Plot
+          g <- ggplot(dat, aes(x=variable, 
+                               y=value,
+                               text = value)) + 
+            geom_bar(stat = 'identity',
+                     fill = '#5B84B1FF',
+                     col = '#FC766AFF', 
+                     alpha = 0.6) + 
+            geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
+            geom_hline(yintercept = budget) +
+            theme_bw(base_size = 14, 
+                     base_family = 'Ubuntu')  +
+            theme(axis.text.x = element_text(angle = 45, 
+                                             hjust = 1)) +
+            xlab('') + ylab('') +
+            ggtitle(plot_title)
+        } else {
+          # Plot
+          g <- ggplot(dat, aes(x=variable, 
+                               y=value,
+                               text = value)) + 
+            geom_bar(stat = 'identity',
+                     fill = '#5B84B1FF',
+                     col = '#FC766AFF', 
+                     alpha = 0.6) + 
+            geom_hline(yintercept = budget) +
+            theme_bw(base_size = 14, 
+                     base_family = 'Ubuntu')  +
+            theme(axis.text.x = element_text(angle = 45, 
+                                             hjust = 1)) +
+            xlab('') + ylab('') +
+            ggtitle(plot_title)
+        }
+
         
-        # Plot
-        g <- ggplot(dat, aes(x=variable, 
-                             y=value,
-                             text = value)) + 
-          geom_bar(stat = 'identity',
-                   fill = '#5B84B1FF',
-                   col = '#FC766AFF', 
-                   alpha = 0.6) + 
-          geom_hline(yintercept = budget) +
-          theme_bw(base_size = 14, 
-                   base_family = 'Ubuntu')  +
-          theme(axis.text.x = element_text(angle = 45, 
-                                           hjust = 1)) +
-          xlab('') + ylab('') +
-          ggtitle(plot_title)
         return(g)
       }
     }
@@ -1363,7 +1509,6 @@ server <- function(input, output) {
   
   
   output$loss_exceedance_plotly <- renderPlot({
-    geom_ribbon(data=dd,aes(x=date, y=value, ymin=lwr,ymax=upr, group=variable),alpha=0.3)
     if(is.null(selected_damage_type()) | is.na(input$budget)){
       NULL
     } else {
@@ -1402,20 +1547,42 @@ server <- function(input, output) {
         names(peril_exceedance_curve)[2] <- 'Probability'
         peril_exceedance_curve$Probability <- 1 - peril_exceedance_curve$Probability
         
+        if(input$ci){
+          dat <- peril_exceedance_curve
+          dat$y_min <- dat$`Total Loss`- mean(dat$`Total Loss`)
+          dat$y_min <- ifelse(dat$y_min < 0, 0, dat$y_min)
+          
+          dat$y_max <-  dat$`Total Loss` + mean(dat$`Total Loss`)
+          g <- ggplot(dat, aes(Probability, `Total Loss`)) +
+            geom_line(col = 'blue', size = 1, alpha = 0.7) + 
+            geom_line(aes(Probability, y_min), linetype = 'dotted') +
+            geom_line(aes(Probability, y_max), linetype = 'dotted') +
+            scale_x_reverse() +
+            ggtitle(plot_title) +
+            geom_hline(yintercept = largest_loss_num) +
+            geom_hline(yintercept = budget) +
+            geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
+            annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
+            annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
+            theme_bw(base_size = 14, 
+                     base_family = 'Ubuntu')
+          
+        } else {
+          g <- ggplot(peril_exceedance_curve, aes(Probability, `Total Loss`)) +
+            geom_line(col = 'blue', size = 1, alpha = 0.7) + 
+            scale_x_reverse() +
+            ggtitle(plot_title) +
+            geom_hline(yintercept = largest_loss_num) +
+            geom_hline(yintercept = budget) +
+            geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
+            annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
+            annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
+            theme_bw(base_size = 14, 
+                     base_family = 'Ubuntu')
+          
+        }
         
-        
-        g <- ggplot(peril_exceedance_curve, aes(Probability, `Total Loss`)) +
-          geom_line(col = 'blue', size = 1, alpha = 0.7) + 
-          scale_x_reverse() +
-          ggtitle(plot_title) +
-          geom_hline(yintercept = largest_loss_num) +
-          geom_hline(yintercept = budget) +
-          geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
-          annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
-          annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
-          theme_bw(base_size = 14, 
-                   base_family = 'Ubuntu')
-        
+       
         return(g)
        
       }
@@ -1458,23 +1625,48 @@ server <- function(input, output) {
         # melt the data frame to get value and variable 
         dat <- melt(dat)
         
-        # divide valueb by 100k
-        
-        # plot
-        g <- ggplot(dat, aes(x=variable, 
-                             y=value,
-                             text = value)) + 
-          geom_bar(stat = 'identity',
-                   fill = '#5B84B1FF',
-                   col = '#FC766AFF', 
-                   alpha = 0.6) + 
-          theme_bw(base_size = 14, 
-                   base_family = 'Ubuntu')  +
-          theme(axis.text.x = element_text(angle = 45, 
-                                           hjust = 1)) +
-          xlab('') + ylab('') +
+        if(input$ci){
+          y_min <- dat$value - mean(dat$value)
+          y_min <- ifelse(y_min < 0, 0, y_min)
           
-          ggtitle(plot_title)
+          y_max <-  dat$value + mean(dat$value)
+          # plot
+          g <- ggplot(dat, aes(x=variable, 
+                               y=value,
+                               text = value)) + 
+            geom_bar(stat = 'identity',
+                     fill = '#5B84B1FF',
+                     col = '#FC766AFF', 
+                     alpha = 0.6) + 
+            geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
+            
+            theme_bw(base_size = 14, 
+                     base_family = 'Ubuntu')  +
+            theme(axis.text.x = element_text(angle = 45, 
+                                             hjust = 1)) +
+            xlab('') + ylab('') +
+            
+            ggtitle(plot_title)
+          
+        }else {
+          # plot
+          g <- ggplot(dat, aes(x=variable, 
+                               y=value,
+                               text = value)) + 
+            geom_bar(stat = 'identity',
+                     fill = '#5B84B1FF',
+                     col = '#FC766AFF', 
+                     alpha = 0.6) + 
+            theme_bw(base_size = 14, 
+                     base_family = 'Ubuntu')  +
+            theme(axis.text.x = element_text(angle = 45, 
+                                             hjust = 1)) +
+            xlab('') + ylab('') +
+            
+            ggtitle(plot_title)
+          
+        }
+ 
         
         return(g)
         
@@ -1531,13 +1723,33 @@ server <- function(input, output) {
         funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
         funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
         
-       g <-  ggplot(funding_gap_curve, aes(`Probability of exceeding loss`, `Funding gap`)) +
-          geom_line(col = 'blue', size = 1, alpha = 0.7) +
-         scale_x_reverse(position = 'top') +
-         geom_hline(yintercept = 0, size = 2) +
-         ggtitle(plot_title) +
-         theme_bw(base_size = 14, 
-                  base_family = 'Ubuntu')
+        if(input$ci){
+          dat <- funding_gap_curve
+          dat$y_min <- dat$`Funding gap`- mean(dat$`Funding gap`)
+          dat$y_min <- dat$y_min
+          # dat$y_min <- ifelse(y_min > 0, 0, y_min)
+          dat$y_max <-  dat$`Funding gap` + mean(dat$`Funding gap`)
+          g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`)) +
+            geom_line(col = 'blue', size = 1, alpha = 0.7) +
+            geom_line(aes(`Probability of exceeding loss`, y_min), linetype = 'dotted') +
+            geom_line(aes(`Probability of exceeding loss`, y_max), linetype = 'dotted') +
+            scale_x_reverse(position = 'top') +
+            geom_hline(yintercept = 0, size = 2) +
+            ggtitle(plot_title) +
+            theme_bw(base_size = 14, 
+                     base_family = 'Ubuntu')
+          g
+        } else {
+          g <-  ggplot(funding_gap_curve, aes(`Probability of exceeding loss`, `Funding gap`)) +
+            geom_line(col = 'blue', size = 1, alpha = 0.7) +
+            scale_x_reverse(position = 'top') +
+            geom_hline(yintercept = 0, size = 2) +
+            ggtitle(plot_title) +
+            theme_bw(base_size = 14, 
+                     base_family = 'Ubuntu')
+        }
+          
+    
           
        
     g
