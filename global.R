@@ -197,7 +197,8 @@ welcome_modal <-
         drawn from the Tool should be attributed to the World Bank, its Board of Executive Directors, its management, or any of its member countries."),
     br(),
     p('This tool does not imply and judgement of endorsement on the part of the World Bank. In no event will GAD or the World Bank be liable for any form of damage arising from the 
-        application or misapplication of the tool, or any other associated materials.')
+        application or misapplication of the tool, or any other associated materials.'),
+    fluidRow(column(12, align = 'center', actionButton('accept', 'Accept')))
 )
 
 # Define text for the about page
@@ -218,3 +219,35 @@ about_page <-
                                         provisions set forth in license and other nondisclosure agreements.")))
   )
 
+
+# Function for conditional coloring, etc. in the tab panel headers
+tab_maker <- function(n = 1,
+                      label = 'TOOL SETTINGS',
+                      input,
+                      tab_data){
+  label_n <- n
+  if(n == 4){
+    label_n <- 3.5
+  }
+  if(n == 5){
+    label_n <- 4
+  }
+  
+  # Get tab info
+  tab_name <- input$tabs
+  td <- tab_data$data
+  tab_number <- td %>% filter(name == tab_name) %>% .$number
+  the_text <- '&#10004;'
+  if(tab_number >=n){
+    the_color <- '#F05023'
+    the_circle <- 'circle'
+  } else {
+    the_color <- '#707372'
+    the_circle <- 'greycircle'
+  }
+  if(tab_number <= n){
+    the_text <- label_n
+  }
+  
+  HTML(paste0('<div style="width: 100%; margin: 0 auto; text-align: center"><div class="', the_circle, '">', the_text, '</div><h4 style = "width: 100%; color: ', the_color, '; margin: 0 auto; text-align: center">', label, '</h4></div>'))
+}

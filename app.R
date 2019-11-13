@@ -17,7 +17,10 @@ tab_dict <- data_frame(number = 1:5,
 n_tabs <- nrow(tab_dict)
 
 
-header <- dashboardHeader(title="World Bank Group")
+header <- dashboardHeader(title = tags$a(href='https://www.worldbank.org/',
+                                         tags$img(src='logo.png',height='60',width='200', alt = 'World Bank Group')))
+
+
 sidebar <- dashboardSidebar(
   sidebarMenu(
     id = 'side_tab',
@@ -53,10 +56,14 @@ body <- dashboardBody(
   tabItems(
     tabItem(
       tabName="main",
-      fluidPage(
+      fluidPage(theme = 'custom.css',
         tabsetPanel(
           id = 'tabs',
-          tabPanel('TOOL SETTINGS', 
+          tabPanel(
+            
+            title = uiOutput('tool_settings_ui'),
+            #icon("calendar"), 
+            value = 'TOOL SETTINGS',
                    
                    fluidPage(
                      h3('Please select your preferred settings'),
@@ -72,7 +79,11 @@ body <- dashboardBody(
                      ),
                      fluidRow(uiOutput('country'))
                    )),
-          tabPanel('INPUT',
+          tabPanel(
+            
+            title = uiOutput('input_ui'),
+            value = 'INPUT',
+            
                    #  start new row that encompasses inputs for country, download buttons, damage type, and currency
                    fluidPage(
                      fluidRow(column(12,
@@ -99,7 +110,8 @@ body <- dashboardBody(
                    )),
           
           
-          tabPanel('DATA',
+          tabPanel(uiOutput('data_ui'),
+                               value = 'DATA',
                    
                    fluidPage(
                      fluidRow(
@@ -177,7 +189,9 @@ body <- dashboardBody(
                              placement = "middle", trigger = "hover", options = list(container ='body'))
                    
           ),
-          tabPanel('SIMULATIONS', 
+          tabPanel(
+            uiOutput('simulations_ui'),
+                   value = 'SIMULATIONS',
                    
                    fluidPage(
                      br(),
@@ -228,7 +242,10 @@ body <- dashboardBody(
                    )
                    
           ),
-          tabPanel('OUTPUT', 
+          tabPanel(
+            title = uiOutput('output_ui'),
+            value = 'OUTPUT',
+            
                    h4('Risk & Disaster Analysis Output'),
                    fluidPage(
                      br(),
@@ -270,7 +287,14 @@ body <- dashboardBody(
           )),
         br(),
         actionButton("prevBtn", "< Previous"),
-        actionButton("nextBtn", "Next >")
+        actionButton("nextBtn", "Continue",
+                     style = "color: white; 
+                     background-color: #009FDA; 
+                     font-weight: bold;
+                     position: relative; 
+                     text-align:center;
+                     border-radius: 6px;
+                     border-width: 2px")
       )),
     tabItem(
       tabName = 'about',
@@ -380,10 +404,14 @@ server <- function(input, output, session) {
     removeModal()
     
     showModal(modalDialog(
-      title = "Disaster Risk Financing Tool 1", easyClose = FALSE, footer = modalButton('Accept'),
+      title = "Disaster Risk Financing Tool 1", easyClose = FALSE, footer = NULL,
       welcome_modal
     ))
   })
+  observeEvent(input$accept,{
+    removeModal()
+  })
+  
   
   # Upload menu
   observeEvent(input$upload_or_auto, {
@@ -450,11 +478,13 @@ server <- function(input, output, session) {
     if(input$data_type == 'Country'){
       selectInput("country", 
                   "Choose a country",
-                  choices = countries)
+                  choices = countries,
+                  selected = 'Sri Lanka')
     } else {
       selectInput("archetype", 
                   "Choose an archetype",
-                  choices = archetypes)
+                  choices = archetypes,
+                  selected = "Drought-prone low income country")
     }
     
   })
@@ -1244,7 +1274,8 @@ server <- function(input, output, session) {
   # ui for prob_dis - right now the output is dependent on the best distribution
   # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
   output$prob_dis <- renderUI({
-    if(is.null(get_aic_mle())){
+    gg <- get_aic_mle()
+    if(is.null(gg)){
       return(NULL)
     } else {
       # get aic_mle_data
@@ -1839,7 +1870,32 @@ server <- function(input, output, session) {
   #   
   # })
   
-  
+  # UIs for panel headers
+  output$tool_settings_ui <- renderUI({
+    tab_maker(n = 1, label = 'TOOL SETTINGS',
+              input = input,
+              tab_data = tab_data)
+  })
+  output$input_ui <- renderUI({
+    tab_maker(n = 2, label = 'INPUT',
+              input = input,
+              tab_data = tab_data)
+  })
+  output$data_ui <- renderUI({
+    tab_maker(n = 3, label = 'DATA',
+              input = input,
+              tab_data = tab_data)
+  })
+  output$simulations_ui <- renderUI({
+    tab_maker(n = 4, label = 'SIMULATIONS',
+              input = input,
+              tab_data = tab_data)
+  })
+  output$output_ui <- renderUI({
+    tab_maker(n = 5, label = 'OUTPUT',
+              input = input,
+              tab_data = tab_data)
+  })
 }
 
 shinyApp(ui, server)
