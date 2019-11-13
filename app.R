@@ -17,7 +17,11 @@ tab_dict <- data_frame(number = 1:5,
 n_tabs <- nrow(tab_dict)
 
 
-header <- dashboardHeader(title="World Bank Group")
+header <- dashboardHeader()
+header$children[[2]]$children <-  tags$a(href='https://www.worldbank.org/',
+                                           tags$img(src='logo.png',height='60',width='200'))
+
+# header <- dashboardHeader(title="World Bank Group")
 sidebar <- dashboardSidebar(
   sidebarMenu(
     id = 'side_tab',
