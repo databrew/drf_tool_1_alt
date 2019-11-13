@@ -53,7 +53,7 @@ body <- dashboardBody(
   tabItems(
     tabItem(
       tabName="main",
-      fluidPage(
+      fluidPage(theme = 'custom.css',
         tabsetPanel(
           id = 'tabs',
           tabPanel('TOOL SETTINGS', 
@@ -450,11 +450,13 @@ server <- function(input, output, session) {
     if(input$data_type == 'Country'){
       selectInput("country", 
                   "Choose a country",
-                  choices = countries)
+                  choices = countries,
+                  selected = 'Sri Lanka')
     } else {
       selectInput("archetype", 
                   "Choose an archetype",
-                  choices = archetypes)
+                  choices = archetypes,
+                  selected = "Drought-prone low income country")
     }
     
   })
@@ -1244,7 +1246,8 @@ server <- function(input, output, session) {
   # ui for prob_dis - right now the output is dependent on the best distribution
   # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
   output$prob_dis <- renderUI({
-    if(is.null(get_aic_mle())){
+    gg <- get_aic_mle()
+    if(is.null(gg)){
       return(NULL)
     } else {
       # get aic_mle_data
