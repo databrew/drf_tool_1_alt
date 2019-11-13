@@ -86,9 +86,10 @@ body.hold-transition .content-wrapper,body.hold-transition .left-side,body.hold-
     padding-left: 15px;
     padding-right: 15px}
 .h1,.h2,.h3,.h4,.h5,.h6,h1,h2,h3,h4,h5,h6 {
-    font-family: 'Arial',sans-serif}
+    font-family: 'Arial',sans-serif,
+    color: #494A4B}
 a {
-    color: #3c8dbc}
+    color: #494A4B}
 a:active,a:focus,a:hover {
     outline: 0;
     text-decoration: none;

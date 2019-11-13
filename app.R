@@ -273,7 +273,14 @@ body <- dashboardBody(
           )),
         br(),
         actionButton("prevBtn", "< Previous"),
-        actionButton("nextBtn", "Next >")
+        actionButton("nextBtn", "Continue",
+                     style = "color: white; 
+                     background-color: #009FDA; 
+                     font-weight: bold;
+                     position: relative; 
+                     text-align:center;
+                     border-radius: 6px;
+                     border-width: 2px")
       )),
     tabItem(
       tabName = 'about',
