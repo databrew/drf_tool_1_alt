@@ -3296,3 +3296,8 @@ table.text-center,table.text-center td,table.text-center th {
  .skin-blue .main-header .navbar .sidebar-toggle:hover{
                       background-color: #98252B;
                       }
+/* background */
+/* body */
+.content-wrapper, .right-side {
+background-color: #FFFFFF;
+}
