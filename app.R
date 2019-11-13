@@ -59,7 +59,11 @@ body <- dashboardBody(
       fluidPage(theme = 'custom.css',
         tabsetPanel(
           id = 'tabs',
-          tabPanel('TOOL SETTINGS', 
+          tabPanel(
+            
+            title = uiOutput('tool_settings_ui'),
+            #icon("calendar"), 
+            value = 'TOOL SETTINGS',
                    
                    fluidPage(
                      h3('Please select your preferred settings'),
@@ -75,7 +79,11 @@ body <- dashboardBody(
                      ),
                      fluidRow(uiOutput('country'))
                    )),
-          tabPanel('INPUT',
+          tabPanel(
+            
+            title = uiOutput('input_ui'),
+            value = 'INPUT',
+            
                    #  start new row that encompasses inputs for country, download buttons, damage type, and currency
                    fluidPage(
                      fluidRow(column(12,
@@ -102,7 +110,8 @@ body <- dashboardBody(
                    )),
           
           
-          tabPanel('DATA',
+          tabPanel(uiOutput('data_ui'),
+                               value = 'DATA',
                    
                    fluidPage(
                      fluidRow(
@@ -180,7 +189,9 @@ body <- dashboardBody(
                              placement = "middle", trigger = "hover", options = list(container ='body'))
                    
           ),
-          tabPanel('SIMULATIONS', 
+          tabPanel(
+            uiOutput('simulations_ui'),
+                   value = 'SIMULATIONS',
                    
                    fluidPage(
                      br(),
@@ -231,7 +242,10 @@ body <- dashboardBody(
                    )
                    
           ),
-          tabPanel('OUTPUT', 
+          tabPanel(
+            title = uiOutput('output_ui'),
+            value = 'OUTPUT',
+            
                    h4('Risk & Disaster Analysis Output'),
                    fluidPage(
                      br(),
@@ -1856,7 +1870,32 @@ server <- function(input, output, session) {
   #   
   # })
   
-  
+  # UIs for panel headers
+  output$tool_settings_ui <- renderUI({
+    tab_maker(n = 1, label = 'TOOL SETTINGS',
+              input = input,
+              tab_data = tab_data)
+  })
+  output$input_ui <- renderUI({
+    tab_maker(n = 2, label = 'INPUT',
+              input = input,
+              tab_data = tab_data)
+  })
+  output$data_ui <- renderUI({
+    tab_maker(n = 3, label = 'DATA',
+              input = input,
+              tab_data = tab_data)
+  })
+  output$simulations_ui <- renderUI({
+    tab_maker(n = 4, label = 'SIMULATIONS',
+              input = input,
+              tab_data = tab_data)
+  })
+  output$output_ui <- renderUI({
+    tab_maker(n = 5, label = 'OUTPUT',
+              input = input,
+              tab_data = tab_data)
+  })
 }
 
 shinyApp(ui, server)

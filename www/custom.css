@@ -3302,3 +3302,28 @@ table.text-center,table.text-center td,table.text-center th {
 .content-wrapper, .right-side {
 background-color: #FFFFFF;
 }
+
+.circle {
+  margin: 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid #F05023;
+  border-radius: 50%;
+  font-size: 14px;
+  color: #F05023;
+  line-height: 25px;
+  text-align: center;
+  background: #FFFFFF;
+}
+.greycircle {
+  margin: 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid #707372;
+  border-radius: 50%;
+  font-size: 14px;
+  color: #707372;
+  line-height: 25px;
+  text-align: center;
+  background: #FFFFFF;
+}
