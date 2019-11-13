@@ -197,7 +197,8 @@ welcome_modal <-
         drawn from the Tool should be attributed to the World Bank, its Board of Executive Directors, its management, or any of its member countries."),
     br(),
     p('This tool does not imply and judgement of endorsement on the part of the World Bank. In no event will GAD or the World Bank be liable for any form of damage arising from the 
-        application or misapplication of the tool, or any other associated materials.')
+        application or misapplication of the tool, or any other associated materials.'),
+    fluidRow(column(12, align = 'center', actionButton('accept', 'Accept')))
 )
 
 # Define text for the about page
