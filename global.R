@@ -254,3 +254,14 @@ tab_maker <- function(n = 1,
   
   HTML(paste0('<div style="width: 100%; margin: 0 auto; text-align: center"><div class="', the_circle, '">', the_text, '</div><h4 style = "width: 100%; color: ', the_color, '; margin: 0 auto; text-align: center">', label, '</h4></div>'))
 }
+
+# Function for allowing / prohibiting tab changes (based on amount of time since last change)
+# (The purpose of this is to prevent the back-and-forthy weirdness)
+not_too_fast <- function(old_time, new_time){
+  time_difference <- as.numeric(difftime(new_time, old_time, units = 'secs'))
+  if(time_difference > 0.5){
+    TRUE
+  } else {
+    FALSE
+  }
+}

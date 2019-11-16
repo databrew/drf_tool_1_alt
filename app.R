@@ -439,6 +439,9 @@ server <- function(input, output, session) {
     hide(selector = ".page")
   })
   
+  # Keep a counter of time since of the last tab change
+  tab_time <- reactiveVal(value = Sys.time())
+  
   # Define function for changing the tab number in one direction or the 
   # other as a function of forward/back clicks
   navPage <- function(direction) {
@@ -447,29 +450,58 @@ server <- function(input, output, session) {
   
   # Observe the forward/back clicks, and update rv$page accordingly
   observeEvent(input$prevBtn, {
-    # Update rv$page
-    navPage(-1)
+    # Do the time calculations
+    tt <- tab_time()
+    ok <- not_too_fast(old_time = tt,
+                       new_time = Sys.time())
+    if(ok){
+      # Update rv$page
+      navPage(-1)
+      tab_time(Sys.time())
+    }
+    
   })
   observeEvent(input$nextBtn, {
-    # Update rv$page
-    navPage(1)
+    # Do the time calculations
+    tt <- tab_time()
+    ok <- not_too_fast(old_time = tt,
+                       new_time = Sys.time())
+    if(ok){
+      # Update rv$page
+      navPage(1)
+      tab_time(Sys.time())
+    }
   })
   
   # Observe any changes to rv$page, and update the selected tab accordingly
   observeEvent(rv$page, {
-    tab_number <- rv$page
-    td <- tab_data$data
-    tab_name <- td %>% filter(number == tab_number) %>% .$name
-    updateTabsetPanel(session, inputId="tabs", selected=tab_name)
+    # Do the time calculations
+    tt <- tab_time()
+    ok <- not_too_fast(old_time = tt,
+                       new_time = Sys.time())
+    if(ok){
+      tab_number <- rv$page
+      td <- tab_data$data
+      tab_name <- td %>% filter(number == tab_number) %>% .$name
+      updateTabsetPanel(session, inputId="tabs", selected=tab_name)
+      tab_time(Sys.time())
+    }
   })
   
-  # Observe any click on the left tab menu, and update accordingly the rv$page object
+  # Observe any click on the tab menu, and update accordingly the rv$page object
   observeEvent(input$tabs, {
-    tab_name <- input$tabs
-    td <- tab_data$data
-    tab_number <- td %>% filter(name == tab_name) %>% .$number
-    message(paste0('Selected tab is ', tab_name, '. Number: ', tab_number))
-    rv$page <- tab_number
+    # Do the time calculations
+    tt <- tab_time()
+    ok <- not_too_fast(old_time = tt,
+                       new_time = Sys.time())
+    if(ok){
+      tab_name <- input$tabs
+      td <- tab_data$data
+      tab_number <- td %>% filter(name == tab_name) %>% .$number
+      message(paste0('Selected tab is ', tab_name, '. Number: ', tab_number))
+      rv$page <- tab_number
+      tab_time(Sys.time())
+    }
   })
   
   
