@@ -51,7 +51,7 @@ archetypes <- c('',
                 'Low income country, exposed to droughts, floods, and storms')
 
 # create a vector for scaling choices
-scaled_data <- c('Population', 'GDP', 'Inflation')
+scaled_data <- c('No scale','Population', 'GDP', 'Inflation')
 
 # define a vector of countries and currencies to be used in the dropdown (add more later)
 currencies <- c('USD', 'Other')
@@ -72,7 +72,7 @@ advanced_parametric <- c('Log normal', 'Beta', 'Gamma',
 #########
 
 # get all archetype cost data into one data frame
-archetype_cost_data <- read_in_archetype_cost_data('cost_data')
+archetype_cost_data <- read_in_archetype_cost_data('cost_data', archetype_names = archetypes)
 
 # ge all archetype frequency data into data frame
 archetype_freq_data <- read_in_archetype_freq_data('freq_data', archetype_names = archetypes)

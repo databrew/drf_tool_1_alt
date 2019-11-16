@@ -77,7 +77,8 @@ body <- dashboardBody(
                        radioButtons("data_type", "Select Data Type",
                                     choices = c('Country', 'Archetype'), selected = 'Country', inline = TRUE)
                      ),
-                     fluidRow(uiOutput('country'))
+                     fluidRow(uiOutput('country')),
+                    
                    )),
           tabPanel(
             
@@ -106,7 +107,11 @@ body <- dashboardBody(
                               uiOutput('code_ui'))
                      ),
                      fluidRow(column(12,
-                                     uiOutput('prob_dis')))
+                                     uiOutput('prob_dis'))),
+                     fluidRow(column(6,
+                                     uiOutput('select_scale_ui'), # HERE fix
+                                     uiOutput('trend_test_ui'))
+                              ),
                    )),
           
           
@@ -135,7 +140,7 @@ body <- dashboardBody(
                      ),
                      fluidRow(
                        column(12,
-                              uiOutput('further_detrend'),
+                              
                               DT::dataTableOutput('raw_data_table'))),
                      br(),
                      fluidRow(
@@ -146,10 +151,6 @@ body <- dashboardBody(
                                              "Download Scaled Data"))),
                      fluidRow(
                        column(12,
-                              selectInput('select_scale', 
-                                          'Choose from preloaded scaling data',
-                                          choices = scaled_data,
-                                          selected = scaled_data[1]),
                               DT::dataTableOutput('raw_scaled_data')
                        )
                      )
@@ -627,32 +628,16 @@ server <- function(input, output, session) {
         country_name <- input$country
         
         # get a list called country data
-        country_data <- list()
-        
-        # the first spot in the list is for loss data, second spot for cost data, and third spot for population. If available, 4th will be inflation, 5th sill be gdp
-        if(country_name == 'Sri Lanka'){
-          country_data[[1]] <- sri_lanka_loss
-          country_data[[2]] <- sri_lanka_cost
-          country_data[[3]] <- sri_lanka_pop
-        } else if (country_name == 'South Africa'){
-          country_data[[1]] <- south_africa_loss
-          country_data[[2]] <- south_africa_cost
-          country_data[[3]] <- south_africa_pop
-        } else if (country_name == 'Philippines'){
-          country_data[[1]] <- philippines_loss
-          country_data[[2]] <- philippines_cost
-          country_data[[3]] <- philippines_pop
-        } else if(country_name == 'Mozambique') {
-          country_data[[1]] <- mozambique_loss
-          country_data[[2]] <- mozambique_cost
-          country_data[[3]] <- mozambique_pop    
-        } 
+        country_data <- country_data[country_data$Country ==country,]
+       
         
         # If user-supplied, overwrite some data
         user_supplied <- input$upload_or_auto
         if(user_supplied == 'User-supplied data'){
           the_data <- input_data()
           if(!is.null(the_data)){
+            country_data <- list()
+            
             # Define which index to overwrite
             typey <- input$upload_type
             if(typey == 'Loss'){
@@ -667,13 +652,15 @@ server <- function(input, output, session) {
             
             # Overwrite the auto data with user-supplied data
             country_data[[the_index]] <- the_data
+            
+            message('selected_country() is ')
+            print(head(country_data[[1]]))
+            print(head(country_data[[2]]))
+            print(head(country_data[[3]]))
           }
         }
         
-        message('selected_country() is ')
-        print(head(country_data[[1]]))
-        print(head(country_data[[2]]))
-        print(head(country_data[[3]]))
+        
         return(country_data)
       }
       
@@ -687,45 +674,15 @@ server <- function(input, output, session) {
   selected_archetype <- reactive({
     if(is.null(input$archetype)){
       return(NULL)
-    } else if(input$archetype == ''){
-      return(NULL)
-    } else if(input$archetype == 'High risk middle income country, exposed to storms, floods, and earthquakes'){
-      archetype_data <- high_risk_mid_income_storms_floods_earthquakes
-    } else if(input$archetype == 'Middle income country, exposed to floods') {
-      archetype_data <- middle_income_flood
-    } else if(input$archetype == 'Upper-middle income country, exposed to storms, floods, and earthquakes') {
-      archetype_data <- upper_middle_income_storms_floods_earthquakes
-    } else if(input$archetype == 'Drought-prone low income country') {
-      archetype_data <- low_income_droughts
-    } else if(input$archetype == 'Low income conutry, exposed to storms, floods, and earthquakes') {
-      archetype_data <- low_income_storms_floods_earthquakes
-    } else if(input$archetype == 'Low income country, exposed to droughts, floods, and storms'){
-      archetype_data <- low_income_droughts_floods_storms
-    }
-    return(archetype_data)
-  })
-  
-  # create a reactive object to get country info
-  selected_country_info <- reactive({
-    if(is.null(input$country) | input$data_type == 'Archetype'){
-      return(NULL)
     } else {
-      country_name <- input$country
-      # get country info - a dataframe 
-      if(country_name == 'Sri Lanka'){
-        country_info <- sri_lanka_info
-      } else if (country_name == 'South Africa'){
-        country_info <- south_africa_info
-      } else if (country_name == 'Philippines'){
-        country_info <- philippines_info
-      } else if(country_name == 'Mozambique') {
-        country_info <- mozambique_info
-      } 
-      return(country_info)
+      archetype <- input$archetype
+      archetype_data <- archetype_data[archetype_data == archetype,]
+      return(archetype_data)
     }
-    
+   
   })
   
+ 
   # create a uioutput for peril type  - this is dependent on the country selected.
   output$peril_type <- renderUI({
     # get country data
@@ -800,175 +757,124 @@ server <- function(input, output, session) {
     
   })
   
-  # create a uioutput for detrend
-  detrend <- reactive({
+  # render ui for scale, only if advance
+  output$select_scale_ui <- renderUI({
+    if(input$advanced == 'Basic' | input$data_type == 'Archetype'){
+      return(NULL)
+    } else {
+      data <- selected_country
+      scaled_choices <- names(data)[names(data) %in% scaled_data]
+      scaled_choices <- c(scaled_choices, 'No scaling')
+      
+      selectInput('select_scale', 
+                  'Choose from preloaded scaling data',
+                  choices = scaled_choices,
+                  selected = scaled_choices[1])
+    }
+  })
+ 
+  # uioutput for trend test 
+  output$trend_test_ui <- renderUI({
     if(input$advanced == 'Basic'){
       return(NULL)
-    } else if(is.null(selected_country()) & is.null(selected_archetype())){
+    } else {
+      awesomeCheckbox('trend_test', 'Choose from preloaded scaling data', value = FALSE)
+    }
+  })
+  
+
+  prepare_data <- reactive({
+    if((is.null(selected_country()) & is.null(selected_archetype())) | is.null(input$damage_type)){
       return(NULL)
     } else {
-      # get country data
-      if(is.null(input$peril_type) | is.null(input$damage_type)){
-        return(NULL)
-      } else { 
-        
-        # get other inputs
-        cost <- input$cost_per_person
-        peril_type <- input$peril_type
-        # determine if we are doing total damage or cost per person 
-        damage_type <- input$damage_type
-        message(damage_type)
-        if(input$data_type == 'Country'){
-          data  <- selected_country()
+      if(input$data_type == 'Country'){
+        # get country
+        data <- selected_country()
+        # condition for damage type
+        if(input$damage_type == 'Total damage'){
           
-          if(damage_type == 'Cost per person'){
-            if(is.null(input$cost)){
-              return(NULL)
-            }
-            message(head(data))
-            data <- data[[2]] # get cost per person data
-            names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
-            data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            data <- data %>% filter(Peril %in% peril_type)
-            
-          } else {
-            # get population data 
-            
-            population_data <- data[[3]]
-            data <- data[[1]]
-            
-            population_data <- population_data[order(population_data$Year, decreasing = TRUE),]
-            
-            population_data$scaling_factor <- population_data$Population[1]/population_data$Population
-            
-            # Multiply the original loss population_data value by the respective scaling factor based on the year the loss population_data value is from.
-            # join peril population_data with population_data
-            data <- inner_join(population_data, data, by = 'Year')
-            data$`Scaled loss` <- round(data$scaling_factor*data$Loss, 2)
-            names(data) <- gsub('.x', '', names(data))
-            data$Country.y <- NULL
-            data <- data %>% filter(Peril %in% peril_type)
-            
-            test <- trend.test(data$`Scaled loss`)$p.value
-            message(test)
-            return(test)
-          }
-          
+          data <- data[data$data_type == 'Loss' | data$data_type == 'loss_freq',]
         } else {
-          data <- selected_archetype()
-          if(is.null(data)){
+          if(is.null(input$cost_per_person)){
             return(NULL)
-          } else {
-            names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
-            data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            data <- data %>% filter(Peril %in% peril_type)
-            
-            test <- trend.test(data$`Scaled loss`)$p.value
-            
-            return(test)
           }
-          
+          cost <- input$cost_per_person
+          data <- data[data$data_type == 'Cost' | data$data_type == 'cost_freq',]
+          data$Affected <- data$Affected*cost
         }
-        
-      }
-    }
-  })
-  
-  # uitoutput
-  output$further_detrend <- renderUI({
-    if(input$advanced == 'Basic' | is.null(detrend())){
-      return(NULL)
-    } else if(detrend() > 0.05) {
-      message(detrend())
-      return(NULL)
-    } else {
-      awesomeCheckbox('further_detrend', 'Detrend data', value = FALSE, status = 'primary')
-    }
-    
-    
-  })
-  
-  # create a reactive object that gets data based on damage type - use the list of dataframes - the first index is loss data, second cost per person
-  selected_damage_type <- reactive({
-    if(is.null(selected_country()) & is.null(selected_archetype())){
-      return(NULL)
-    } else {
-      # get country data
-      if(is.null(input$peril_type) | is.null(input$damage_type)){
-        return(NULL)
       } else {
-        
-        # get other inputs
-        cost <- input$cost_per_person
-        peril_type <- input$peril_type
-        # determine if we are doing total damage or cost per person 
-        damage_type <- input$damage_type
-        message(damage_type)
-        if(input$data_type == 'Country'){
-          data  <- selected_country()
-          
-          if(damage_type == 'Cost per person'){
-            if(is.null(cost)){
-              return(NULL)
-            } else {
-              data <- data[[2]] # get cost per person data
-              names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
-              data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-              data <- data %>% filter(Peril %in% peril_type)
-              
-              # if(input$further_detrend){
-              #   data <- data[data$`Scaled loss` > 0,]
-              #   data$`Scaled loss` <- detrend(data$`Scaled loss`, tt = 'linear')
-              # }
-              message('here', head(data))
-              return(data)
-            }
-            
-          } else {
-            # get population data 
-            
-            population_data <- data[[3]]
-            data <- data[[1]]
-            
-            population_data <- population_data[order(population_data$Year, decreasing = TRUE),]
-            
-            population_data$scaling_factor <- population_data$Population[1]/population_data$Population
-            
-            # Multiply the original loss population_data value by the respective scaling factor based on the year the loss population_data value is from.
-            # join peril population_data with population_data
-            data <- inner_join(population_data, data, by = 'Year')
-            data$`Scaled loss` <- round(data$scaling_factor*data$Loss, 2)
-            names(data) <- gsub('.x', '', names(data))
-            data$Country.y <- NULL
-            data <- data %>% filter(Peril %in% peril_type)
-            
-            # if(input$further_detrend){
-            #   data <- data[data$`Scaled loss` > 0,]
-            #   data$`Scaled loss` <- detrend(data$`Scaled loss`, tt = 'linear')
-            # }
-            return(data)
-            
-          }
-        } else {
-          data <- selected_archetype()
-          message('here', head(data))
-          if(is.null(data)){
-            return(NULL)
-          } else {
-            names(data)[which(names(data) == 'Affected')] <- 'Loss' # change the name for generalization 
-            data$Loss <- data$Loss*cost # multiple loss (in this case people affected) by cost input
-            data <- data %>% filter(Peril %in% peril_type)
-            
-            return(data)
-          }
-          
+        if(is.null(input$cost_per_person)){
+          return(NULL)
         }
-        
+        cost <- input$cost_per_person
+        data <- selected_archetype()
+        data$Affected <- data$Affected*cost
       }
+     
+      return(data)
     }
     
   })
   
+  # data <- country_data
+  # data <- data[data$Country == 'Sri Lanka',]
+  # data <- data[data$data_type == 'Loss' | data$data_type == 'loss_freq',]
+  
+  # reactive object to scale data
+  scale_data <- reactive({
+    if(is.null(prepare_data())){
+      return(NULL)
+    } else {
+      data <- prepare_data()
+    }
+    
+    if(input$advanced){
+      if(is.null(input$select_scale)){
+        return(NULL)
+      }
+      scale_data <- input$select_scale
+      if(scale_data == 'Population'){
+        # store frequenc
+        data <- data %>%  group_by(Peril, data_type) %>% arrange(-Year) %>% mutate(scaled_factor = Population[1]/Population) %>% arrange(data_type)
+        data$Outcome <- data$Population*data$scaled_factor
+      } else if(scale_data == 'GDP'){
+        data <- data
+      } else if(scale_data == 'Inflation'){
+        data <- data
+      }
+       
+     
+    } else {
+      data<- data %>% group_by(Peril,data_type) %>%  arrange(-Year) %>% mutate(scaled_factor = Population[1]/Population) %>% arrange(data_type)
+      data$Outcome <- data$Population*data$scaled_factor
+    }
+    return(data)
+    
+  })
+  
+  # reactive object to test for a trend
+  test_for_trend <- renderUI({
+    if(is.null(prepare_data()) | !input$advanced | is.null(input$trend_test)){
+      return(NULL)
+    } else {
+      data <- prepare_data()
+      test <- trend.test(data$Outcome)$p.value
+      if(test > 0.05){
+        helpText(paste0('The test showed no significant trend'))
+      } else {
+        awesomeCheckbox('correct_trend', 'A trend was found, click here to correct for it', value = FALSE)
+      }
+    }
+ 
+  })
+  
+  # reactive object to correct for trend
+  correct_trend <- reactive({
+    #HERE
+  })
+  
+
+
   
   ################
   # Data tab

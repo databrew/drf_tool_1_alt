@@ -14,28 +14,34 @@ normalize_data <- function(x, add_decimal, dec = NULL){
 }
 
 
-read_in_archetype_cost_data <- function(archetype_data){
+read_in_archetype_cost_data <- function(archetype_data, archetype_names){
   
   
   # read in loss data
-  hr_mi_sfe <- read.csv(paste0('data/Archetypes/',archetype_data, '/hr_mi_sfe_cost.csv'))
+  hr_mi_sfe <- read.csv(paste0('data/Archetypes/',archetype_data, '/hr_mi_sfe_cost.csv'), stringsAsFactors = FALSE)
   # change column names
   names(hr_mi_sfe) <- c('Archetype', 'Year', 'Peril', 'Affected')
+  hr_mi_sfe$Archetype <- archetype_names[2]
   
-  li_d_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_d_cost.csv'))
+  li_d_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_d_cost.csv'),  stringsAsFactors = FALSE)
   names(li_d_cost) <- c('Archetype', 'Year', 'Peril', 'Affected')
+  li_d_cost$Archetype <-  archetype_names[5]
   
-  li_dfs_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_dfs_cost.csv'))
+  li_dfs_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_dfs_cost.csv'), stringsAsFactors = FALSE)
   names(li_dfs_cost) <- c('Archetype', 'Year', 'Peril', 'Affected')
+  li_dfs_cost$Archetype <-  archetype_names[7]
   
-  li_sfe_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_sfe_cost.csv'))
+  li_sfe_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_sfe_cost.csv'), stringsAsFactors = FALSE)
   names(li_sfe_cost) <- c('Archetype', 'Year', 'Peril', 'Affected')
+  li_sfe_cost$Archetype <-  archetype_names[6]
   
-  mi_f_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/mi_f_cost.csv'))
+  mi_f_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/mi_f_cost.csv'), stringsAsFactors = FALSE)
   names(mi_f_cost) <- c('Archetype', 'Year', 'Peril', 'Affected')
+  mi_f_cost$Archetype <-  archetype_names[3]
   
-  umi_sfe_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/umi_sfe_cost.csv'))
+  umi_sfe_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/umi_sfe_cost.csv'),  stringsAsFactors = FALSE)
   names(umi_sfe_cost) <- c('Archetype', 'Year', 'Peril', 'Affected')
+  umi_sfe_cost$Archetype <-  archetype_names[4]
   
   out <- rbind(hr_mi_sfe,
                li_d_cost,
@@ -44,6 +50,7 @@ read_in_archetype_cost_data <- function(archetype_data){
                mi_f_cost,
                umi_sfe_cost)
   out$data_type <- 'archetype_cost'
+  
 
   
   return(out)
@@ -73,11 +80,11 @@ read_in_country_data <- function(country_name) {
   # read in population data
   pop_data <-  read.csv(paste0(path_to_file, 'data_pop.csv'))
   
-  pop_data$data_type <- 'Population'
-  
   all_data  <- plyr::rbind.fill(loss_data,
-                           cost_data,
-                           pop_data)
+                           cost_data)
+  
+  # joine with pop data
+  all_data <- left_join(all_data, pop_data, by = c('Year', 'Country'))
   
   # read om freq for loss
   loss_freq_data <-  read.csv(paste0(path_to_file, 'freq_loss.csv'))
@@ -91,10 +98,11 @@ read_in_country_data <- function(country_name) {
   all_data_freq <- rbind(loss_freq_data,
                          cost_freq_data)
   
-  all_data_freq <- melt(all_data_freq, id.vars = c('Year', 'data_type'))
+  all_data_freq <- melt(all_data_freq, id.vars = c('Year','data_type'))
   
   names(all_data_freq)[names(all_data_freq) == 'variable'] <- 'Peril' 
   names(all_data_freq)[names(all_data_freq) == 'value'] <- 'Count' 
+  all_data_freq$Country <- country_name
   
   out <- plyr::rbind.fill(all_data, all_data_freq)
   
