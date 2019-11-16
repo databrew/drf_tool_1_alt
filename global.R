@@ -68,124 +68,42 @@ advanced_parametric <- c('Log normal', 'Beta', 'Gamma',
                          'Pareto')
 
 ##########
-# Archetype cost data
-##########
+# read in archetyp data 
+#########
 
-# Hig risk middle income country, storms, floods, and earthquakes
-high_risk_mid_income_storms_floods_earthquakes <- read.csv('data/Archetypes/cost_data/high_risk_middle_income_storms_floods_earthquakes.csv')
+# get all archetype cost data into one data frame
+archetype_cost_data <- read_in_archetype_cost_data('cost_data')
 
-names(high_risk_mid_income_storms_floods_earthquakes) <- c('Archetype', 'Year', 'Peril', 'Affected')
+# ge all archetype frequency data into data frame
+archetype_freq_data <- read_in_archetype_freq_data('freq_data', archetype_names = archetypes)
 
-# low income droughts
-low_income_droughts <- read.csv('data/Archetypes/cost_data/low_income_drought.csv')
+# comibe archetype data
+archetype_data <- plyr::rbind.fill(archetype_cost_data,
+                                   archetype_freq_data)
 
-names(low_income_droughts) <- c('Archetype', 'Year', 'Peril', 'Affected')
-
-# low income droughts, floods, storms
-low_income_droughts_floods_storms <- read.csv('data/Archetypes/cost_data/low_income_storms_floods_earthquakes.csv')
-
-names(low_income_droughts) <- c('Archetype', 'Year', 'Peril', 'Affected')
-
-# low income storms, floods, earthquakes
-low_income_storms_floods_earthquakes <- read.csv('data/Archetypes/cost_data/low_income_storms_floods_earthquakes.csv')
-
-names(low_income_storms_floods_earthquakes) <- c('Archetype', 'Year', 'Peril', 'Affected')
-
-# middle income flood
-middle_income_flood <- read.csv('data/Archetypes/cost_data/middle_income_flood.csv')
-
-names(middle_income_flood) <- c('Archetype', 'Year', 'Peril', 'Affected')
-
-# upper middle income storms floods earthquakes
-upper_middle_income_storms_floods_earthquakes <- read.csv('data/Archetypes/cost_data/upper_middle_income_storms_floods_earthquakes.csv')
-
-names(upper_middle_income_storms_floods_earthquakes) <- c('Archetype', 'Year', 'Peril', 'Affected')
+rm(archetype_cost_data, archetype_freq_data)
 
 ##########
-# archety
+# Read in country data - combines cost, loss, frequency for cost and loss, and population into one dataframe
 ##########
+sri_lanka_data <- read_in_country_data('Sri Lanka')
+mozambique_data <- read_in_country_data('Mozambique')
+south_africa_data <- read_in_country_data('South Africa')
+philippines_data <- read_in_country_data('Philippines')
 
-##########
-# Sri Lanka
-##########
+# combine data 
+country_data <- rbind(sri_lanka_data,
+                      mozambique_data,
+                      south_africa_data,
+                      philippines_data)
 
-# read in loss data
-sri_lanka_loss <- read.csv('data/Sri Lanka/data_loss.csv')
-
-names(sri_lanka_loss) <- c('Country', 'Year', 'Peril', 'Loss')
-
-# read in cost data
-sri_lanka_cost <- read.csv('data/Sri Lanka/data_cost.csv')
-
-names(sri_lanka_cost) <- c('Country', 'Year', 'Peril', 'Affected')
-
-# read in population data
-sri_lanka_pop <- read.csv('data/Sri Lanka/data_pop.csv')
-
-# make a data frame to store information about data
-sri_lanka_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, inflation = FALSE, gdp = FALSE)
-
-##########
-# South Africa
-##########
-
-# read in loss data
-south_africa_loss <- read.csv('data/South Africa/data_loss.csv')
-
-names(south_africa_loss) <- c('Country', 'Year', 'Peril', 'Loss')
-
-# read in cost data
-south_africa_cost <- read.csv('data/South Africa/data_cost.csv')
-
-names(south_africa_cost) <- c('Country', 'Year', 'Peril', 'Affected')
-
-# read in population data
-south_africa_pop <- read.csv('data/South Africa/data_pop.csv')
-
-# make a data frame to store information about data
-south_africa_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, inflation = FALSE, gdp = FALSE)
-
-##########
-# Philippines
-##########
-
-# read in loss data
-philippines_loss <- read.csv('data/Philippines/data_loss.csv')
-
-names(philippines_loss) <- c('Country', 'Year', 'Peril', 'Loss')
-
-# read in cost data
-philippines_cost <- read.csv('data/Philippines/data_cost.csv')
-
-names(philippines_cost) <- c('Country', 'Year', 'Peril', 'Affected')
-
-# read in population data
-philippines_pop <- read.csv('data/Philippines/data_pop.csv')
-
-# make a data frame to store information about data
-philippines_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, inflation = FALSE, gdp = FALSE)
-
-##########
-# Mozambique
-##########
-
-# read in loss data
-mozambique_loss <- read.csv('data/Mozambique/data_loss.csv')
-
-names(mozambique_loss) <- c('Country', 'Year', 'Peril', 'Loss')
-
-# read in cost data
-mozambique_cost <- read.csv('data/Mozambique/data_cost.csv')
-
-names(mozambique_cost) <- c('Country', 'Year', 'Peril', 'Affected')
-
-# read in population data
-mozambique_pop <- read.csv('data/Mozambique/data_pop.csv')
-
-# make a data frame to store information about data
-mozambique_info <- data_frame(loss = TRUE, cost = TRUE, population = TRUE, inflation = FALSE, gdp = FALSE)
-
-#### add more countries
+rm(sri_lanka_data,
+   mozambique_data,
+   south_africa_data,
+   philippines_data)
+####################
+# create welcome modal amd tab maker
+###################
 
 # Define the text for the welcome modal
 welcome_modal <-
