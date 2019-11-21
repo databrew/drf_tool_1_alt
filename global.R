@@ -25,6 +25,8 @@ library(ParetoPosStable)
 library(Hmisc)
 library(boot)
 library(shinyjs)
+library(rowr)
+library(Kendall)
 # library(ExtDist)
 
 
