@@ -1,0 +1,602 @@
+﻿Country,Year,Type of event,Total affected,Total Damage
+Costa Rica,2002,Earthquake,10,0
+Costa Rica,2002,Flood,12052,0
+Costa Rica,2002,Storm,147,0
+Costa Rica,2003,Earthquake,233,0
+Costa Rica,2003,Flood,2140,0
+Costa Rica,2003,Storm,31,0
+Costa Rica,2004,Earthquake,0,0
+Costa Rica,2004,Flood,1527,0
+Costa Rica,2005,Flood,12025,0
+Costa Rica,2005,Storm,5,0
+Costa Rica,2006,Flood,2199,0
+Costa Rica,2007,Flood,19706,0
+Costa Rica,2007,Storm,9121,0
+Costa Rica,2008,Earthquake,173,0
+Costa Rica,2008,Flood,14578,0
+Costa Rica,2008,Storm,244,0
+Costa Rica,2009,Earthquake,7979,0
+Costa Rica,2009,Flood,3528,0
+Costa Rica,2009,Storm,3102,0
+Costa Rica,2010,Flood,29178,0
+Costa Rica,2010,Storm,739,0
+Costa Rica,2011,Earthquake,19,0
+Costa Rica,2011,Flood,8808,0
+Costa Rica,2011,Storm,415,0
+Costa Rica,2012,Earthquake,12568,0
+Costa Rica,2012,Flood,5572,0
+Costa Rica,2012,Storm,20634,0
+Costa Rica,2013,Flood,7249,0
+Costa Rica,2013,Storm,878,0
+Djibouti,2004,Drought,1234,0
+Djibouti,2005,Storm,45,0
+Djibouti,2006,Flood,57,0
+Djibouti,2007,Storm,10,0
+Djibouti,2008,Drought,656,0
+Djibouti,2008,Earthquake,12,0
+Djibouti,2008,Flood,6,0
+Djibouti,2008,Storm,11,0
+Djibouti,2009,Flood,10,0
+Djibouti,2009,Storm,10,0
+Djibouti,2010,Drought,3,0
+Djibouti,2010,Storm,4,0
+Djibouti,2011,Drought,2,0
+Djibouti,2011,Storm,25,0
+El Salvador,2003,Drought,6000,0
+El Salvador,2003,Flood,3831,0
+El Salvador,2003,Storm,61,0
+El Salvador,2004,Drought,1000,0
+El Salvador,2004,Flood,2905,0
+El Salvador,2004,Storm,248,0
+El Salvador,2005,Earthquake,2316,0
+El Salvador,2005,Flood,153855,0
+El Salvador,2005,Storm,721,0
+El Salvador,2006,Earthquake,10166,0
+El Salvador,2006,Flood,11825,0
+El Salvador,2006,Storm,15570,0
+El Salvador,2007,Drought,0,0
+El Salvador,2007,Flood,16195,0
+El Salvador,2007,Storm,1707,0
+El Salvador,2008,Flood,10412,525
+El Salvador,2008,Storm,45077,0
+El Salvador,2009,Earthquake,310,0
+El Salvador,2009,Flood,5357,0
+El Salvador,2009,Storm,1272,0
+El Salvador,2010,Earthquake,200,0
+El Salvador,2010,Flood,44476,465940
+El Salvador,2010,Storm,1555,200
+El Salvador,2011,Earthquake,440,0
+El Salvador,2011,Flood,59578,9040141
+El Salvador,2011,Storm,12675,200
+El Salvador,2012,Flood,1635,0
+El Salvador,2012,Storm,1728,0
+El Salvador,2013,Flood,15,4000
+El Salvador,2013,Storm,7,0
+Ethiopia,2002,Drought,8735065,0
+Ethiopia,2002,Flood,17825,0
+Ethiopia,2002,Storm,2699,0
+Ethiopia,2003,Drought,13463121,0
+Ethiopia,2003,Flood,512163,0
+Ethiopia,2003,Storm,3500,0
+Ethiopia,2004,Drought,2588628,0
+Ethiopia,2004,Flood,43747,0
+Ethiopia,2005,Drought,3613017,0
+Ethiopia,2005,Flood,1038348,0
+Ethiopia,2006,Drought,7636343,0
+Ethiopia,2006,Earthquake,11000,0
+Ethiopia,2006,Flood,1755057,0
+Ethiopia,2006,Storm,75,0
+Ethiopia,2007,Drought,1510949,0
+Ethiopia,2007,Flood,1074715,0
+Ethiopia,2007,Storm,3770,0
+Ethiopia,2008,Drought,1194781,0
+Ethiopia,2008,Flood,39178,0
+Ethiopia,2008,Storm,14978,0
+Ethiopia,2009,Drought,192487,0
+Ethiopia,2009,Flood,7692,0
+Ethiopia,2009,Storm,50650,0
+Ethiopia,2010,Drought,10383544,0
+Ethiopia,2010,Flood,1959393,0
+Ethiopia,2011,Drought,4473519,0
+Ethiopia,2011,Flood,3009,0
+Ethiopia,2012,Drought,10020270,0
+Ethiopia,2012,Flood,89145,0
+Ethiopia,2013,Drought,5200153,0
+Ethiopia,2013,Flood,240992,0
+Ethiopia,2013,Storm,720,0
+Guatemala,2002,Flood,10703,0
+Guatemala,2002,Storm,1402,0
+Guatemala,2003,Flood,5281,39475
+Guatemala,2003,Storm,1759,15000
+Guatemala,2004,Drought,51502,0
+Guatemala,2004,Flood,22832,18000
+Guatemala,2004,Storm,8123,306000
+Guatemala,2005,Flood,358173,102567
+Guatemala,2005,Storm,385194,420000
+Guatemala,2006,Flood,31973,0
+Guatemala,2006,Storm,1476,0
+Guatemala,2007,Flood,107890,0
+Guatemala,2007,Storm,829,0
+Guatemala,2008,Flood,355488,4116750
+Guatemala,2008,Storm,4959,815000
+Guatemala,2009,Drought,41101,0
+Guatemala,2009,Earthquake,2577,0
+Guatemala,2009,Flood,56624,197000
+Guatemala,2009,Storm,18712,245000
+Guatemala,2010,Flood,284118,0
+Guatemala,2010,Storm,519948,278000
+Guatemala,2011,Earthquake,8184,0
+Guatemala,2011,Flood,156967,200000
+Guatemala,2011,Storm,51726,58000
+Guatemala,2012,Drought,1,1283000
+Guatemala,2012,Earthquake,2471184,0
+Guatemala,2012,Flood,29334,0
+Guatemala,2012,Storm,5607,650000
+Guatemala,2013,Drought,9297,1250000
+Guatemala,2013,Earthquake,1529,0
+Guatemala,2013,Flood,294238,500000
+Guatemala,2013,Storm,6563,345058
+Honduras,2002,Flood,119625,30774627
+Honduras,2002,Storm,4942,60285691
+Honduras,2003,Drought,185000,0
+Honduras,2003,Flood,1447,920
+Honduras,2003,Storm,153,20000
+Honduras,2004,Drought,43500,0
+Honduras,2004,Flood,0,0
+Honduras,2005,Drought,0,19445947
+Honduras,2005,Flood,42468,126869223.2
+Honduras,2005,Storm,4,3148420.15
+Honduras,2006,Flood,1903,90016
+Honduras,2006,Storm,824,0
+Honduras,2007,Drought,2500,0
+Honduras,2007,Flood,72980,13.158
+Honduras,2007,Storm,11412,0
+Honduras,2008,Flood,1028956,7000000
+Honduras,2008,Storm,3026,0
+Honduras,2009,Earthquake,1,200
+Honduras,2009,Flood,130,0
+Honduras,2010,Drought,496535,0
+Honduras,2010,Earthquake,880,0
+Honduras,2010,Flood,192056,500000
+Honduras,2010,Storm,100356,0
+Honduras,2011,Drought,0,0
+Honduras,2011,Flood,34280,0
+Honduras,2011,Storm,39534,0
+Honduras,2012,Flood,86809,0
+Honduras,2012,Storm,5206,0
+Honduras,2013,Earthquake,10,0
+Honduras,2013,Flood,407,0
+Indonesia,2002,Flood,68484,0
+Indonesia,2002,Storm,0,0
+Indonesia,2003,Drought,0,0
+Indonesia,2003,Earthquake,2300,0
+Indonesia,2003,Flood,289697,0
+Indonesia,2003,Storm,1807,0
+Indonesia,2004,Earthquake,4499971,0
+Indonesia,2004,Flood,796949,0
+Indonesia,2004,Storm,102625,0
+Indonesia,2005,Earthquake,0,0
+Indonesia,2005,Flood,59076,0
+Indonesia,2005,Storm,4997,0
+Indonesia,2006,Earthquake,1625,0
+Indonesia,2006,Flood,602292,0
+Indonesia,2006,Storm,8358,0
+Indonesia,2007,Earthquake,52,0
+Indonesia,2007,Flood,398671,0
+Indonesia,2007,Storm,33364,0
+Indonesia,2008,Flood,4894620,0
+Indonesia,2008,Storm,10023,0
+Indonesia,2009,Earthquake,13202,0
+Indonesia,2009,Flood,5120488,0
+Indonesia,2009,Storm,10224,0
+Indonesia,2010,Drought,172,0
+Indonesia,2010,Earthquake,471,0
+Indonesia,2010,Flood,9450,0
+Indonesia,2010,Storm,2846,0
+Indonesia,2011,Drought,0,0
+Indonesia,2011,Earthquake,0,0
+Indonesia,2011,Flood,4654,0
+Indonesia,2011,Storm,2136,0
+Indonesia,2012,Drought,233167,0
+Indonesia,2012,Earthquake,444,0
+Indonesia,2012,Flood,542450,0
+Indonesia,2012,Storm,41144,0
+Indonesia,2013,Drought,2223225,0
+Indonesia,2013,Earthquake,3106,0
+Indonesia,2013,Flood,1055235,0
+Indonesia,2013,Storm,45978,0
+Iran (Islamic Republic Of),2002,Drought,0,0
+Iran (Islamic Republic Of),2002,Earthquake,40841,0
+Iran (Islamic Republic Of),2002,Flood,0,0
+Iran (Islamic Republic Of),2003,Drought,0,0
+Iran (Islamic Republic Of),2003,Earthquake,297049,521666000
+Iran (Islamic Republic Of),2003,Flood,1370,838000
+Iran (Islamic Republic Of),2003,Storm,0,0
+Iran (Islamic Republic Of),2004,Drought,110000,0
+Iran (Islamic Republic Of),2004,Earthquake,0,0
+Iran (Islamic Republic Of),2004,Flood,4043,0
+Iran (Islamic Republic Of),2004,Storm,2500,240000
+Iran (Islamic Republic Of),2005,Earthquake,22022,0
+Iran (Islamic Republic Of),2005,Flood,13000,0
+Iran (Islamic Republic Of),2006,Drought,0,0
+Iran (Islamic Republic Of),2006,Earthquake,168494,42262000
+Iran (Islamic Republic Of),2006,Flood,2800,16000000
+Iran (Islamic Republic Of),2006,Storm,0,0
+Iran (Islamic Republic Of),2007,Earthquake,1000,0
+Iran (Islamic Republic Of),2007,Flood,10,0
+Iran (Islamic Republic Of),2007,Storm,160009,0
+Iran (Islamic Republic Of),2008,Earthquake,35,0
+Iran (Islamic Republic Of),2008,Flood,0,0
+Iran (Islamic Republic Of),2008,Storm,0,0
+Iran (Islamic Republic Of),2009,Drought,0,0
+Iran (Islamic Republic Of),2010,Drought,0,0
+Iran (Islamic Republic Of),2010,Flood,0,2000000000
+Iran (Islamic Republic Of),2011,Drought,0,0
+Jamaica,2002,Drought,106,20
+Jamaica,2002,Flood,1310592,17067719.7
+Jamaica,2003,Flood,227,0
+Jamaica,2004,Storm,452369,592519.6
+Jamaica,2005,Flood,1230,0
+Jamaica,2005,Storm,668295,288347.1
+Jamaica,2006,Flood,184,0
+Jamaica,2007,Storm,222067,18021880.5
+Jamaica,2008,Flood,483,0
+Jamaica,2008,Storm,454260,29142813.3
+Jamaica,2010,Flood,3173,0
+Jamaica,2010,Storm,517741,26188099.55
+Jamaica,2012,Storm,710452,20574666.24
+Kenya,2008,Drought,98000,0
+Kenya,2008,Flood,40038,0
+Kenya,2009,Drought,3466957,0
+Kenya,2009,Flood,187956,0
+Kenya,2010,Drought,129704,0
+Kenya,2010,Flood,1065,0
+Kenya,2011,Drought,3117493,0
+Kenya,2011,Storm,0,0
+Kenya,2012,Flood,1455,0
+Laos,2002,Flood,38555,0
+Laos,2003,Drought,29688,0
+Laos,2003,Flood,725,0
+Laos,2003,Storm,3364,0
+Laos,2004,Drought,2159,0
+Laos,2004,Flood,6321,0
+Laos,2004,Storm,26971,0
+Laos,2005,Drought,9603,0
+Laos,2005,Flood,170808,0
+Laos,2005,Storm,5577,0
+Laos,2006,Drought,41062,0
+Laos,2006,Flood,39040,0
+Laos,2006,Storm,522,2280000
+Laos,2007,Drought,40777,0
+Laos,2007,Flood,107774,160
+Laos,2007,Storm,2520,0
+Laos,2008,Drought,30562,0
+Laos,2008,Flood,876432,52300000
+Laos,2008,Storm,16435,0
+Laos,2009,Drought,304253,0
+Laos,2009,Flood,431083,0
+Laos,2009,Storm,174465,0
+Laos,2010,Drought,49822,0
+Laos,2010,Flood,186341,0
+Laos,2010,Storm,27514,0
+Laos,2011,Drought,7319,0
+Laos,2011,Flood,1265248,105942
+Laos,2011,Storm,295352,0
+Laos,2012,Drought,263,0
+Laos,2012,Flood,60459,0
+Laos,2012,Storm,6126,0
+Madagascar,2002,Storm,44651,0
+Madagascar,2003,Storm,229048,1772023.13
+Madagascar,2004,Storm,590413,71538413.71
+Madagascar,2005,Flood,136994,0
+Madagascar,2005,Storm,60552,23021846.72
+Madagascar,2006,Storm,53109,14033041.82
+Madagascar,2007,Storm,392844,112692636.6
+Madagascar,2008,Flood,15604,0
+Madagascar,2008,Storm,688968,64482670.87
+Madagascar,2009,Storm,0,3599495.38
+Madagascar,2010,Storm,476143,0
+Madagascar,2011,Storm,200291,20315199.14
+Madagascar,2012,Storm,664750,39422484.59
+Madagascar,2013,Storm,147435,0
+Mexico,2002,Drought,116000,0
+Mexico,2002,Flood,142522,0
+Mexico,2002,Storm,2480319,1025000000
+Mexico,2003,Drought,19871,0
+Mexico,2003,Flood,511338,0
+Mexico,2003,Storm,381212,0
+Mexico,2004,Drought,82582,0
+Mexico,2004,Flood,100456,0
+Mexico,2004,Storm,319863,0
+Mexico,2005,Drought,2796769,0
+Mexico,2005,Flood,2741855,0
+Mexico,2005,Storm,1610550,0
+Mexico,2006,Drought,1468065,0
+Mexico,2006,Flood,272303,0
+Mexico,2006,Storm,835723,0
+Mexico,2007,Drought,1000,0
+Mexico,2007,Earthquake,16,0
+Mexico,2007,Flood,1947393,3100000000
+Mexico,2007,Storm,1005243,0
+Mexico,2008,Drought,462140,0
+Mexico,2008,Flood,1420302,0
+Mexico,2008,Storm,1081174,0
+Mexico,2009,Drought,50847950,0
+Mexico,2009,Flood,926016,0
+Mexico,2009,Storm,222360,400000
+Mexico,2010,Drought,1200,0
+Mexico,2010,Earthquake,44604,0
+Mexico,2010,Flood,2056287,0
+Mexico,2010,Storm,7396156,0
+Mexico,2011,Drought,6000,0
+Mexico,2011,Flood,943424,0
+Mexico,2011,Storm,488719,0
+Mexico,2012,Drought,321714,0
+Mexico,2012,Earthquake,312772,0
+Mexico,2012,Flood,4775,0
+Mexico,2012,Storm,186356,0
+Mexico,2013,Drought,1892000,0
+Mexico,2013,Flood,432078,0
+Mexico,2013,Storm,1738768,0
+Morocco,2003,Flood,40,525000
+Morocco,2004,Earthquake,15238,0
+Morocco,2008,Flood,20004,0
+Morocco,2009,Flood,7000,120000
+Morocco,2010,Flood,0,25000
+Mozambique,2002,Drought,504018,0
+Mozambique,2002,Flood,513636,0
+Mozambique,2002,Storm,38677,0
+Mozambique,2003,Drought,1038388,0
+Mozambique,2003,Flood,525777,0
+Mozambique,2003,Storm,148466,0
+Mozambique,2004,Drought,661025,0
+Mozambique,2004,Flood,162298,0
+Mozambique,2004,Storm,393200,0
+Mozambique,2005,Drought,1363703,0
+Mozambique,2005,Flood,352815,0
+Mozambique,2005,Storm,37572,0
+Mozambique,2006,Drought,673065,0
+Mozambique,2006,Earthquake,1440,0
+Mozambique,2006,Flood,257195,0
+Mozambique,2006,Storm,13642,0
+Mozambique,2007,Drought,435060,0
+Mozambique,2007,Flood,1363279,0
+Mozambique,2007,Storm,264807,0
+Mozambique,2008,Drought,315975,0
+Mozambique,2008,Flood,522687,0
+Mozambique,2008,Storm,2394411,0
+Mozambique,2009,Drought,236949,0
+Mozambique,2009,Flood,36794,0
+Mozambique,2009,Storm,10609,0
+Mozambique,2010,Drought,86581,0
+Mozambique,2010,Flood,8770,0
+Mozambique,2010,Storm,7580,0
+Mozambique,2011,Flood,130176,0
+Mozambique,2011,Storm,11556,0
+Mozambique,2012,Drought,1950,0
+Mozambique,2012,Flood,30777,0
+Mozambique,2012,Storm,12848,0
+Nepal,2002,Flood,370439,0
+Nepal,2002,Storm,1620,0
+Nepal,2003,Drought,0,0
+Nepal,2003,Flood,334409,0
+Nepal,2003,Storm,54030,0
+Nepal,2004,Drought,310,0
+Nepal,2004,Flood,259595,0
+Nepal,2004,Storm,1,0
+Nepal,2005,Drought,80500,0
+Nepal,2005,Flood,11247,0
+Nepal,2005,Storm,750,0
+Nepal,2006,Drought,4247,0
+Nepal,2006,Flood,965,0
+Nepal,2006,Storm,0,0
+Nepal,2007,Flood,53100,0
+Nepal,2007,Storm,304,0
+Nepal,2008,Drought,206050,0
+Nepal,2008,Flood,179589,0
+Nepal,2008,Storm,4348,0
+Nepal,2009,Drought,300013,0
+Nepal,2009,Flood,18581,0
+Nepal,2009,Storm,10967,0
+Nepal,2010,Drought,105,0
+Nepal,2010,Flood,134592,0
+Nepal,2010,Storm,9098,0
+Nepal,2011,Earthquake,35057,0
+Nepal,2011,Flood,279864,0
+Nepal,2011,Storm,18649,0
+Nepal,2012,Earthquake,42,0
+Nepal,2012,Flood,450643,0
+Nepal,2012,Storm,9912,0
+Nepal,2013,Earthquake,98,0
+Nepal,2013,Flood,52879,0
+Nepal,2013,Storm,2667,0
+Nicaragua,2002,Flood,12198,0
+Nicaragua,2002,Storm,10,0
+Nicaragua,2003,Flood,1140,199123.85
+Nicaragua,2003,Storm,155060,0
+Nicaragua,2004,Drought,8736,0
+Nicaragua,2004,Earthquake,5,0
+Nicaragua,2004,Flood,607,0
+Nicaragua,2005,Drought,5800,0
+Nicaragua,2005,Flood,50489,0
+Nicaragua,2005,Storm,1901,0
+Nicaragua,2007,Drought,5000,0
+Nicaragua,2007,Flood,120370,0
+Nicaragua,2008,Drought,53000,0
+Nicaragua,2008,Flood,19240,5115.4
+Nicaragua,2008,Storm,268,20000
+Nicaragua,2009,Drought,7000,0
+Nicaragua,2009,Flood,30876,0
+Nicaragua,2009,Storm,305,0
+Nicaragua,2010,Drought,43050,0
+Nicaragua,2010,Flood,64410,0
+Nicaragua,2010,Storm,3876,0
+Nicaragua,2011,Drought,3700,0
+Nicaragua,2011,Flood,4316,0
+Nicaragua,2011,Storm,1469,0
+Nicaragua,2012,Drought,56925,0
+Nicaragua,2012,Flood,9774,42212
+Nicaragua,2012,Storm,271,0
+Nicaragua,2013,Drought,98037,0
+Nicaragua,2013,Flood,52040,0
+Nicaragua,2013,Storm,5556,5000
+Niger (the),2002,Drought,0,0
+Niger (the),2002,Flood,0,0
+Niger (the),2004,Drought,0,0
+Niger (the),2004,Flood,0,0
+Niger (the),2005,Drought,0,0
+Niger (the),2005,Flood,0,0
+Niger (the),2006,Drought,0,0
+Niger (the),2006,Flood,0,0
+Niger (the),2007,Drought,0,0
+Niger (the),2007,Flood,0,0
+Niger (the),2008,Drought,0,0
+Niger (the),2008,Flood,0,0
+Niger (the),2009,Drought,0,0
+Niger (the),2009,Flood,0,0
+Niger (the),2010,Drought,0,0
+Niger (the),2010,Flood,0,0
+Niger (the),2011,Drought,0,0
+Niger (the),2011,Flood,0,0
+Niger (the),2012,Drought,0,0
+Niger (the),2012,Flood,0,0
+Niger (the),2013,Drought,0,0
+Niger (the),2013,Flood,0,0
+Pakistan,2002,Earthquake,23385,0
+Pakistan,2002,Flood,40712,0
+Pakistan,2002,Storm,633,0
+Pakistan,2003,Drought,7757,0
+Pakistan,2003,Earthquake,21872,0
+Pakistan,2003,Flood,142295,0
+Pakistan,2003,Storm,882752,0
+Pakistan,2004,Drought,4617,0
+Pakistan,2004,Earthquake,11606,0
+Pakistan,2004,Flood,40532,0
+Pakistan,2004,Storm,2094,0
+Pakistan,2005,Drought,675,0
+Pakistan,2005,Earthquake,58523,0
+Pakistan,2005,Flood,137873,0
+Pakistan,2005,Storm,18474,0
+Pakistan,2006,Drought,4461,0
+Pakistan,2006,Earthquake,1193,0
+Pakistan,2006,Flood,300839,0
+Pakistan,2006,Storm,12129,0
+Pakistan,2007,Drought,4604,0
+Pakistan,2007,Earthquake,28084,0
+Pakistan,2007,Flood,2618,0
+Pakistan,2007,Storm,6819,0
+Pakistan,2008,Drought,4799,0
+Pakistan,2008,Earthquake,101300,0
+Pakistan,2008,Flood,25379,0
+Pakistan,2008,Storm,6253,0
+Pakistan,2009,Earthquake,231,0
+Pakistan,2009,Flood,24167,0
+Pakistan,2009,Storm,461,0
+Pakistan,2010,Earthquake,22659,0
+Pakistan,2010,Flood,136736,0
+Pakistan,2010,Storm,63735,0
+Pakistan,2011,Earthquake,25482,0
+Pakistan,2011,Flood,385947,0
+Pakistan,2011,Storm,8477,0
+Pakistan,2012,Earthquake,88383,0
+Pakistan,2012,Flood,317193,0
+Pakistan,2012,Storm,171696,0
+Pakistan,2013,Earthquake,114914,0
+Pakistan,2013,Flood,79639,0
+Pakistan,2013,Storm,64912,0
+Peru,2002,Earthquake,56,0
+Peru,2002,Flood,7530,80000
+Peru,2002,Storm,2218,8000
+Peru,2003,Earthquake,1211,0
+Peru,2003,Flood,5937,0
+Peru,2003,Storm,436,160000
+Peru,2004,Drought,0,0
+Peru,2004,Flood,9140,0
+Peru,2004,Storm,1711,0
+Peru,2005,Earthquake,762,0
+Peru,2005,Flood,312,0
+Peru,2005,Storm,2048,0
+Peru,2006,Drought,53558,0
+Peru,2006,Earthquake,5000,0
+Peru,2006,Flood,11178,0
+Peru,2006,Storm,783,0
+Peru,2007,Drought,0,0
+Peru,2007,Earthquake,606489,0
+Peru,2007,Flood,53759,0
+Peru,2007,Storm,43564,0
+Peru,2008,Earthquake,545,0
+Peru,2008,Flood,39079,0
+Peru,2008,Storm,971,0
+Peru,2009,Earthquake,1238,0
+Peru,2009,Flood,73531,0
+Peru,2009,Storm,3479,0
+Peru,2010,Flood,91422,0
+Peru,2010,Storm,192,0
+Peru,2011,Flood,7257,0
+Peru,2011,Storm,9576,0
+Peru,2012,Earthquake,1176,0
+Peru,2012,Flood,158274,10000
+Peru,2012,Storm,98,0
+Peru,2013,Earthquake,1800,0
+Peru,2013,Flood,222134,0
+Peru,2013,Storm,6399,0
+Sri Lanka,2002,Drought,159967,0
+Sri Lanka,2002,Flood,133440,0
+Sri Lanka,2002,Storm,7368,0
+Sri Lanka,2003,Drought,187424,0
+Sri Lanka,2003,Flood,517703,0
+Sri Lanka,2003,Storm,45589,0
+Sri Lanka,2004,Drought,2692319,0
+Sri Lanka,2004,Earthquake,1076240,0
+Sri Lanka,2004,Flood,243313,0
+Sri Lanka,2004,Storm,4742,0
+Sri Lanka,2005,Drought,31497,0
+Sri Lanka,2005,Flood,289472,0
+Sri Lanka,2005,Storm,18548,0
+Sri Lanka,2006,Drought,51904,0
+Sri Lanka,2006,Flood,348020,0
+Sri Lanka,2006,Storm,57880,0
+Sri Lanka,2007,Drought,107789,0
+Sri Lanka,2007,Earthquake,65,0
+Sri Lanka,2007,Flood,80949,0
+Sri Lanka,2007,Storm,59313,0
+Sri Lanka,2008,Drought,135292,0
+Sri Lanka,2008,Flood,483512,0
+Sri Lanka,2008,Storm,21692,0
+Sri Lanka,2009,Drought,235238,0
+Sri Lanka,2009,Earthquake,5,0
+Sri Lanka,2009,Flood,452237,0
+Sri Lanka,2009,Storm,36081,0
+Sri Lanka,2010,Drought,13395,0
+Sri Lanka,2010,Flood,1158167,0
+Sri Lanka,2010,Storm,13769,0
+Sri Lanka,2011,Drought,68459,0
+Sri Lanka,2011,Flood,2502148,0
+Sri Lanka,2011,Storm,43706,0
+Sri Lanka,2012,Drought,892383,0
+Sri Lanka,2012,Flood,159654,0
+Sri Lanka,2012,Storm,197446,0
+Sri Lanka,2013,Drought,78234,0
+Sri Lanka,2013,Flood,450635,0
+Sri Lanka,2013,Storm,43312,0
+Viet Nam,2005,Storm,98,0
+Viet Nam,2006,Flood,31675,0
+Viet Nam,2007,Flood,2388454,0
+Viet Nam,2007,Storm,405457,0
+Viet Nam,2008,Flood,209973,0
+Viet Nam,2008,Storm,0,0
+Viet Nam,2009,Flood,0,0
+Viet Nam,2009,Storm,0,0
+Viet Nam,2010,Storm,0,0
+Yemen,2004,Earthquake,3,0
+Yemen,2004,Storm,12,0
+Yemen,2005,Flood,0,0
+Yemen,2005,Storm,39,0
+Yemen,2007,Flood,43,0
+Yemen,2007,Storm,190,0
+Yemen,2008,Flood,5539,0
+Yemen,2008,Storm,33,0
+Yemen,2010,Earthquake,6,0
+Yemen,2010,Flood,7,0
+Yemen,2011,Storm,2,0
+Yemen,2013,Flood,6,0

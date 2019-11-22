@@ -27,6 +27,7 @@ library(boot)
 library(shinyjs)
 library(rowr)
 library(Kendall)
+library(tidyr)
 # library(ExtDist)
 
 
@@ -41,11 +42,13 @@ options(scipen = '999')
 ##########
 
 # create a countries vector 
-countries <- c('','Sri Lanka', 'South Africa', 'Philippines', 'Mozambique')
+countries <- c("Afghanistan","Algeria","Angola","Azerbaijan","Bangladesh", "Bosnia and Herzegovina", "Bulgaria", "Costa Rica","Djibouti", "El Salvador",
+               "Ethiopia", "Guatemala", "Haiti","Honduras", "India","Indonesia",  "Iran (Islamic Republic Of)", "Jamaica","Kenya","Kyrgyzstan", "Laos",                     
+                "Madagascar","Mexico", "Morocco","Mozambique","Myanmar", "Namibia","Nepal", "Nicaragua", "Niger (the)" ,"Nigeria", "Pakistan", "Peru","Philippines (the)",
+               "Romania", "Somalia", "South Africa","Sri Lanka","Tajikistan","Viet Nam", "Yemen")
 
 # create a vector of archetype data
-archetypes <- c('',
-                'High risk middle income country, exposed to storms, floods, and earthquakes',
+archetypes <- c('High risk middle income country, exposed to storms, floods, and earthquakes',
                 'Middle income country, exposed to floods',
                 'Upper-middle income country, exposed to storms, floods, and earthquakes',
                 'Drought-prone low income country',
@@ -53,7 +56,7 @@ archetypes <- c('',
                 'Low income country, exposed to droughts, floods, and storms')
 
 # create a vector for scaling choices
-scaled_data <- c('No scale','Population', 'GDP', 'Inflation')
+scaled_data <- c('No scale','population', 'gdp', 'inflation')
 
 # define a vector of countries and currencies to be used in the dropdown (add more later)
 currencies <- c('USD', 'Other')
@@ -69,40 +72,84 @@ advanced_parametric <- c('Log normal', 'Beta', 'Gamma',
                          'Frechet', 'Gumbel', 'Weibull',
                          'Pareto')
 
+
+###########
+# read in country data
+###########
+
+# emdat
+emdat_data <- read.csv('data/Countries/emdat_country.csv', stringsAsFactors = FALSE)
+
+# add column for data origin
+emdat_data$origin <- 'EMDAT'
+
+# desinventar
+des_data <- read.csv('data/Countries/desinventer_country.csv', stringsAsFactors = FALSE)
+
+# add column for data origin
+des_data$origin <- 'DesInventar'
+
+# combine data
+country_data <- rbind(emdat_data, des_data)
+rm(emdat_data, des_data)
+# rename columns
+names(country_data) <- c('country', 'year', 'peril', 'affected', 'damage', 'origin')
+
+# melt data to collapse damage type
+country_data <- melt(country_data, id.vars = c('country', 'year', 'peril', 'origin'))
+
+names(country_data)[5] <- 'damage_type'
+
 ##########
-# read in archetyp data 
+# determing best source based on years available
+##########
+
+# split data into affected and total damage
+cost_data <- country_data[country_data$damage_type == 'affected',]
+damage_data <-  country_data[country_data$damage_type == 'damage',]
+rm(country_data)
+
+# get best data
+cost_data <- get_best_data(cost_data)
+damage_data <- get_best_data(damage_data)
+
+# get frequency data
+cost_freq <- expand_data(cost_data)
+damage_freq <- expand_data(damage_data)
+cost_freq <- fill_na(cost_freq)
+damage_freq <- fill_na(damage_freq)
+
+# combine data
+frequency_data <- rbind(cost_freq, damage_freq)
+country_data <- rbind(damage_data, cost_data)
+rm(cost_freq, damage_freq, cost_data, damage_data)
+
+
+##########
+# read in scaling data
+##########
+population_data <- read.csv('data/Scale/population_data.csv')
+gdp_data <- read.csv('data/Scale/gdp.csv')
+inflation_data <- read.csv('data/Scale/inflation.csv')
+
+# join data 
+scale_data <- full_join(population_data, inflation_data)
+scale_data <- full_join(scale_data, gdp_data)
+
+
+##########
+# read in archetyp data
 #########
 
 # get all archetype cost data into one data frame
 archetype_cost_data <- read_in_archetype_cost_data('cost_data', archetype_names = archetypes)
+names(archetype_cost_data) <- c('archetype', 'year', 'peril', 'outcome', 'data_type')
 
 # ge all archetype frequency data into data frame
 archetype_freq_data <- read_in_archetype_freq_data('freq_data', archetype_names = archetypes)
+names(archetype_freq_data) <- c('year', 'peril', 'count','archetype', 'data_type')
 
-# comibe archetype data
-archetype_data <- plyr::rbind.fill(archetype_cost_data,
-                                   archetype_freq_data)
 
-rm(archetype_cost_data, archetype_freq_data)
-
-##########
-# Read in country data - combines cost, loss, frequency for cost and loss, and population into one dataframe
-##########
-sri_lanka_data <- read_in_country_data('Sri Lanka')
-mozambique_data <- read_in_country_data('Mozambique')
-south_africa_data <- read_in_country_data('South Africa')
-philippines_data <- read_in_country_data('Philippines')
-
-# combine data 
-country_data <- rbind(sri_lanka_data,
-                      mozambique_data,
-                      south_africa_data,
-                      philippines_data)
-
-rm(sri_lanka_data,
-   mozambique_data,
-   south_africa_data,
-   philippines_data)
 ####################
 # create welcome modal amd tab maker
 ###################
