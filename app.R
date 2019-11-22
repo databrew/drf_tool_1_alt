@@ -620,7 +620,7 @@ server <- function(input, output, session) {
     if(is.null(input$country)){
       NULL
     } else {
-     
+      message('what about here')
       # store input country
       country_name <- input$country
       
@@ -668,10 +668,11 @@ server <- function(input, output, session) {
   
   # create reactive object for country_data frequency
   country_frequency <- reactive({
-    if(is.null(selected_country)){
+    if(is.null(selected_country())){
       NULL
     } else {
       country_name <- input$country
+      best_data <- input$data_source
       freq_data <- frequency_data[frequency_data$country == country_name,]
       return(freq_data)
     }
@@ -691,7 +692,7 @@ server <- function(input, output, session) {
   
   # create reactive object for country_data frequency
   archetype_frequency <- reactive({
-    if(is.null(selected_archetype)){
+    if(is.null(selected_archetype())){
       NULL
     } else {
       archetype <- input$archetype
@@ -730,12 +731,12 @@ server <- function(input, output, session) {
   # source('global.R')
   # country_name <- 'Sri Lanka'
   # country_data <- country_data[country_data$country == country_name,]
-  # country_frequency <- freq_data
+  # country_frequency <- frequency_data
   # country_frequency <- country_frequency[country_frequency$country == country_name,]
-  # best_data  = 'EMDAT'
+  # best_source  = 'EMDAT'
   # 
   prepare_loss_data <- reactive({
-    if(is.null(input$data_source) | is.null(country_frequency)){
+    if(is.null(input$data_source) | is.null(country_frequency())){
       return(NULL)
     } else {
      best_source <- input$data_source
@@ -763,11 +764,13 @@ server <- function(input, output, session) {
   
   prepare_scale_data <- reactive({
     if(is.null(input$country)){
-      return(NULL)
+      NULL
     } else {
       country_name <- input$country
       scale_data <- scale_data[scale_data$Country == country_name,]
       names(scale_data) <- c('country', 'year', 'population', 'inflation', 'gdp')
+      return(scale_data)
+      message(head(scale_data), 'here is caled')
     }
   })
   
@@ -936,6 +939,19 @@ server <- function(input, output, session) {
     }
   })
  
+  # create a uioutput for peril type  - this is dependent on the country selected.
+  output$peril_type_ui <- renderUI({
+    # get country data
+    data  <- selected_country()
+    temp <- data
+    # get the peril names for choices in peril input
+    peril_names <- as.character(unique(temp$Peril))
+    checkboxGroupInput('peril_type', 
+                       'Choose a peril',
+                       choices = peril_names,
+                       selected = peril_names,
+                       inline = TRUE)
+  })
 
   # # 
   # data <- country_data
@@ -1132,7 +1148,7 @@ server <- function(input, output, session) {
   ################
   # Data tab
   ################
-  
+  # the problem here is that there are some reactives we are not nullifying out and need to spread data for frequency 
   # create a data table  
   output$raw_data_table <- DT::renderDataTable({
     if(is.null(prepare_loss_data()) & is.null(prepare_cost_data()) | is.null(input$damage_type)){
@@ -1141,9 +1157,9 @@ server <- function(input, output, session) {
       min_obs = 4
       if(input$damage_type == 'Total damage'){
         data <- prepare_loss_data()
-
+        message(head(data), 'for tabl')
         if(input$view_data != 'Frequency'){
-          loss_data <- data[[2]]
+          loss_data <- data[[1]]
           num_obs <- nrow(loss_data)
           if(num_obs < min_obs){
             loss_data <- data_frame('Not enough observations to run simulations')
@@ -1153,13 +1169,15 @@ server <- function(input, output, session) {
             datatable(loss_data, options = list(dom='t',ordering=F))
           }
         } else {
-          freq_data <- data[[1]]
+          freq_data <- data[[2]]
           num_obs <- nrow(freq_data)
           if(num_obs < min_obs){
             freq_data <- data_frame('Not enough observations to run simulations')
             names(freq_data) <- NULL
             datatable(freq_data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
           } else {
+            # spread data
+            freq_data <- spread(freq_data, key = 'peril', value = 'value')
             datatable(freq_data, options = list(dom='t',ordering=F))
           }
         }
@@ -1169,7 +1187,7 @@ server <- function(input, output, session) {
         data <- prepare_cost_data()
         
         if(input$view_data != 'Frequency'){
-          loss_data <- data[[2]]
+          loss_data <- data[[1]]
           if(num_obs < min_obs){
             loss_data <- data_frame('Not enough observations to run simulations')
             names(loss_data) <- NULL
@@ -1178,7 +1196,7 @@ server <- function(input, output, session) {
             datatable(loss_data, options = list(dom='t',ordering=F))
           }
         } else {
-          freq_data <- data[[1]]
+          freq_data <- data[[2]]
           if(num_obs < min_obs){
             freq_data <- data_frame('Not enough observations to run simulations')
             names(freq_data) <- NULL
@@ -1198,20 +1216,21 @@ server <- function(input, output, session) {
   # gdp 4th, inflation 5th
   output$raw_scaled_data <- renderDataTable({
     if(is.null(prepare_scale_data())){
-      return(NULL)
-    }
-    if(input$data_type == 'Archetype'){
-      data <- data_frame('Scaling data unavailable for data selected')
-      names(data) <- NULL
-      datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
+      message('what is this')
+      NULL
     } else {
+      if(input$data_type == 'Archetype'){
+        data <- data_frame('Scaling data unavailable for data selected')
+        names(data) <- NULL
+        datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
+      } else {
+        data <- prepare_scale_data()
+       
+        datatable(data, options = list(dom='t',ordering=F))
       
-      data <- prepare_scale_data()
-      datatable(data, options = list(dom='t',ordering=F))
-      
-      
+      }
     }
- 
+    
 })
   
   
