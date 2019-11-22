@@ -806,10 +806,10 @@ server <- function(input, output, session) {
     }
     
   })
-  # 
-  data <- country_data
-  data <- data[data$Country == 'Sri Lanka',]
-  data <- data[data$data_type == 'Loss' | data$data_type == 'loss_freq',]
+  # # 
+  # data <- country_data
+  # data <- data[data$Country == 'Sri Lanka',]
+  # data <- data[data$data_type == 'Loss' | data$data_type == 'loss_freq',]
 
   # reactive object to scale data
   scale_data <- reactive({
