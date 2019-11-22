@@ -450,27 +450,27 @@ server <- function(input, output, session) {
   
   # Observe the forward/back clicks, and update rv$page accordingly
   observeEvent(input$prevBtn, {
-    # Do the time calculations
-    tt <- tab_time()
-    ok <- not_too_fast(old_time = tt,
-                       new_time = Sys.time())
-    if(ok){
+    # # Do the time calculations
+    # tt <- tab_time()
+    # ok <- not_too_fast(old_time = tt,
+    #                    new_time = Sys.time())
+    # if(ok){
       # Update rv$page
       navPage(-1)
-      tab_time(Sys.time())
-    }
+      # tab_time(Sys.time())
+    # }
     
   })
   observeEvent(input$nextBtn, {
     # Do the time calculations
-    tt <- tab_time()
-    ok <- not_too_fast(old_time = tt,
-                       new_time = Sys.time())
-    if(ok){
+    # tt <- tab_time()
+    # ok <- not_too_fast(old_time = tt,
+    #                    new_time = Sys.time())
+    # if(ok){
       # Update rv$page
       navPage(1)
-      tab_time(Sys.time())
-    }
+      # tab_time(Sys.time())
+    # }
   })
   
   # Observe any changes to rv$page, and update the selected tab accordingly

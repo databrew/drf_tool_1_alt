@@ -229,6 +229,7 @@ not_too_fast <- function(old_time, new_time){
   if(time_difference > 0.5){
     TRUE
   } else {
+    message('too fast!')
     FALSE
   }
 }
