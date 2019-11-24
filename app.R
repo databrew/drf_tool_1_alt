@@ -90,7 +90,7 @@ body <- dashboardBody(
                        column(3,
                               uiOutput('code_ui'))
                      ),
-                     fluidRow(uiOutput('country')),
+                     fluidRow(uiOutput('country_ui')),
                      fluidRow(uiOutput('data_source_ui')),
                     
                    )),
@@ -184,7 +184,10 @@ body <- dashboardBody(
                               
                     
                      fluidRow(column(12,
-                                     uiOutput('prob_dis')))
+                                     uiOutput('prob_dis_flood'),
+                                     uiOutput('prob_dis_earthquake'),
+                                     uiOutput('prob_dis_drought'),
+                                     uiOutput('prob_dis_storm')))
                     
                               )
                    )),
@@ -345,7 +348,7 @@ server <- function(input, output, session) {
       paste("data-", Sys.Date(), ".csv", sep="")
     },
     content = function(file) {
-      the_data <- selected_damage_type()
+      the_data <- selected_damage_type() # ASK JOE about this
       write.csv(the_data, file)
     }
   )
@@ -505,18 +508,19 @@ server <- function(input, output, session) {
   })
   
   
-  output$country <- renderUI({
+  output$country_ui <- renderUI({
     
     if(input$data_type == 'Country'){
       selectInput("country", 
                   "Choose a country",
                   choices = countries,
-                  selected = 'Sri Lanka')
+                  selected = countries[1])
     } else {
       selectInput("archetype", 
                   "Choose an archetype",
                   choices = archetypes,
                   selected = "Drought-prone low income country")
+      message('this is archetype input')
     }
     
   })
@@ -536,8 +540,6 @@ server <- function(input, output, session) {
                    selected = 'Total damage',
                    inline = TRUE)
     }
-    
-    
     
   })
   
@@ -616,11 +618,9 @@ server <- function(input, output, session) {
   
   # get a reactive object that selects country data (list) based on imput
   selected_country <- reactive({
-    
     if(is.null(input$country)){
       NULL
     } else {
-      message('what about here')
       # store input country
       country_name <- input$country
       
@@ -656,7 +656,6 @@ server <- function(input, output, session) {
         }
       }
       
-      
       return(country_data)
     
     
@@ -680,8 +679,9 @@ server <- function(input, output, session) {
   
   # create a reactive object for archetypes 
   selected_archetype <- reactive({
+
     if(is.null(input$archetype)){
-      return(NULL)
+       NULL
     } else {
       archetype <- input$archetype
       archetype_data <- archetype_cost_data[archetype_cost_data == archetype,]
@@ -703,7 +703,7 @@ server <- function(input, output, session) {
   
   output$data_source_ui <- renderUI({
     if(is.null(input$data_type) | is.null(selected_country())){
-      return(NULL)
+      NULL
     } else {
       if(input$data_type == 'Archetype'){
         return(NULL)
@@ -728,16 +728,10 @@ server <- function(input, output, session) {
     }
   })
   
-  # source('global.R')
-  # country_name <- 'Sri Lanka'
-  # country_data <- country_data[country_data$country == country_name,]
-  # country_frequency <- frequency_data
-  # country_frequency <- country_frequency[country_frequency$country == country_name,]
-  # best_source  = 'EMDAT'
-  # 
+
   prepare_loss_data <- reactive({
     if(is.null(input$data_source) | is.null(country_frequency())){
-      return(NULL)
+      NULL
     } else {
      best_source <- input$data_source
      country_data <- selected_country()
@@ -756,11 +750,12 @@ server <- function(input, output, session) {
      data[[1]] <- country_data
      data[[2]] <- country_frequency
      
+     
      return(data)
     }
     
   })
-  
+
   
   prepare_scale_data <- reactive({
     if(is.null(input$country)){
@@ -770,7 +765,6 @@ server <- function(input, output, session) {
       scale_data <- scale_data[scale_data$Country == country_name,]
       names(scale_data) <- c('country', 'year', 'population', 'inflation', 'gdp')
       return(scale_data)
-      message(head(scale_data), 'here is caled')
     }
   })
   
@@ -795,13 +789,12 @@ server <- function(input, output, session) {
   
   # create a uioutput for when data type == cost per person
   output$cost_per_person_ui <- renderUI({
-    if(is.null(input$damage_type) | is.null(input$currency)){
-      return(NULL)
+    if(is.null(input$damage_type)){
+      NULL
     } else {
       if(input$damage_type == 'Total damage') {
-        return(NULL)
+        NULL
       } else {
-        message('here')
         numericInput('cost_per_person',
                      'Enter cost per person USD', 
                      min = 1,
@@ -816,10 +809,10 @@ server <- function(input, output, session) {
   # create uioutput code for cases where the user choses a currency other than USD
   output$code_ui <- renderUI({
     if(is.null(input$damage_type) | is.null(input$currency)){
-      return(NULL)
+      NULL
     } else {
       if(input$currency == 'USD' | input$damage_type == 'Total damage'){
-        return(NULL)
+        NULL
       } else {
         selectInput('code',
                     'Choose a currency code', 
@@ -835,10 +828,10 @@ server <- function(input, output, session) {
   # create uioutput rate for cases where the user choses a currency other than USD
   output$rate_ui <- renderUI({
     if(is.null(input$damage_type) | is.null(input$currency)) {
-      return(NULL)
+      NULL
     } else {
       if(input$currency == 'USD' | input$damage_type == 'Total damage'){
-        return(NULL)
+        NULL
       } else {
         
         numericInput('rate',
@@ -860,15 +853,17 @@ server <- function(input, output, session) {
   # country_frequency <- country_frequency[country_frequency$country == country_name,]
   
   prepare_cost_data <- reactive({
-    if(is.null(input$data_source) | is.null(country_frequency) | is.null(input$rate) | is.null(input$code) | is.null(input$cost_per_person) |is.null(input$currencies)){
-      return(NULL)
+    if(is.null(input$data_source) | is.null(country_frequency()) | is.null(input$damage_type)){
+      NULL
     } else {
       best_source <- input$data_source
-      rate <- input$rate
-      code <- input$code
-      cost <- input$cost_per_person
+      # rate <- input$rate
+      # code <- input$code
+      # cost <- input$cost_per_person
+      cost = 50
       country_data <- selected_country()
       country_frequency <- country_frequency()
+     
       
       # subset data by best source
       country_data <- country_data[country_data$origin == best_source & country_data$damage_type == 'affected',]
@@ -878,12 +873,14 @@ server <- function(input, output, session) {
       country_data$origin <- country_data$damage_type <- country_data$best_data <- NULL
       country_frequency$origin <- country_frequency$damage_type <-  NULL
       
+   
       country_data$value <- country_data$value*cost
-      
+
       # store in list
       data <- list()
       data[[1]] <- country_data
       data[[2]] <- country_frequency
+      
       
       return(data)
     }
@@ -895,78 +892,92 @@ server <- function(input, output, session) {
   # archetype_frequency <- archetype_freq_data
   # archetype_frequency <- archetype_frequency[archetype_frequency$archetype == archetype_name,]
   
-  prepare_archetype_data <- reactive({
-    if(is.null(input$data_source) | is.null(archetype_frequency) | is.null(input$rate) | is.null(input$code) | is.null(input$cost_per_person) |is.null(input$currencies)){
-      return(NULL)
-    } else {
-      best_source <- input$data_source
-      rate <- input$rate
-      code <- input$code
-      cost <- input$cost_per_person
-      archetype_data <- selected_archetype()
-      archetype_frequency <- archetype_frequency()
-
-      
-      # remove emdat and 
-      archetype_frequency$data_type <- archetype_data$data_type <-  NULL
-      
-      archetype_data$outcome <- archetype_data$outcome*cost
-      
-      # store in list
-      data <- list()
-      data[[1]] <- archetype_data
-      data[[2]] <- archetype_frequency
-      
-      return(data)
-    }
-    
-  })
+  # prepare_archetype_data <- reactive({
+  #   if(is.null(input$data_source) | is.null(country_frequency()) | is.null(input$damage_type)){
+  #     NULL
+  #   } else {
+  #     best_source <- input$data_source
+  #     # rate <- input$rate
+  #     # code <- input$code
+  #     # cost <- input$cost_per_person
+  #     archetype_data <- selected_archetype()
+  #     archetype_frequency <- archetype_frequency()
+  #     cost = 50
+  #     
+  #     # remove emdat and 
+  #     archetype_frequency$data_type <- archetype_data$data_type <-  NULL
+  #     
+  #     archetype_data$outcome <- archetype_data$outcome*cost
+  #     
+  #     message(head(archetype_data), 'this is good')
+  #     
+  #     # store in list
+  #     data <- list()
+  #     data[[1]] <- archetype_data
+  #     data[[2]] <- archetype_frequency
+  #     
+  #     return(data)
+  #   }
+  #   
+  # })
+  # 
   
 
   # render ui for scale, only if advance
   output$select_scale_ui <- renderUI({
-    if(input$advanced == 'Basic' | input$data_type == 'Archetype' | is.null(prepare_scale_data())){
+    if(input$data_type == 'Archetype' | is.null(prepare_scale_data())){
       NULL
     } else {
-      data <- prepare_scale_data()
-      scaled_choices <- names(data)[names(data) %in% scaled_data]
-      scaled_choices <- Hmisc::capitalize(c(scaled_choices, ' No scaling'))
-      message(scaled_choices)
-      selectInput('select_scale', 
-                  'Choose from preloaded scaling data',
-                  choices = scaled_choices,
-                  selected = scaled_choices[1])
+      if(input$advanced == 'Basic'){
+        selectInput('select_scale', 
+                    'Scaled data by population',
+                    choices = 'Population',
+                    selected = 'Population')
+      } else {
+        data <- prepare_scale_data()
+        scaled_choices <- names(data)[names(data) %in% scaled_data]
+        scaled_choices <- Hmisc::capitalize(c(scaled_choices, ' No scaling'))
+        selectInput('select_scale', 
+                    'Choose from preloaded scaling data',
+                    choices = scaled_choices,
+                    selected = scaled_choices[1])
+      }
+     
     }
   })
+  
  
   # create a uioutput for peril type  - this is dependent on the country selected.
   output$peril_type_ui <- renderUI({
-    # get country data
-    data  <- selected_country()
-    temp <- data
-    # get the peril names for choices in peril input
-    peril_names <- as.character(unique(temp$Peril))
-    checkboxGroupInput('peril_type', 
-                       'Choose a peril',
-                       choices = peril_names,
-                       selected = peril_names,
-                       inline = TRUE)
+    if(is.null(selected_country())){
+      NULL
+    } else {
+      # get country data
+      data  <- selected_country()
+      temp <- data
+      # get the peril names for choices in peril input
+      peril_names <- as.character(unique(temp$Peril))
+      checkboxGroupInput('peril_type', 
+                         'Choose a peril',
+                         choices = peril_names,
+                         selected = peril_names,
+                         inline = TRUE)
+    }
+    
   })
 
-  # # 
-  # data <- country_data
-  # data <- data[data$Country == 'Sri Lanka',]
-  # data <- data[data$data_type == 'Loss' | data$data_type == 'loss_freq',]
-  # scale_data <- scale_data[scale_data$Country == 'Sri Lanka',]
-  # names(scale_data) <- c('country', 'year', 'population', 'inflation', 'gdp')
-  # names(scale_data) <- c('')
+ 
   # reactive object to scale data
   scale_loss_data <- reactive({
-    if(is.null(prepare_loss_data()) | is.null(input$select_scale) | is.null(input$prepare_scale_data)){
-      return(NULL)
+    
+    if(is.null(prepare_loss_data()) | is.null(input$select_scale) | is.null(input$prepare_scale_data())){
+      NULL
     } else {
+      message(head(combined_data), ' THIS IS COM DAT')
+      
       data <- prepare_loss_data()
       scale_data <- prepare_scale_data()
+      message('her we aerfs dfsl df sdfs')
       
     }
     
@@ -1002,9 +1013,10 @@ server <- function(input, output, session) {
     
   })
   
+  
   scale_cost_data <- reactive({
-    if(is.null(prepare_loss_data()) | is.null(input$select_scale) | is.null(input$prepare_cost_data)){
-      return(NULL)
+    if(is.null(prepare_loss_data()) | is.null(input$select_scale) | is.null(input$prepare_cost_data())){
+      NULL
     } else {
       data <- prepare_cost_data()
       scale_data <- prepare_scale_data()
@@ -1081,7 +1093,6 @@ server <- function(input, output, session) {
     } else {
       peril_names <- execute_trend_test()
       peril_names <- peril_names$peril[peril_names$p_value < 0.05 & !is.na(peril_names$p_value)]
-      message(peril_names)
       if(identical(peril_names, character(0))){
         selectInput('trend_test', 'Trend test results', choices = 'All perils had no significant trend or not enough observations')
       } else {
@@ -1090,6 +1101,7 @@ server <- function(input, output, session) {
       }
     }
   })
+  
     
   
   
@@ -1098,7 +1110,7 @@ server <- function(input, output, session) {
   # trend_perils$p_value[trend_perils$peril == 'Storm'] <- 0.03
   
   correct_trend <- reactive({
-    if(is.null(prepare_loss_data()) | is.null(prepare_cost_data()) | is.null(input$trend_test) | is.null(execute_trend_test())){
+    if((is.null(prepare_loss_data()) & is.null(prepare_cost_data())) | is.null(input$trend_test) | is.null(execute_trend_test())){
       return(NULL)
     } else {
 
@@ -1110,7 +1122,6 @@ server <- function(input, output, session) {
       }    
       
       if(input$advanced == 'Basic'){
-        message('here is basic data')
         return(data)
       } else {
         if(input$trend_test  == 'No'){
@@ -1143,6 +1154,8 @@ server <- function(input, output, session) {
     }
     
   })
+
+  
   
   
   ################
@@ -1157,7 +1170,6 @@ server <- function(input, output, session) {
       min_obs = 4
       if(input$damage_type == 'Total damage'){
         data <- prepare_loss_data()
-        message(head(data), 'for tabl')
         if(input$view_data != 'Frequency'){
           loss_data <- data[[1]]
           num_obs <- nrow(loss_data)
@@ -1181,13 +1193,14 @@ server <- function(input, output, session) {
             datatable(freq_data, options = list(dom='t',ordering=F))
           }
         }
-       
+
       } else {
-       
+
         data <- prepare_cost_data()
-        
         if(input$view_data != 'Frequency'){
           loss_data <- data[[1]]
+          min_obs = 4
+          num_obs <- nrow(loss_data)
           if(num_obs < min_obs){
             loss_data <- data_frame('Not enough observations to run simulations')
             names(loss_data) <- NULL
@@ -1196,7 +1209,9 @@ server <- function(input, output, session) {
             datatable(loss_data, options = list(dom='t',ordering=F))
           }
         } else {
+          min_obs = 4
           freq_data <- data[[2]]
+          num_obs <- nrow(freq_data)
           if(num_obs < min_obs){
             freq_data <- data_frame('Not enough observations to run simulations')
             names(freq_data) <- NULL
@@ -1205,18 +1220,19 @@ server <- function(input, output, session) {
             datatable(freq_data, options = list(dom='t',ordering=F))
           }
         }
-        
+
       }
-      
+
     }
-    
+
   })
+  
+  
   
   # output for scaling data if available - the 3rd, 4th, and 5th index in the data list are scaling data. Population is 3rd
   # gdp 4th, inflation 5th
   output$raw_scaled_data <- renderDataTable({
     if(is.null(prepare_scale_data())){
-      message('what is this')
       NULL
     } else {
       if(input$data_type == 'Archetype'){
@@ -1225,308 +1241,394 @@ server <- function(input, output, session) {
         datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
       } else {
         data <- prepare_scale_data()
-       
+        
         datatable(data, options = list(dom='t',ordering=F))
-      
+        
       }
     }
     
-})
+  })
+  
+
+  data <- readRDS('~/Desktop/data.rda')
+  
+  fit_dis <- reactive({
+    if(is.null(correct_trend())){
+      NULL
+    } else {
+      data <- correct_trend()
+      out <- fit_distribution(data)
+      return(out)
+    }
+    
+  })
+  
+  # make a reactive object that grabs the name of the best distribution - this is the default for basic users. Advanced users can choose a new one
+  get_best_dis <- reactive({
+    if(is.null(fit_dis())){
+      return(NULL)
+    } else {
+      # get aic_mle_data
+      dat <- fit_dis()
+      peril_names <- unique(dat$peril)
+      data_list <- list()
+      for(i in 1:length(peril_names)){
+        peril_name <- peril_names[i]
+        sub_dat <- dat[dat$peril == peril_name,]
+        aic_min_ind <- which(sub_dat$AIC == min(sub_dat$AIC, na.rm = T))
+        sub_dat <- sub_dat[aic_min_ind,]
+        sub_dat$best_dis <- sub_dat$Distribution
+        data_list[[i]] <- sub_dat
+        
+      }
+      
+      out <- do.call('rbind', data_list)
+      return(out)
+  
+    }
+  })
   
   
+  # ui for prob_dis - right now the output is dependent on the best distribution
+  # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
+  output$prob_dis_drought_ui <- renderUI({
+    gg <- get_best_dis()
+    if(is.null(gg)){
+      return(NULL)
+    } else {
+      # get aic_mle_data
+      dat <- get_best_dis()
+      
+      if(input$advanced == 'Advanced'){
+        selectInput('prob_dis_drought', 'Choose distribution (default is best fit)',
+                    choices = advanced_parametric,
+                    selected = best_dis)
+      } else {
+        selectInput('prob_dis_drought', 'Default is best fit',
+                    choices = best_dis,
+                    selected = best_dis)
+      }
+    }
+    
+  })
   
-  # # Log normal ci
+  utput$prob_dis_earthquake_ui <- renderUI({
+    gg <- get_best_dis()
+    if(is.null(gg)){
+      return(NULL)
+    } else {
+      # get aic_mle_data
+      dat <- get_best_dis()
+      
+      if(input$advanced == 'Advanced'){
+        selectInput('prob_dis_earthquake', 'Choose distribution (default is best fit)',
+                    choices = advanced_parametric,
+                    selected = best_dis)
+      } else {
+        selectInput('prob_dis_earthquake', 'Default is best fit',
+                    choices = best_dis,
+                    selected = best_dis)
+      }
+    }
+    
+  })
+  
+  utput$prob_dis_flood_ui <- renderUI({
+    gg <- get_best_dis()
+    if(is.null(gg)){
+      return(NULL)
+    } else {
+      # get aic_mle_data
+      dat <- get_best_dis()
+      
+      if(input$advanced == 'Advanced'){
+        selectInput('prob_dis_flood', 'Choose distribution (default is best fit)',
+                    choices = advanced_parametric,
+                    selected = best_dis)
+      } else {
+        selectInput('prob_dis_flood', 'Default is best fit',
+                    choices = best_dis,
+                    selected = best_dis)
+      }
+    }
+    
+  })
+  
+  utput$prob_dis_storm_ui <- renderUI({
+    gg <- get_best_dis()
+    if(is.null(gg)){
+      return(NULL)
+    } else {
+      # get aic_mle_data
+      dat <- get_best_dis()
+      
+      if(input$advanced == 'Advanced'){
+        selectInput('prob_dis_storm', 'Choose distribution (default is best fit)',
+                    choices = advanced_parametric,
+                    selected = best_dis)
+      } else {
+        selectInput('prob_dis_storm', 'Default is best fit',
+                    choices = best_dis,
+                    selected = best_dis)
+      }
+    }
+    
+  })
+  
+  
+
+#   
+  # Log normal ci
   # log_normal_statistic <- function(x, inds) {try(fitdistr(x[inds],"lognormal")$estimate, silent = TRUE)}
   # bs_log_normal <- boot(data$Loss, log_normal_statistic, R = 1000)
-  # # log_normal_ci <- boot.ci(bs_log_normal, conf=0.95, type="bca")
-  ################
-  # Simulations tab
-  ################
-  # 
-  # get_aic_mle <- reactive({
-  #   
-  # })
-  # 
-  # get_aic_mle <- reactive({
-  #   if(is.null(selected_damage_type())){
-  #     return(NULL)
-  #   } else {
-  # 
-  #     # data <- country_data
-  #     data <- selected_damage_type()
-  #     # remove obsevations with 0, if any
-  #     data <- data[data$Loss > 0,]
-  #     message(head(data))
-  # 
-  #     ##########
-  #     # fit lognormal
-  #     #########
-  #     log_normal <- try(fitdistr(data$Loss, "lognormal"),silent = TRUE)
-  #     if(class(log_normal) == 'try-error'){
-  #       log_normal <- NULL
-  #       log_normal_aic <- NA
-  #       log_normal$estimate[1] <- NA
-  #       log_normal$estimate[2] <- NA
-  #       # log_norma$upper_mle_1 <- NA
-  #       # log_normal$lower_mle_1 <- NA
-  #       # log_norma$upper_mle_2 <- NA
-  #       # log_normal$lower_mle_2 <- NA
-  #       #
-  #     } else {
-  #       # get aic
-  #       log_normal_aic <- round(AIC(log_normal), 4)
-  #       #
-  #       # # upper and lower bound for each estimate
-  #       # log_normal_upper_mle_1 <- log_normal$estimate[1] + log_normal$sd[1]
-  #       # log_normal_lower_mle_1 <- log_normal$estimate[1] - log_normal$sd[1]
-  #       #
-  #       # log_normal_upper_mle_2 <- log_normal$estimate[2] + log_normal$sd[2]
-  #       # log_normal_lower_mle_2 <- log_normal$estimate[2] - log_normal$sd[2]
-  # 
-  #       # if there is an error, fill object with NA
-  #       message('log normal AIC is ', log_normal_aic)
-  # 
-  #       # get MLE
-  #       log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
-  #       message('log normal mle is ', log_normal_mle)
-  #     }
-  #     # create data frame to store aic and MLEs
-  #     log_normal_data <- data_frame(name = 'log_normal',
-  #                                   aic = log_normal_aic,
-  #                                   mle_1 = log_normal$estimate[1],
-  #                                   mle_2 = log_normal$estimate[2])
-  #     # upper_mle_1 = log_normal_upper_mle_1,
-  #     # lower_mle_1 = log_normal_lower_mle_1,
-  #     # upper_mle_2 = log_normal_upper_mle_2,
-  #     # lower_mle_2 = log_normal_lower_mle_2)
-  # 
-  #     beta <- try(eBeta_ab(data$Loss, method = "numerical.MLE"), silent = TRUE)
-  #     if(class(beta) == 'try-error'){
-  #       beta <- NULL
-  #       beta_aic <- NA
-  #       beta$shape1 <- NA
-  #       beta$shape2 <- NA
-  #       beta_mle <- c(beta$shape1, beta$shape2)
-  #     } else {
-  #       beta_ll <- lBeta_ab(X = data$Loss, params = beta, logL = TRUE)
-  #       beta_aic <- -(2*beta_ll + 2)
-  #       beta_mle <- c(beta$shape1, beta$shape2)
-  # 
-  #       # beta_aic <- round(beta$aic, 4)
-  #       message('beta AIC is ', beta_aic)
-  #       message('beta mle is ', beta_mle)
-  #     }
-  #     beta_data <- data_frame(name = 'beta',
-  #                             aic = round(beta_aic, 4),
-  #                             mle_1 = beta_mle[1],
-  #                             mle_2 = beta_mle[2])
-  # 
-  # 
-  # 
-  #     # EQUATION FOR AIC
-  #     # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
-  # 
-  #     # fit gamma
-  #     # gamma <- fitdistr(data$Loss, 'gamma')
-  #     gamma <- try(fitdistrplus::fitdist(data$Loss, "gamma", start=list(shape=0.5, scale=1), method="mle"), silent = TRUE)
-  # 
-  #     if(class(gamma) == 'try-error'){
-  #       gamma <- NULL
-  #       gamma_aic <- NA
-  #       gamma$estimate[1] <- NA
-  #       gamma$estimate[2] <- NA
-  # 
-  #     } else {
-  #       # get aic
-  #       gamma_aic <- round(gamma$aic, 4)
-  #       message('gamma AIC is ', gamma_aic)
-  # 
-  #       # upper and lower bound for each estimate
-  #       # gamma_upper_mle_1 <- gamma$estimate[1] + gamma$sd[1]
-  #       # gamm_lower_mle_1 <- gamma$estimate[1] - gamma$sd[1]
-  #       #
-  #       # gamma_upper_mle_2 <- gamma$estimate[2] + gamma$sd[2]
-  #       # gamma_lower_mle_2 <- gamma$estimate[2] - gamma$sd[2]
-  #       #
-  #       # get mle
-  #       gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
-  #       message('gamme mle is ', gamma_mle)
-  #     }
-  #     gamma_data <- data_frame(name = 'gamma',
-  #                              aic = gamma_aic,
-  #                              mle_1 = gamma$estimate[1],
-  #                              mle_2 = gamma$estimate[2])
-  #     # upper_mle_1 = log_normal_upper_mle_1,
-  #     # lower_mle_1 = log_normal_lower_mle_1,
-  #     # upper_mle_2 = log_normal_upper_mle_2,
-  #     # lower_mle_2 = log_normal_lower_mle_2)
-  # 
-  # 
-  # 
-  #     # fit frechet
-  #     # dfrechet(data$Loss, lambda = 1, mu = 1, sigma = 1, log = TRUE)
-  #     frechet <- try(fitdistrplus::fitdist(data$Loss, "frechet", start=list(scale=0.1, shape=0.1), method="mle"),
-  #                    silent = TRUE)
-  #     if(class(frechet) == 'try-error'){
-  #       frechet <- NULL
-  #       frechet_aic <- NA
-  #       frechet$estimate[1] <- NA
-  #       frechet$estimate[2] <- NA
-  # 
-  #     } else {
-  #       frechet_aic <- round(frechet$aic, 4)
-  #       message('frechet AIC is ', frechet_aic)
-  #       # get mle
-  #       frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
-  #       message('frechet mle is ', frechet_mle)
-  #     }
-  #     frechet_data <- data_frame(name = 'frechet',
-  #                                aic = frechet_aic,
-  #                                mle_1 = frechet$estimate[1],
-  #                                mle_2 = frechet$estimate[2])
-  # 
-  # 
-  # 
-  #     # git gumbel
-  #     gumbel_fit <- try(fit_gumbel(data$Loss), silent = TRUE)
-  #     if(class(gumbel_fit) == 'try-error'){
-  #       gumbel_fit <- NULL
-  #       gumbel_aic <- NA
-  #       gumbel_fit$estimate[1] <- NA
-  #       gumbel_fit$estimate[2] <- NA
-  # 
-  #     } else {
-  #       gumbel_aic <- round(gumbel_fit$aic, 4)
-  #       message('gumbel AIC is ', gumbel_aic)
-  #       # get mle
-  #       gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
-  #       message('gumbel mle is ', gumbel_mle)
-  #     }
-  #     gumbel_data <- data_frame(name = 'gumbel',
-  #                               aic = gumbel_aic,
-  #                               mle_1 = gumbel_fit$estimate[1],
-  #                               mle_2 = gumbel_fit$estimate[2])
-  # 
-  # 
-  # 
-  #     # fit weibull
-  #     weibull <- try(fitdistrplus::fitdist(data$Loss, "weibull", start=list(shape=0.1, scale=1), method="mle"), silent = TRUE)
-  #     if(class(weibull) == 'try-error'){
-  #       weibull <- NULL
-  #       weibull_aic <- NA
-  #       weibull$estimate[1] <- NA
-  #       weibull$estimate[2] <- NA
-  # 
-  #     } else {
-  #       weibull_aic <- round(weibull$aic, 4)
-  #       message('weibull AIC is ', weibull_aic)
-  # 
-  #       # get mle
-  #       weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
-  #       message('weibull mle is ', weibull_mle)
-  #     }
-  #     weibull_data <- data_frame(name = 'weibull',
-  #                                aic = weibull_aic,
-  #                                mle_1 = weibull$estimate[1],
-  #                                mle_2 = weibull$estimate[2])
-  # 
-  # 
-  # 
-  #     # fit pareto
-  #     pareto <-ParetoPosStable::pareto.fit(data$Loss, estim.method = 'MLE')
-  #     if(class(pareto) == 'try-error'){
-  #       pareto <- NULL
-  #       pareto_aic <- NA
-  #       pareto_fit$estimate[1] <- NA
-  #       pareto_fit$estimate[2] <- NA
-  # 
-  #     } else {
-  #       pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
-  #       message('pareto AIC is ', pareto_aic)
-  #       # get mle
-  #       pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
-  #       message('pareto mle is ', pareto_mle)
-  #     }
-  #     pareto_data <- data_frame(name = 'pareto',
-  #                               aic = pareto_aic,
-  #                               mle_1 = pareto$estimate[[1]],
-  #                               mle_2 = pareto$estimate[[2]])
-  # 
-  # 
-  # 
-  # 
-  #     # create a data frame out of data results
-  #     aic_mle_data <- rbind(log_normal_data,
-  #                           gamma_data,
-  #                           beta_data,
-  #                           frechet_data,
-  #                           gumbel_data,
-  #                           weibull_data,
-  #                           pareto_data)
-  # 
-  #     # change names of variable
-  #     names(aic_mle_data) <- c('Distribution', 'AIC', 'MLE 1', 'MLE 2')
-  # 
-  #     # capitalize and remove underscore of Distribution
-  #     aic_mle_data$Distribution <- Hmisc::capitalize(aic_mle_data$Distribution)
-  #     aic_mle_data$Distribution <- gsub('_', ' ', aic_mle_data$Distribution)
-  #     aic_mle_data$AIC <- round(aic_mle_data$AIC, 2)
-  #     aic_mle_data$`MLE 1`<- round(aic_mle_data$`MLE 1`, 2)
-  #     aic_mle_data$`MLE 2` <- round(aic_mle_data$`MLE 2`, 2)
-  # 
-  #     return(aic_mle_data)
-  #   }
-  # 
-  # 
-  # 
-  # })
-  # 
-  # # make a reactive object that grabs the name of the best distribution - this is the default for basic users. Advanced users can choose a new one
-  # get_best_dis <- reactive({
-  #   if(is.null(get_aic_mle())){
-  #     return(NULL)
-  #   } else {
-  #     # get aic_mle_data
-  #     dat <- get_aic_mle()
-  #     # for now remove beta
-  #     # dat <- dat[dat$Distribution != 'Beta',]
-  #     # get index for minimum aic
-  #     aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
-  #     # # subset by best aic index
-  #     dat <- dat[aic_min_ind,]
-  #     best_dis <- dat$Distribution
-  #     return(best_dis)
-  #   }
-  # })
-  # 
-  # 
-  # # ui for prob_dis - right now the output is dependent on the best distribution
-  # # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
-  # output$prob_dis <- renderUI({
-  #   gg <- get_aic_mle()
-  #   if(is.null(gg)){
-  #     return(NULL)
-  #   } else {
-  #     # get aic_mle_data
-  #     dat <- get_aic_mle()
-  #     # get index for minimum aic
-  #     aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
-  #     # # subset my index
-  #     dat <- dat[aic_min_ind,]
-  #     best_dis <- dat$Distribution
-  # 
-  #     if(input$advanced == 'Advanced'){
-  #       selectInput('prob_dis', 'Choose distribution (default is best fit)',
-  #                   choices = advanced_parametric,
-  #                   selected = best_dis)
-  #     } else {
-  #       selectInput('prob_dis', 'Default is best fit',
-  #                   choices = best_dis,
-  #                   selected = best_dis)
-  #     }
-  #   }
-  # 
-  # })
+  # log_normal_ci <- boot.ci(bs_log_normal, conf=0.95, type="bca")
+#   ###############
+#   # Simulations tab
+#   ###############
+# 
+#   get_aic_mle <- reactive({
+#     if(is.null(correct_trend())){
+#       NULL
+#     } else {
+#       data <- correct_trend()
+#       message(head(data), 'get_aic_mle data here')
+#     }
+# 
+#   })
+# 
+#   get_aic_mle <- reactive({
+#     if(is.null(selected_damage_type())){
+#       return(NULL)
+#     } else {
+# 
+#       # data <- country_data
+#       data <- selected_damage_type()
+#       # remove obsevations with 0, if any
+#       data <- data[data$Loss > 0,]
+# 
+#       ##########
+#       # fit lognormal
+#       #########
+#       log_normal <- try(fitdistr(data$Loss, "lognormal"),silent = TRUE)
+#       if(class(log_normal) == 'try-error'){
+#         log_normal <- NULL
+#         log_normal_aic <- NA
+#         log_normal$estimate[1] <- NA
+#         log_normal$estimate[2] <- NA
+#         # log_norma$upper_mle_1 <- NA
+#         # log_normal$lower_mle_1 <- NA
+#         # log_norma$upper_mle_2 <- NA
+#         # log_normal$lower_mle_2 <- NA
+#         #
+#       } else {
+#         # get aic
+#         log_normal_aic <- round(AIC(log_normal), 4)
+#         #
+#         # # upper and lower bound for each estimate
+#         # log_normal_upper_mle_1 <- log_normal$estimate[1] + log_normal$sd[1]
+#         # log_normal_lower_mle_1 <- log_normal$estimate[1] - log_normal$sd[1]
+#         #
+#         # log_normal_upper_mle_2 <- log_normal$estimate[2] + log_normal$sd[2]
+#         # log_normal_lower_mle_2 <- log_normal$estimate[2] - log_normal$sd[2]
+# 
+#         # if there is an error, fill object with NA
+#         message('log normal AIC is ', log_normal_aic)
+# 
+#         # get MLE
+#         log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
+#         message('log normal mle is ', log_normal_mle)
+#       }
+#       # create data frame to store aic and MLEs
+#       log_normal_data <- data_frame(name = 'log_normal',
+#                                     aic = log_normal_aic,
+#                                     mle_1 = log_normal$estimate[1],
+#                                     mle_2 = log_normal$estimate[2])
+#       # upper_mle_1 = log_normal_upper_mle_1,
+#       # lower_mle_1 = log_normal_lower_mle_1,
+#       # upper_mle_2 = log_normal_upper_mle_2,
+#       # lower_mle_2 = log_normal_lower_mle_2)
+# 
+#       beta <- try(eBeta_ab(data$Loss, method = "numerical.MLE"), silent = TRUE)
+#       if(class(beta) == 'try-error'){
+#         beta <- NULL
+#         beta_aic <- NA
+#         beta$shape1 <- NA
+#         beta$shape2 <- NA
+#         beta_mle <- c(beta$shape1, beta$shape2)
+#       } else {
+#         beta_ll <- lBeta_ab(X = data$Loss, params = beta, logL = TRUE)
+#         beta_aic <- -(2*beta_ll + 2)
+#         beta_mle <- c(beta$shape1, beta$shape2)
+# 
+#         # beta_aic <- round(beta$aic, 4)
+#         message('beta AIC is ', beta_aic)
+#         message('beta mle is ', beta_mle)
+#       }
+#       beta_data <- data_frame(name = 'beta',
+#                               aic = round(beta_aic, 4),
+#                               mle_1 = beta_mle[1],
+#                               mle_2 = beta_mle[2])
+# 
+# 
+# 
+#       # EQUATION FOR AIC
+#       # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
+# 
+#       # fit gamma
+#       # gamma <- fitdistr(data$Loss, 'gamma')
+#       gamma <- try(fitdistrplus::fitdist(data$Loss, "gamma", start=list(shape=0.5, scale=1), method="mle"), silent = TRUE)
+# 
+#       if(class(gamma) == 'try-error'){
+#         gamma <- NULL
+#         gamma_aic <- NA
+#         gamma$estimate[1] <- NA
+#         gamma$estimate[2] <- NA
+# 
+#       } else {
+#         # get aic
+#         gamma_aic <- round(gamma$aic, 4)
+#         message('gamma AIC is ', gamma_aic)
+# 
+#         # upper and lower bound for each estimate
+#         # gamma_upper_mle_1 <- gamma$estimate[1] + gamma$sd[1]
+#         # gamm_lower_mle_1 <- gamma$estimate[1] - gamma$sd[1]
+#         #
+#         # gamma_upper_mle_2 <- gamma$estimate[2] + gamma$sd[2]
+#         # gamma_lower_mle_2 <- gamma$estimate[2] - gamma$sd[2]
+#         #
+#         # get mle
+#         gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
+#         message('gamme mle is ', gamma_mle)
+#       }
+#       gamma_data <- data_frame(name = 'gamma',
+#                                aic = gamma_aic,
+#                                mle_1 = gamma$estimate[1],
+#                                mle_2 = gamma$estimate[2])
+#       # upper_mle_1 = log_normal_upper_mle_1,
+#       # lower_mle_1 = log_normal_lower_mle_1,
+#       # upper_mle_2 = log_normal_upper_mle_2,
+#       # lower_mle_2 = log_normal_lower_mle_2)
+# 
+# 
+# 
+#       # fit frechet
+#       # dfrechet(data$Loss, lambda = 1, mu = 1, sigma = 1, log = TRUE)
+#       frechet <- try(fitdistrplus::fitdist(data$Loss, "frechet", start=list(scale=0.1, shape=0.1), method="mle"),
+#                      silent = TRUE)
+#       if(class(frechet) == 'try-error'){
+#         frechet <- NULL
+#         frechet_aic <- NA
+#         frechet$estimate[1] <- NA
+#         frechet$estimate[2] <- NA
+# 
+#       } else {
+#         frechet_aic <- round(frechet$aic, 4)
+#         message('frechet AIC is ', frechet_aic)
+#         # get mle
+#         frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
+#         message('frechet mle is ', frechet_mle)
+#       }
+#       frechet_data <- data_frame(name = 'frechet',
+#                                  aic = frechet_aic,
+#                                  mle_1 = frechet$estimate[1],
+#                                  mle_2 = frechet$estimate[2])
+# 
+# 
+# 
+#       # git gumbel
+#       gumbel_fit <- try(fit_gumbel(data$Loss), silent = TRUE)
+#       if(class(gumbel_fit) == 'try-error'){
+#         gumbel_fit <- NULL
+#         gumbel_aic <- NA
+#         gumbel_fit$estimate[1] <- NA
+#         gumbel_fit$estimate[2] <- NA
+# 
+#       } else {
+#         gumbel_aic <- round(gumbel_fit$aic, 4)
+#         message('gumbel AIC is ', gumbel_aic)
+#         # get mle
+#         gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
+#         message('gumbel mle is ', gumbel_mle)
+#       }
+#       gumbel_data <- data_frame(name = 'gumbel',
+#                                 aic = gumbel_aic,
+#                                 mle_1 = gumbel_fit$estimate[1],
+#                                 mle_2 = gumbel_fit$estimate[2])
+# 
+# 
+# 
+#       # fit weibull
+#       weibull <- try(fitdistrplus::fitdist(data$Loss, "weibull", start=list(shape=0.1, scale=1), method="mle"), silent = TRUE)
+#       if(class(weibull) == 'try-error'){
+#         weibull <- NULL
+#         weibull_aic <- NA
+#         weibull$estimate[1] <- NA
+#         weibull$estimate[2] <- NA
+# 
+#       } else {
+#         weibull_aic <- round(weibull$aic, 4)
+#         message('weibull AIC is ', weibull_aic)
+# 
+#         # get mle
+#         weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
+#         message('weibull mle is ', weibull_mle)
+#       }
+#       weibull_data <- data_frame(name = 'weibull',
+#                                  aic = weibull_aic,
+#                                  mle_1 = weibull$estimate[1],
+#                                  mle_2 = weibull$estimate[2])
+# 
+# 
+# 
+#       # fit pareto
+#       pareto <-ParetoPosStable::pareto.fit(data$Loss, estim.method = 'MLE')
+#       if(class(pareto) == 'try-error'){
+#         pareto <- NULL
+#         pareto_aic <- NA
+#         pareto_fit$estimate[1] <- NA
+#         pareto_fit$estimate[2] <- NA
+# 
+#       } else {
+#         pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
+#         message('pareto AIC is ', pareto_aic)
+#         # get mle
+#         pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
+#         message('pareto mle is ', pareto_mle)
+#       }
+#       pareto_data <- data_frame(name = 'pareto',
+#                                 aic = pareto_aic,
+#                                 mle_1 = pareto$estimate[[1]],
+#                                 mle_2 = pareto$estimate[[2]])
+# 
+# 
+# 
+# 
+#       # create a data frame out of data results
+#       aic_mle_data <- rbind(log_normal_data,
+#                             gamma_data,
+#                             beta_data,
+#                             frechet_data,
+#                             gumbel_data,
+#                             weibull_data,
+#                             pareto_data)
+# 
+#       # change names of variable
+#       names(aic_mle_data) <- c('Distribution', 'AIC', 'MLE 1', 'MLE 2')
+# 
+#       # capitalize and remove underscore of Distribution
+#       aic_mle_data$Distribution <- Hmisc::capitalize(aic_mle_data$Distribution)
+#       aic_mle_data$Distribution <- gsub('_', ' ', aic_mle_data$Distribution)
+#       aic_mle_data$AIC <- round(aic_mle_data$AIC, 2)
+#       aic_mle_data$`MLE 1`<- round(aic_mle_data$`MLE 1`, 2)
+#       aic_mle_data$`MLE 2` <- round(aic_mle_data$`MLE 2`, 2)
+# 
+#       return(aic_mle_data)
+#     }
+# 
+# 
+# 
+#   })
+
   # 
   # # create table for aic
   # output$aic_table <- renderDataTable({
