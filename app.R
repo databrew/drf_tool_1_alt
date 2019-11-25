@@ -1174,12 +1174,13 @@ server <- function(input, output, session) {
       } else {
         peril_names <- all_perils$peril[all_perils$p_value < 0.05 & !is.na(all_perils$p_value)]
         if(identical(peril_names, character(0))){
-          significant_trends(TRUE) # Setting this to true
+          significant_trends(FALSE)
           fluidPage(
            helpText('All perils had no significant trend or not enough observations')
           )
           
         } else {
+          significant_trends(TRUE) 
           peril_names <- paste(peril_names, collapse = ',')
           fluidPage(
             selectInput('trend_test', paste0('Trends were found in ', paste0(peril_names, collapse = ', '), '. Correct linear trends?'), choices = c('Yes', 'No')))
@@ -1272,26 +1273,34 @@ server <- function(input, output, session) {
     core_dat <- core_data()
     scale_dat <- scale_data_reactive()
     trend_dat <- correct_trend()
+    is_trend <- input$trend_test
     out <- NULL
-    if(is.null(core_dat) & is.null(scale_dat) & is.null(trend_dat)){
-      NULL
-    }
-    if(!is.null(scale_dat) & (is.null(core_dat) & is.null(trend_dat))){
-       out <- scale_dat
-       message('RIGHT HERE')
-
-    }
-    if(!is.null(trend_dat) & (is.null(scale_dat) & is.null(core_dat))){
-      out <- trend_dat
-      
-    }
-    if(!is.null(core_dat) & (is.null(scale_dat) & is.null(trend_dat))){
-      
+    message('core_dat is '); print(head(core_dat))
+    message('scale_dat is '); print(head(scale_dat))
+    message('trend_dat is '); print(head(trend_dat))
+    message('A')
+    # if(is.null(core_dat) & is.null(scale_dat) & is.null(trend_dat)){
+    #   NULL
+    # }
+    if(input$data_type == 'Archetype'){
       out <- core_dat
+      out <- out[[1]]
+      message('archetype selected, so core_dat!!!')
+    } else {
+      # capture whether there are significant trends
+      if(is.null(is_trend)){
+        out <- scale_dat
+      } else {
+        if(is_trend == 'Yes'){
+          out <- trend_dat
+        } else {
+          out <- scale_dat
+        }
+      }
     }
     
+   
     return(out)
-    
   })
   
   output$delete <- DT::renderDataTable({
