@@ -1249,132 +1249,132 @@ server <- function(input, output, session) {
     
   })
   
-
-  data <- readRDS('~/Desktop/data.rda')
-  
-  fit_dis <- reactive({
-    if(is.null(correct_trend())){
-      NULL
-    } else {
-      data <- correct_trend()
-      out <- fit_distribution(data)
-      return(out)
-    }
-    
-  })
-  
-  # make a reactive object that grabs the name of the best distribution - this is the default for basic users. Advanced users can choose a new one
-  get_best_dis <- reactive({
-    if(is.null(fit_dis())){
-      return(NULL)
-    } else {
-      # get aic_mle_data
-      dat <- fit_dis()
-      peril_names <- unique(dat$peril)
-      data_list <- list()
-      for(i in 1:length(peril_names)){
-        peril_name <- peril_names[i]
-        sub_dat <- dat[dat$peril == peril_name,]
-        aic_min_ind <- which(sub_dat$AIC == min(sub_dat$AIC, na.rm = T))
-        sub_dat <- sub_dat[aic_min_ind,]
-        sub_dat$best_dis <- sub_dat$Distribution
-        data_list[[i]] <- sub_dat
-        
-      }
-      
-      out <- do.call('rbind', data_list)
-      return(out)
-  
-    }
-  })
-  
-  
-  # ui for prob_dis - right now the output is dependent on the best distribution
-  # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
-  output$prob_dis_drought_ui <- renderUI({
-    gg <- get_best_dis()
-    if(is.null(gg)){
-      return(NULL)
-    } else {
-      # get aic_mle_data
-      dat <- get_best_dis()
-      
-      if(input$advanced == 'Advanced'){
-        selectInput('prob_dis_drought', 'Choose distribution (default is best fit)',
-                    choices = advanced_parametric,
-                    selected = best_dis)
-      } else {
-        selectInput('prob_dis_drought', 'Default is best fit',
-                    choices = best_dis,
-                    selected = best_dis)
-      }
-    }
-    
-  })
-  
-  utput$prob_dis_earthquake_ui <- renderUI({
-    gg <- get_best_dis()
-    if(is.null(gg)){
-      return(NULL)
-    } else {
-      # get aic_mle_data
-      dat <- get_best_dis()
-      
-      if(input$advanced == 'Advanced'){
-        selectInput('prob_dis_earthquake', 'Choose distribution (default is best fit)',
-                    choices = advanced_parametric,
-                    selected = best_dis)
-      } else {
-        selectInput('prob_dis_earthquake', 'Default is best fit',
-                    choices = best_dis,
-                    selected = best_dis)
-      }
-    }
-    
-  })
-  
-  utput$prob_dis_flood_ui <- renderUI({
-    gg <- get_best_dis()
-    if(is.null(gg)){
-      return(NULL)
-    } else {
-      # get aic_mle_data
-      dat <- get_best_dis()
-      
-      if(input$advanced == 'Advanced'){
-        selectInput('prob_dis_flood', 'Choose distribution (default is best fit)',
-                    choices = advanced_parametric,
-                    selected = best_dis)
-      } else {
-        selectInput('prob_dis_flood', 'Default is best fit',
-                    choices = best_dis,
-                    selected = best_dis)
-      }
-    }
-    
-  })
-  
-  utput$prob_dis_storm_ui <- renderUI({
-    gg <- get_best_dis()
-    if(is.null(gg)){
-      return(NULL)
-    } else {
-      # get aic_mle_data
-      dat <- get_best_dis()
-      
-      if(input$advanced == 'Advanced'){
-        selectInput('prob_dis_storm', 'Choose distribution (default is best fit)',
-                    choices = advanced_parametric,
-                    selected = best_dis)
-      } else {
-        selectInput('prob_dis_storm', 'Default is best fit',
-                    choices = best_dis,
-                    selected = best_dis)
-      }
-    }
-    
-  })
-  
+# 
+#   data <- readRDS('~/Desktop/data.rda')
+#   
+#   fit_dis <- reactive({
+#     if(is.null(correct_trend())){
+#       NULL
+#     } else {
+#       data <- correct_trend()
+#       out <- fit_distribution(data)
+#       return(out)
+#     }
+#     
+#   })
+#   
+#   # make a reactive object that grabs the name of the best distribution - this is the default for basic users. Advanced users can choose a new one
+#   get_best_dis <- reactive({
+#     if(is.null(fit_dis())){
+#       return(NULL)
+#     } else {
+#       # get aic_mle_data
+#       dat <- fit_dis()
+#       peril_names <- unique(dat$peril)
+#       data_list <- list()
+#       for(i in 1:length(peril_names)){
+#         peril_name <- peril_names[i]
+#         sub_dat <- dat[dat$peril == peril_name,]
+#         aic_min_ind <- which(sub_dat$AIC == min(sub_dat$AIC, na.rm = T))
+#         sub_dat <- sub_dat[aic_min_ind,]
+#         sub_dat$best_dis <- sub_dat$Distribution
+#         data_list[[i]] <- sub_dat
+#         
+#       }
+#       
+#       out <- do.call('rbind', data_list)
+#       return(out)
+#   
+#     }
+#   })
+#   
+#   
+#   # ui for prob_dis - right now the output is dependent on the best distribution
+#   # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
+#   output$prob_dis_drought_ui <- renderUI({
+#     gg <- get_best_dis()
+#     if(is.null(gg)){
+#       return(NULL)
+#     } else {
+#       # get aic_mle_data
+#       dat <- get_best_dis()
+#       
+#       if(input$advanced == 'Advanced'){
+#         selectInput('prob_dis_drought', 'Choose distribution (default is best fit)',
+#                     choices = advanced_parametric,
+#                     selected = best_dis)
+#       } else {
+#         selectInput('prob_dis_drought', 'Default is best fit',
+#                     choices = best_dis,
+#                     selected = best_dis)
+#       }
+#     }
+#     
+#   })
+#   
+#   utput$prob_dis_earthquake_ui <- renderUI({
+#     gg <- get_best_dis()
+#     if(is.null(gg)){
+#       return(NULL)
+#     } else {
+#       # get aic_mle_data
+#       dat <- get_best_dis()
+#       
+#       if(input$advanced == 'Advanced'){
+#         selectInput('prob_dis_earthquake', 'Choose distribution (default is best fit)',
+#                     choices = advanced_parametric,
+#                     selected = best_dis)
+#       } else {
+#         selectInput('prob_dis_earthquake', 'Default is best fit',
+#                     choices = best_dis,
+#                     selected = best_dis)
+#       }
+#     }
+#     
+#   })
+#   
+#   utput$prob_dis_flood_ui <- renderUI({
+#     gg <- get_best_dis()
+#     if(is.null(gg)){
+#       return(NULL)
+#     } else {
+#       # get aic_mle_data
+#       dat <- get_best_dis()
+#       
+#       if(input$advanced == 'Advanced'){
+#         selectInput('prob_dis_flood', 'Choose distribution (default is best fit)',
+#                     choices = advanced_parametric,
+#                     selected = best_dis)
+#       } else {
+#         selectInput('prob_dis_flood', 'Default is best fit',
+#                     choices = best_dis,
+#                     selected = best_dis)
+#       }
+#     }
+#     
+#   })
+#   
+#   utput$prob_dis_storm_ui <- renderUI({
+#     gg <- get_best_dis()
+#     if(is.null(gg)){
+#       return(NULL)
+#     } else {
+#       # get aic_mle_data
+#       dat <- get_best_dis()
+#       
+#       if(input$advanced == 'Advanced'){
+#         selectInput('prob_dis_storm', 'Choose distribution (default is best fit)',
+#                     choices = advanced_parametric,
+#                     selected = best_dis)
+#       } else {
+#         selectInput('prob_dis_storm', 'Default is best fit',
+#                     choices = best_dis,
+#                     selected = best_dis)
+#       }
+#     }
+#     
+#   })
+#   
   
 
 #   
