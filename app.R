@@ -1008,6 +1008,7 @@ server <- function(input, output, session) {
     
     possible_tables <- c('cost', 'loss', 'arch')
     if(is.null(ad)){
+      message('here')
       possible_tables <- possible_tables[possible_tables != 'arch']
     }
     if(is.null(ld)){
@@ -1234,10 +1235,7 @@ server <- function(input, output, session) {
     
   })
   
-  output$correct_trend_table <- DT::renderDataTable({
-    corrected_data <- correct_trend()
-    corrected_data
-  })
+  
   
   
   ################
@@ -1267,6 +1265,38 @@ server <- function(input, output, session) {
       out
     }
     
+  })
+  
+  # reactive object to create right data 
+  get_right_data <- reactive({
+    core_dat <- core_data()
+    scale_dat <- scale_data_reactive()
+    trend_dat <- correct_trend()
+    out <- NULL
+    if(is.null(core_dat) & is.null(scale_dat) & is.null(trend_dat)){
+      NULL
+    }
+    if(!is.null(scale_dat) & (is.null(core_dat) & is.null(trend_dat))){
+       out <- scale_dat
+       message('RIGHT HERE')
+
+    }
+    if(!is.null(trend_dat) & (is.null(scale_dat) & is.null(core_dat))){
+      out <- trend_dat
+      
+    }
+    if(!is.null(core_dat) & (is.null(scale_dat) & is.null(trend_dat))){
+      
+      out <- core_dat
+    }
+    
+    return(out)
+    
+  })
+  
+  output$delete <- DT::renderDataTable({
+    corrected_data <- get_right_data()
+    corrected_data
   })
   
   # 
@@ -2248,10 +2278,10 @@ server <- function(input, output, session) {
               input = input,
               tab_data = tab_data)
   })
-  output$delete <- DT::renderDataTable({
-    sdr <- scale_data_reactive()
-    sdr
-  })
+  # output$delete <- DT::renderDataTable({
+  #   sdr <- scale_data_reactive()
+  #   sdr
+  # })
 }
 
 shinyApp(ui, server)
