@@ -1297,7 +1297,7 @@ server <- function(input, output, session) {
       }
     }
     
-   
+    save(out, file = 'out.RData')
     return(out)
   })
   
@@ -1425,7 +1425,8 @@ server <- function(input, output, session) {
     ps <- prepared_simulations()
     message('PS IS')
     print(head(ps))
-    run_simulations(ps)
+    x <- run_simulations(ps)
+    save(x, file = 'x.RData')
   })
   
   
@@ -1968,7 +1969,7 @@ server <- function(input, output, session) {
   # 
   # # make reactive object to store probability of exceeding budget
   # probability_of_exceeding <- reactive({
-  #   
+  # 
   #   if(is.null(selected_damage_type())){
   #     NULL
   #   } else {
@@ -1976,14 +1977,14 @@ server <- function(input, output, session) {
   #     if(any(is.na(dat_sim))){
   #       return(NULL)
   #     } else {
-  #       
+  # 
   #       # get budget
   #       budget <- input$budget
   #       peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
   #       peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
   #       rownames(peril_exceedance_curve) <- NULL
   #       names(peril_exceedance_curve)[1] <- 'y'
-  #       
+  # 
   #       # remove percent and turn numeric
   #       peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
   #       peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
@@ -1991,14 +1992,14 @@ server <- function(input, output, session) {
   #       names(peril_exceedance_curve)[1] <- 'Total Loss'
   #       names(peril_exceedance_curve)[2] <- 'Probability'
   #       peril_exceedance_curve$Probability <- 1 - peril_exceedance_curve$Probability
-  #       
+  # 
   #       # find where budget equals curve
   #       prob_exceed <- peril_exceedance_curve$Probability[which.min(abs(peril_exceedance_curve$`Total Loss` - budget))]
   #       return(prob_exceed)
   #     }
   #   }
-  #   
-  #   
+  # 
+  # 
   # })
   # 
   # # create a reactive object that takes new input 
@@ -2041,354 +2042,377 @@ server <- function(input, output, session) {
   # 
   # 
   # # OUTPUT 1
-  # output$annual_loss_plotly <- renderPlot({
-  #   
-  #   if(is.null(selected_damage_type()) | is.na(input$budget)){
-  #     return(NULL)
-  #   } else {
-  #     message(input$budget)
-  #     # get best distirbution 
-  #     dat_sim <- run_best_simulation()
-  #     if(any(is.na(dat_sim))){
-  #       NULL
-  #     } else {
-  #       # get country data
-  #       data <- selected_damage_type()
-  #       
-  #       # get budget
-  #       budget <- input$budget
-  #       
-  #       # remove obsevations with 0, if any
-  #       data <- data[data$Loss > 0,]
-  #       data <- data[order(data$Year, decreasing = FALSE),]
-  #       
-  #       # get country input for plot title
-  #       plot_title <- input$country
-  #       
-  #       # get quaintles 
-  #       output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99), na.rm = TRUE) 
-  #       annual_avg <- mean(dat_sim)
-  #       
-  #       # create data frame dat to store output with chart labels 
-  #       dat <- data_frame(`Annual average` = annual_avg, 
-  #                         `1 in 5 Years` = output[1],
-  #                         `1 in 10 Years` = output[2],
-  #                         `1 in 25 Years` = output[3],
-  #                         `1 in 50 Years` = output[4],
-  #                         `1 in 100 Years` = output[5],
-  #                         `Highest historical annual loss` = max(data$Loss),
-  #                         `Most recent annual loss` = data$Loss[nrow(data)])
-  #       
-  #       # melt the data frame to get value and variable 
-  #       dat <- melt(dat)
-  #       
-  #       dat$variable <- factor(dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years', 
-  #                                                       'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
-  #       dat$value <- round(dat$value, 2)
-  #       
-  #       if(input$ci){
-  #         y_min <- dat$value - mean(dat$value)
-  #         y_min <- ifelse(y_min < 0, 0, y_min)
-  #         
-  #         y_max <-  dat$value + mean(dat$value)
-  #         # Plot
-  #         g <- ggplot(dat, aes(x=variable, 
-  #                              y=value,
-  #                              text = value)) + 
-  #           geom_bar(stat = 'identity',
-  #                    fill = '#5B84B1FF',
-  #                    col = '#FC766AFF', 
-  #                    alpha = 0.6) + 
-  #           geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
-  #           geom_hline(yintercept = budget) +
-  #           theme_bw(base_size = 14, 
-  #                    base_family = 'Ubuntu')  +
-  #           theme(axis.text.x = element_text(angle = 45, 
-  #                                            hjust = 1)) +
-  #           xlab('') + ylab('') +
-  #           ggtitle(plot_title)
-  #       } else {
-  #         # Plot
-  #         g <- ggplot(dat, aes(x=variable, 
-  #                              y=value,
-  #                              text = value)) + 
-  #           geom_bar(stat = 'identity',
-  #                    fill = '#5B84B1FF',
-  #                    col = '#FC766AFF', 
-  #                    alpha = 0.6) + 
-  #           geom_hline(yintercept = budget) +
-  #           theme_bw(base_size = 14, 
-  #                    base_family = 'Ubuntu')  +
-  #           theme(axis.text.x = element_text(angle = 45, 
-  #                                            hjust = 1)) +
-  #           xlab('') + ylab('') +
-  #           ggtitle(plot_title)
-  #       }
-  #       
-  #       
-  #       return(g)
-  #     }
-  #   }
-  #   
-  # })
+  output$annual_loss_plotly <- renderPlot({
+
+    if(is.null(selected_damage_type()) | is.na(input$budget)){
+      return(NULL)
+    } else {
+      message(input$budget)
+      # get best distirbution
+      dat_sim <- run_best_simulation()
+      if(any(is.na(dat_sim))){
+        NULL
+      } else {
+        # get country data
+        data <- selected_damage_type()
+
+        # get budget
+        budget <- input$budget
+
+        # remove obsevations with 0, if any
+        data <- data[data$Loss > 0,]
+        data <- data[order(data$Year, decreasing = FALSE),]
+
+        # get country input for plot title
+        plot_title <- input$country
+
+        # get quaintles
+        output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99), na.rm = TRUE)
+        annual_avg <- mean(dat_sim)
+
+        # create data frame dat to store output with chart labels
+        dat <- data_frame(`Annual average` = annual_avg,
+                          `1 in 5 Years` = output[1],
+                          `1 in 10 Years` = output[2],
+                          `1 in 25 Years` = output[3],
+                          `1 in 50 Years` = output[4],
+                          `1 in 100 Years` = output[5],
+                          `Highest historical annual loss` = max(data$Loss),
+                          `Most recent annual loss` = data$Loss[nrow(data)])
+
+        # melt the data frame to get value and variable
+        dat <- melt(dat)
+
+        dat$variable <- factor(dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
+                                                        'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
+        dat$value <- round(dat$value, 2)
+
+        if(input$ci){
+          y_min <- dat$value - mean(dat$value)
+          y_min <- ifelse(y_min < 0, 0, y_min)
+
+          y_max <-  dat$value + mean(dat$value)
+          # Plot
+          g <- ggplot(dat, aes(x=variable,
+                               y=value,
+                               text = value)) +
+            geom_bar(stat = 'identity',
+                     fill = '#5B84B1FF',
+                     col = '#FC766AFF',
+                     alpha = 0.6) +
+            geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
+            geom_hline(yintercept = budget) +
+            theme_bw(base_size = 14,
+                     base_family = 'Ubuntu')  +
+            theme(axis.text.x = element_text(angle = 45,
+                                             hjust = 1)) +
+            xlab('') + ylab('') +
+            ggtitle(plot_title)
+        } else {
+          # Plot
+          g <- ggplot(dat, aes(x=variable,
+                               y=value,
+                               text = value)) +
+            geom_bar(stat = 'identity',
+                     fill = '#5B84B1FF',
+                     col = '#FC766AFF',
+                     alpha = 0.6) +
+            geom_hline(yintercept = budget) +
+            theme_bw(base_size = 14,
+                     base_family = 'Ubuntu')  +
+            theme(axis.text.x = element_text(angle = 45,
+                                             hjust = 1)) +
+            xlab('') + ylab('') +
+            ggtitle(plot_title)
+        }
+
+
+        return(g)
+      }
+    }
+
+  })
   # 
   # 
   # ############ OUTPUT 2
   # 
   # 
-  # output$loss_exceedance_plotly <- renderPlot({
-  #   if(is.null(selected_damage_type()) | is.na(input$budget)){
-  #     NULL
-  #   } else {
-  #     dat_sim <- run_best_simulation()
-  #     if(any(is.na(dat_sim))){
-  #       return(NULL)
-  #     } else {
-  #       
-  #       data <- selected_damage_type()
-  #       
-  #       country_name <- unique(data$Country)
-  #       
-  #       data <- data[order(data$Year, decreasing = FALSE),]
-  #       largest_loss_num <- max(data$Loss)
-  #       largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
-  #       
-  #       # find where budget equals curve
-  #       prob_exceed <- probability_of_exceeding()
-  #       # get country input for plot title
-  #       plot_title <- input$country
-  #       exceed_budget <- paste0('Probability of exceeding budget = ', prob_exceed)
-  #       plot_title <- paste0(plot_title, ' : ', exceed_budget)
-  #       
-  #       # get budget
-  #       budget <- input$budget
-  #       peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
-  #       peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
-  #       rownames(peril_exceedance_curve) <- NULL
-  #       names(peril_exceedance_curve)[1] <- 'y'
-  #       
-  #       # remove percent and turn numeric
-  #       peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
-  #       peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
-  #       peril_exceedance_curve$x <- peril_exceedance_curve$x/100
-  #       names(peril_exceedance_curve)[1] <- 'Total Loss'
-  #       names(peril_exceedance_curve)[2] <- 'Probability'
-  #       peril_exceedance_curve$Probability <- 1 - peril_exceedance_curve$Probability
-  #       
-  #       if(input$ci){
-  #         dat <- peril_exceedance_curve
-  #         dat$y_min <- dat$`Total Loss`- mean(dat$`Total Loss`)
-  #         dat$y_min <- ifelse(dat$y_min < 0, 0, dat$y_min)
-  #         
-  #         dat$y_max <-  dat$`Total Loss` + mean(dat$`Total Loss`)
-  #         g <- ggplot(dat, aes(Probability, `Total Loss`)) +
-  #           geom_line(col = 'blue', size = 1, alpha = 0.7) + 
-  #           geom_line(aes(Probability, y_min), linetype = 'dotted') +
-  #           geom_line(aes(Probability, y_max), linetype = 'dotted') +
-  #           scale_x_reverse() +
-  #           ggtitle(plot_title) +
-  #           geom_hline(yintercept = largest_loss_num) +
-  #           geom_hline(yintercept = budget) +
-  #           geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
-  #           annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
-  #           annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
-  #           theme_bw(base_size = 14, 
-  #                    base_family = 'Ubuntu')
-  #         
-  #       } else {
-  #         g <- ggplot(peril_exceedance_curve, aes(Probability, `Total Loss`)) +
-  #           geom_line(col = 'blue', size = 1, alpha = 0.7) + 
-  #           scale_x_reverse() +
-  #           ggtitle(plot_title) +
-  #           geom_hline(yintercept = largest_loss_num) +
-  #           geom_hline(yintercept = budget) +
-  #           geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
-  #           annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
-  #           annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
-  #           theme_bw(base_size = 14, 
-  #                    base_family = 'Ubuntu')
-  #         
-  #       }
-  #       
-  #       
-  #       return(g)
-  #       
-  #     }
-  #   }
-  #   
-  #   
-  # })
+  output$loss_exceedance_plotly <- renderPlot({
+    if(is.null(selected_damage_type()) | is.na(input$budget)){
+      NULL
+    } else {
+      dat_sim <- run_best_simulation()
+      if(any(is.na(dat_sim))){
+        return(NULL)
+      } else {
+
+        data <- selected_damage_type()
+
+        country_name <- unique(data$Country)
+
+        data <- data[order(data$Year, decreasing = FALSE),]
+        largest_loss_num <- max(data$Loss)
+        largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
+
+        # find where budget equals curve
+        prob_exceed <- probability_of_exceeding()
+        # get country input for plot title
+        plot_title <- input$country
+        exceed_budget <- paste0('Probability of exceeding budget = ', prob_exceed)
+        plot_title <- paste0(plot_title, ' : ', exceed_budget)
+
+        # get budget
+        budget <- input$budget
+        peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
+        peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
+        rownames(peril_exceedance_curve) <- NULL
+        names(peril_exceedance_curve)[1] <- 'y'
+
+        # remove percent and turn numeric
+        peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
+        peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
+        peril_exceedance_curve$x <- peril_exceedance_curve$x/100
+        names(peril_exceedance_curve)[1] <- 'Total Loss'
+        names(peril_exceedance_curve)[2] <- 'Probability'
+        peril_exceedance_curve$Probability <- 1 - peril_exceedance_curve$Probability
+
+        if(input$ci){
+          dat <- peril_exceedance_curve
+          dat$y_min <- dat$`Total Loss`- mean(dat$`Total Loss`)
+          dat$y_min <- ifelse(dat$y_min < 0, 0, dat$y_min)
+
+          dat$y_max <-  dat$`Total Loss` + mean(dat$`Total Loss`)
+          g <- ggplot(dat, aes(Probability, `Total Loss`)) +
+            geom_line(col = 'blue', size = 1, alpha = 0.7) +
+            geom_line(aes(Probability, y_min), linetype = 'dotted') +
+            geom_line(aes(Probability, y_max), linetype = 'dotted') +
+            scale_x_reverse() +
+            ggtitle(plot_title) +
+            geom_hline(yintercept = largest_loss_num) +
+            geom_hline(yintercept = budget) +
+            geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
+            annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
+            annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
+            theme_bw(base_size = 14,
+                     base_family = 'Ubuntu')
+
+        } else {
+          g <- ggplot(peril_exceedance_curve, aes(Probability, `Total Loss`)) +
+            geom_line(col = 'blue', size = 1, alpha = 0.7) +
+            scale_x_reverse() +
+            ggtitle(plot_title) +
+            geom_hline(yintercept = largest_loss_num) +
+            geom_hline(yintercept = budget) +
+            geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
+            annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
+            annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
+            theme_bw(base_size = 14,
+                     base_family = 'Ubuntu')
+
+        }
+
+
+        return(g)
+
+      }
+    }
+
+
+  })
   # 
   # 
   # ############ OUTPUT 3
-  # output$annual_loss_gap_plotly <- renderPlot({
-  #   
-  #   if(is.null(selected_damage_type()) | is.na(input$budget)){
-  #     NULL
-  #   } else {
-  #     dat_sim <- run_best_simulation()
-  #     
-  #     if(any(is.na(dat_sim))){
-  #       NULL 
-  #     } else {
-  #       # get country data
-  #       data <- selected_damage_type()
-  #       
-  #       # remove obsevations with 0, if any
-  #       data <- data[data$Loss > 0,]
-  #       
-  #       data <- data[order(data$Year, decreasing = FALSE),]
-  #       # get country input for plot title
-  #       plot_title <- input$country
-  #       
-  #       # get quaintles 
-  #       output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99)) 
-  #       annual_avg <- mean(dat_sim)
-  #       
-  #       # create data frame dat to store output with chart labels 
-  #       dat <- data_frame(`Average` = annual_avg, 
-  #                         `Severe` = output[2],
-  #                         `Extreme` = output[5])
-  #       
-  #       # melt the data frame to get value and variable 
-  #       dat <- melt(dat)
-  #       
-  #       if(input$ci){
-  #         y_min <- dat$value - mean(dat$value)
-  #         y_min <- ifelse(y_min < 0, 0, y_min)
-  #         
-  #         y_max <-  dat$value + mean(dat$value)
-  #         # plot
-  #         g <- ggplot(dat, aes(x=variable, 
-  #                              y=value,
-  #                              text = value)) + 
-  #           geom_bar(stat = 'identity',
-  #                    fill = '#5B84B1FF',
-  #                    col = '#FC766AFF', 
-  #                    alpha = 0.6) + 
-  #           geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
-  #           
-  #           theme_bw(base_size = 14, 
-  #                    base_family = 'Ubuntu')  +
-  #           theme(axis.text.x = element_text(angle = 45, 
-  #                                            hjust = 1)) +
-  #           xlab('') + ylab('') +
-  #           
-  #           ggtitle(plot_title)
-  #         
-  #       }else {
-  #         # plot
-  #         g <- ggplot(dat, aes(x=variable, 
-  #                              y=value,
-  #                              text = value)) + 
-  #           geom_bar(stat = 'identity',
-  #                    fill = '#5B84B1FF',
-  #                    col = '#FC766AFF', 
-  #                    alpha = 0.6) + 
-  #           theme_bw(base_size = 14, 
-  #                    base_family = 'Ubuntu')  +
-  #           theme(axis.text.x = element_text(angle = 45, 
-  #                                            hjust = 1)) +
-  #           xlab('') + ylab('') +
-  #           
-  #           ggtitle(plot_title)
-  #         
-  #       }
-  #       
-  #       
-  #       return(g)
-  #       
-  #     }
-  #   }
-  #   
-  #   
-  #   
-  # })
+ 
+  output$annual_loss_gap_plotly <- renderPlot({
+    dat <- out
+    dat_sim = x
+        dat <- get_right_data()
+        dat_sim <- ran_simulations()
+        # remove obsevations with 0, if any
+        dat <- dat[dat$value > 0,]
+        dat <- dat[order(dat$year, decreasing = FALSE),]
+        is_archetype <- input$data_type == 'Archetype'
+        # get country input for plot title
+        if(is_archetype){
+          plot_title <- 'Archetype'
+        } else {
+          plot_title <- input$country
+        }
+
+        data_list <- list()
+        for(i in 1:length(unique(dat_sim$key))){
+          peril_name <- unique(dat_sim$key)[i]
+          sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
+          sub_dat <- dat %>% filter(peril == peril_name)
+          output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
+          annual_avg <- mean(sub_dat$value)
+          # create data frame dat to store output with chart labels
+          sub_plot_dat <- data_frame(`Average` = annual_avg,
+                                 `Severe` = output[2],
+                                 `Extreme` = output[5])
+          
+          # melt the data frame to get value and variable
+          sub_plot_dat <- melt(sub_plot_dat)
+          data_list[[i]] <- sub_plot_dat
+        }
+        
+        plot_dat <- do.call('rbind', data_list)
+        
+        
+
+        if(input$ci){
+          y_min <- plot_dat$value - mean(plot_dat$value)
+          y_min <- ifelse(y_min < 0, 0, y_min)
+
+          y_max <-  plot_dat$value + mean(plot_dat$value)
+          # plot
+          g <- ggplot(plot_dat, aes(x=variable,
+                               y=value,
+                               text = value)) +
+            geom_bar(stat = 'identity',
+                     fill = '#5B84B1FF',
+                     col = '#FC766AFF',
+                     alpha = 0.6) +
+            geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
+
+            theme_bw(base_size = 14,
+                     base_family = 'Ubuntu')  +
+            theme(axis.text.x = element_text(angle = 45,
+                                             hjust = 1)) +
+            xlab('') + ylab('') +
+
+            ggtitle(plot_title)
+
+        }else {
+          # plot
+          g <- ggplot(plot_dat, aes(x=variable,
+                               y=value,
+                               text = value)) +
+            geom_bar(stat = 'identity',
+                     fill = '#5B84B1FF',
+                     col = '#FC766AFF',
+                     alpha = 0.6) +
+            theme_bw(base_size = 14,
+                     base_family = 'Ubuntu')  +
+            theme(axis.text.x = element_text(angle = 45,
+                                             hjust = 1)) +
+            xlab('') + ylab('') +
+
+            ggtitle(plot_title)
+
+        }
+
+        return(g)
+
+  })
   # 
   # # OUTPUT 4
-  # output$loss_exceedance_gap_plotly <- renderPlot({
-  #   
-  #   if(is.null(selected_damage_type()) | is.na(input$budget)) {
-  #     NULL
-  #   } else {
-  #     dat_sim <- run_best_simulation()
-  #     
-  #     if(any(is.na(dat_sim))){
-  #       NULL
-  #     } else {
-  #       
-  #       prob_exceed_suprplus_deficit <- probability_of_exceeding_suplus_deficit()
-  #       data <- selected_damage_type()
-  #       
-  #       data <- data[order(data$Year, decreasing = FALSE),]
-  #       largest_loss_num <- max(data$Loss)
-  #       largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
-  #       budget <- input$budget
-  #       exceed_budget <- input$exceed_budget
-  #       
-  #       # get country input for plot title
-  #       if(input$budget == 0){
-  #         plot_title <- input$country
-  #         
-  #       } else {
-  #         plot_title <- input$country
-  #         exceed_surplus_deficit <- paste0('Probability of exceeding funding gap/surplus by \n', exceed_budget, ' is ', prob_exceed_suprplus_deficit)
-  #         plot_title <- paste0(plot_title, ' : ', exceed_surplus_deficit) 
-  #         
-  #       }
-  #       
-  #       # get best distirbution 
-  #       dat_sim <- run_best_simulation()
-  #       funding_gap_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
-  #       funding_gap_curve$x <- rownames(funding_gap_curve)
-  #       rownames(funding_gap_curve) <- NULL
-  #       names(funding_gap_curve)[1] <- 'y'
-  #       
-  #       # remove percent and turn numeric
-  #       funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
-  #       funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
-  #       
-  #       # divide y by 100k, so get data in millions 
-  #       funding_gap_curve$x <- (1 - funding_gap_curve$x)
-  #       # funding_gap_curve$y <- funding_gap_curve$y/scale_by
-  #       
-  #       names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
-  #       names(funding_gap_curve)[1] <- 'Funding gap'
-  #       funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
-  #       funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
-  #       
-  #       if(input$ci){
-  #         dat <- funding_gap_curve
-  #         dat$y_min <- dat$`Funding gap`- mean(dat$`Funding gap`)
-  #         dat$y_min <- dat$y_min
-  #         # dat$y_min <- ifelse(y_min > 0, 0, y_min)
-  #         dat$y_max <-  dat$`Funding gap` + mean(dat$`Funding gap`)
-  #         g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`)) +
-  #           geom_line(col = 'blue', size = 1, alpha = 0.7) +
-  #           geom_line(aes(`Probability of exceeding loss`, y_min), linetype = 'dotted') +
-  #           geom_line(aes(`Probability of exceeding loss`, y_max), linetype = 'dotted') +
-  #           scale_x_reverse(position = 'top') +
-  #           geom_hline(yintercept = 0, size = 2) +
-  #           ggtitle(plot_title) +
-  #           theme_bw(base_size = 14, 
-  #                    base_family = 'Ubuntu')
-  #         g
-  #       } else {
-  #         g <-  ggplot(funding_gap_curve, aes(`Probability of exceeding loss`, `Funding gap`)) +
-  #           geom_line(col = 'blue', size = 1, alpha = 0.7) +
-  #           scale_x_reverse(position = 'top') +
-  #           geom_hline(yintercept = 0, size = 2) +
-  #           ggtitle(plot_title) +
-  #           theme_bw(base_size = 14, 
-  #                    base_family = 'Ubuntu')
-  #       }
-  #       
-  #       
-  #       g
-  #       
-  #     }
-  #   }
-  # })
+  dat <- out
+  dat_sim <- x
+  output$loss_exceedance_gap_plotly <- renderPlot({
+
+        # prob_exceed_suprplus_deficit <- probability_of_exceeding_suplus_deficit()
+        # data <- selected_damage_type()
+    dat <- out
+    dat_sim = x
+    dat <- get_right_data()
+    dat_sim <- ran_simulations()
+        dat <- dat[order(dat$year, decreasing = FALSE),]
+        largest_loss_num <- max(dat$value)
+        largest_loss_year <- dat$Year[dat$loss == max(dat$loss)]
+        budget <- input$budget
+        exceed_budget <- input$exceed_budget
+
+        # # get country input for plot title
+        # if(input$budget == 0){
+        #   plot_title <- input$country
+        # 
+        # } else {
+        #   plot_title <- input$country
+        #   exceed_surplus_deficit <- paste0('Probability of exceeding funding gap/surplus by \n', exceed_budget, ' is ', prob_exceed_suprplus_deficit)
+        #   plot_title <- paste0(plot_title, ' : ', exceed_surplus_deficit)
+        # 
+        # }
+
+        is_archetype <- input$data_type == 'Archetype'
+        # get country input for plot title
+        if(is_archetype){
+          plot_title <- 'Archetype'
+        } else {
+          plot_title <- input$country
+        }
+        
+        data_list <- list()
+        for(i in 1:length(unique(dat_sim$key))){
+          peril_name <- unique(dat_sim$key)[i]
+          sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
+          sub_dat <- dat %>% filter(peril == peril_name)
+          output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
+          annual_avg <- mean(sub_dat$value)
+          # create data frame dat to store output with chart labels
+          sub_plot_dat <- data_frame(`Average` = annual_avg,
+                                     `Severe` = output[2],
+                                     `Extreme` = output[5])
+          
+          # melt the data frame to get value and variable
+          sub_plot_dat <- melt(sub_plot_dat)
+          data_list[[i]] <- sub_plot_dat
+        }
+        
+        plot_dat <- do.call('rbind', data_list)
+        
+        
+        # get best distirbution
+        dat_sim <- run_best_simulation()
+        funding_gap_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
+        funding_gap_curve$x <- rownames(funding_gap_curve)
+        rownames(funding_gap_curve) <- NULL
+        names(funding_gap_curve)[1] <- 'y'
+
+        # remove percent and turn numeric
+        funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
+        funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
+
+        # divide y by 100k, so get data in millions
+        funding_gap_curve$x <- (1 - funding_gap_curve$x)
+        # funding_gap_curve$y <- funding_gap_curve$y/scale_by
+
+        names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
+        names(funding_gap_curve)[1] <- 'Funding gap'
+        funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
+        funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
+
+        if(input$ci){
+          dat <- funding_gap_curve
+          dat$y_min <- dat$`Funding gap`- mean(dat$`Funding gap`)
+          dat$y_min <- dat$y_min
+          # dat$y_min <- ifelse(y_min > 0, 0, y_min)
+          dat$y_max <-  dat$`Funding gap` + mean(dat$`Funding gap`)
+          g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`)) +
+            geom_line(col = 'blue', size = 1, alpha = 0.7) +
+            geom_line(aes(`Probability of exceeding loss`, y_min), linetype = 'dotted') +
+            geom_line(aes(`Probability of exceeding loss`, y_max), linetype = 'dotted') +
+            scale_x_reverse(position = 'top') +
+            geom_hline(yintercept = 0, size = 2) +
+            ggtitle(plot_title) +
+            theme_bw(base_size = 14,
+                     base_family = 'Ubuntu')
+          g
+        } else {
+          g <-  ggplot(funding_gap_curve, aes(`Probability of exceeding loss`, `Funding gap`)) +
+            geom_line(col = 'blue', size = 1, alpha = 0.7) +
+            scale_x_reverse(position = 'top') +
+            geom_hline(yintercept = 0, size = 2) +
+            ggtitle(plot_title) +
+            theme_bw(base_size = 14,
+                     base_family = 'Ubuntu')
+        }
+
+
+        g
+
+      
+  })
   # 
   # DONT DO ANYTHING WITH BERNOULLI UNTILL YOU GET MORE INFO
   # # The basic user will not see this, only the advanced user

@@ -60,6 +60,7 @@ fit_distribution <- function(the_right_data = NULL){
     }
   }
   if(ok){
+    the_right_data <- the_right_data[the_right_data$value > 0,]
     out <- get_aic_mle(the_right_data)
     # save(out, file = 'out.RData')
   }
