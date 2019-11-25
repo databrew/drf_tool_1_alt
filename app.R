@@ -1060,7 +1060,10 @@ server <- function(input, output, session) {
       message('Not enough obs')
       return(NULL)
     } else {
-      data
+      out <- data %>%
+        tidyr::spread(key = peril, value = value)
+      names(out)[1:2] <- c('Country', 'Year')
+      out
     }
   })
   
