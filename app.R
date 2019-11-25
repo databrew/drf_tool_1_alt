@@ -2042,50 +2042,62 @@ server <- function(input, output, session) {
   # 
   # 
   # # OUTPUT 1
+  
+  dat <- out
+  dat_sim = x
   output$annual_loss_plotly <- renderPlot({
 
-    if(is.null(selected_damage_type()) | is.na(input$budget)){
-      return(NULL)
-    } else {
-      message(input$budget)
-      # get best distirbution
-      dat_sim <- run_best_simulation()
-      if(any(is.na(dat_sim))){
-        NULL
-      } else {
-        # get country data
-        data <- selected_damage_type()
-
+    dat <- get_right_data()
+    dat_sim <- ran_simulations()
+    # remove obsevations with 0, if any
+    dat <- dat[dat$value > 0,]
+    dat <- dat[order(dat$year, decreasing = FALSE),]
         # get budget
         budget <- input$budget
 
         # remove obsevations with 0, if any
-        data <- data[data$Loss > 0,]
-        data <- data[order(data$Year, decreasing = FALSE),]
-
+        dat <- dat[dat$value > 0,]
+        dat <- dat[order(dat$year, decreasing = FALSE),]
+        is_archetype <- input$data_type == 'Archetype'
         # get country input for plot title
-        plot_title <- input$country
+        if(is_archetype){
+          plot_title <- 'Archetype'
+        } else {
+          plot_title <- input$country
+        }
+        
+        data_list <- list()
+        for(i in 1:length(unique(dat_sim$key))){
+          peril_name <- unique(dat_sim$key)[i]
+          sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
+          sub_dat <- dat %>% filter(peril == peril_name)
+          output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
 
-        # get quaintles
-        output <- quantile(dat_sim,c(0.8,0.9, 0.96,0.98,0.99), na.rm = TRUE)
-        annual_avg <- mean(dat_sim)
-
-        # create data frame dat to store output with chart labels
-        dat <- data_frame(`Annual average` = annual_avg,
-                          `1 in 5 Years` = output[1],
-                          `1 in 10 Years` = output[2],
-                          `1 in 25 Years` = output[3],
-                          `1 in 50 Years` = output[4],
-                          `1 in 100 Years` = output[5],
-                          `Highest historical annual loss` = max(data$Loss),
-                          `Most recent annual loss` = data$Loss[nrow(data)])
-
-        # melt the data frame to get value and variable
-        dat <- melt(dat)
-
-        dat$variable <- factor(dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
-                                                        'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
-        dat$value <- round(dat$value, 2)
+          # create sub_data frame sub_dat to store output with chart labels
+          sub_dat <- data_frame(`Annual average` = annual_avg,
+                            `1 in 5 Years` = output[1],
+                            `1 in 10 Years` = output[2],
+                            `1 in 25 Years` = output[3],
+                            `1 in 50 Years` = output[4],
+                            `1 in 100 Years` = output[5],
+                            `Highest historical annual loss` = max(sub_dat$value),
+                            `Most recent annual loss` = sub_dat$value[nrow(sub_dat)])
+          
+          # melt the sub_data frame to get value and variable
+          sub_dat <- melt(sub_dat)
+          
+          sub_dat$variable <- factor(sub_dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
+                                                          'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
+          sub_dat$value <- round(sub_dat$value, 2)
+          
+          # melt the data frame to get value and variable
+          sub_plot_dat <- melt(sub_plot_dat)
+          data_list[[i]] <- sub_plot_dat
+        }
+        
+        plot_dat <- do.call('rbind', data_list)
+        
+      
 
         if(input$ci){
           y_min <- dat$value - mean(dat$value)
@@ -2128,8 +2140,7 @@ server <- function(input, output, session) {
 
 
         return(g)
-      }
-    }
+      
 
   })
   # 
@@ -2347,43 +2358,32 @@ server <- function(input, output, session) {
           peril_name <- unique(dat_sim$key)[i]
           sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
           sub_dat <- dat %>% filter(peril == peril_name)
-          output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
-          annual_avg <- mean(sub_dat$value)
-          # create data frame dat to store output with chart labels
-          sub_plot_dat <- data_frame(`Average` = annual_avg,
-                                     `Severe` = output[2],
-                                     `Extreme` = output[5])
+          # get best distirbution
+          funding_gap_curve <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002)))
+          funding_gap_curve$x <- rownames(funding_gap_curve)
+          rownames(funding_gap_curve) <- NULL
+          names(funding_gap_curve)[1] <- 'y'
           
-          # melt the data frame to get value and variable
-          sub_plot_dat <- melt(sub_plot_dat)
-          data_list[[i]] <- sub_plot_dat
+          # remove percent and turn numeric
+          funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
+          funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
+          
+          # divide y by 100k, so get data in millions
+          funding_gap_curve$x <- (1 - funding_gap_curve$x)
+          # funding_gap_curve$y <- funding_gap_curve$y/scale_by
+          
+          names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
+          names(funding_gap_curve)[1] <- 'Funding gap'
+          funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
+          funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
+          data_list[[i]] <- funding_gap_curve
         }
         
         plot_dat <- do.call('rbind', data_list)
         
         
-        # get best distirbution
-        dat_sim <- run_best_simulation()
-        funding_gap_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002)))
-        funding_gap_curve$x <- rownames(funding_gap_curve)
-        rownames(funding_gap_curve) <- NULL
-        names(funding_gap_curve)[1] <- 'y'
-
-        # remove percent and turn numeric
-        funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
-        funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
-
-        # divide y by 100k, so get data in millions
-        funding_gap_curve$x <- (1 - funding_gap_curve$x)
-        # funding_gap_curve$y <- funding_gap_curve$y/scale_by
-
-        names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
-        names(funding_gap_curve)[1] <- 'Funding gap'
-        funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
-        funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
-
         if(input$ci){
-          dat <- funding_gap_curve
+          dat <- plot_dat
           dat$y_min <- dat$`Funding gap`- mean(dat$`Funding gap`)
           dat$y_min <- dat$y_min
           # dat$y_min <- ifelse(y_min > 0, 0, y_min)
