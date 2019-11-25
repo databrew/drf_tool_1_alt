@@ -174,29 +174,58 @@ run_simulations <- function(prepared_simulation_data = NULL){
 }
 
 # Plot simulations
-plot_simulations <- function(ran_simulations = NULL,
-                             peril = 'Flood'){
+plot_simulations <- function(rs = NULL,
+                             right_data = NULL,
+                             peril = NULL,
+                             overlap = NULL){
   # ran_simulations gets generated in run_simulations
   # it should be a 3 column df with columns key, value and freq
   # peril must be one of the peril types
-  
-  out <- ggplot()
+  if(is.null(peril)){
+    peril <- 'Flood'
+  }
+  if(is.null(overlap)){
+    overlap <- c()# c('Observed data', 'Simulated data')
+  }
+  out <- ggplot() +
+    theme_bw()
   ok <- FALSE
-  if(!is.null(ran_simulations)){
-    if(nrow(ran_simulations) > 0){
-      ok <- TRUE
+  if(!is.null(rs)){
+    if(nrow(rs) > 0){
+      if(!is.null(rd)){
+        if(nrow(rd) > 0){
+          ok <- TRUE
+        }
+      }
     }
   }
   
-  if(ok){
+  if(ok)
     # Filter
-    pd <- ran_simulations %>%
-      filter(key == peril)
-    out <- ggplot(data = pd,
-           aes(x = value)) +
-      geom_density()
+    pd <- rs %>%
+    filter(key == peril) %>%
+    mutate(data_type = 'Simulated data') %>%
+    dplyr::select(value, data_type)
+  # Add the observed data
+  observed_data <- rd %>% dplyr::select(value) %>%
+    mutate(data_type = 'Observed data')
+  pd <- pd %>% bind_rows(
+    observed_data)  
+  
+  pd <- pd %>% filter(data_type %in% overlap)
+  if(nrow(pd) == 0){
+    out <- ggplot() +
+      labs(title = paste0('No data to show for ', peril)) +
+      theme_bw()
   } else {
-    out <- ggplot()
+    out <- ggplot(data = pd,
+                  aes(x = value)) +
+      geom_density(aes(fill = data_type),
+                   alpha = 0.7) +
+      scale_fill_brewer(name = 'Data type',
+                        type = 'qual') +
+      theme(legend.position = 'bottom') +
+      theme_bw()
   }
   return(out)
 }

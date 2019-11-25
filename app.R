@@ -91,7 +91,7 @@ body <- dashboardBody(
                         column(3,
                                uiOutput('code_ui'))
                       ),
-                      uiOutput('country_ui'),
+                      fluidRow(uiOutput('country_ui')),
                       fluidRow(uiOutput('data_source_ui')),
                       
                     )),
@@ -197,28 +197,33 @@ body <- dashboardBody(
                     value = 'SIMULATIONS',
                     
                     fluidPage(
-                      br(),
                       fluidRow(
-                        box(
-                          title = 'Peril data',
-                          width = 6,
-                          status = 'primary',
-                          plotOutput('hist_plot')),
-                        box(
-                          title = 'Simulation data',
-                          width = 6,
-                          status = 'primary',
-                          plotOutput('simulation_plot'))
+                        column(6,
+                               checkboxGroupInput('overlap_choices',
+                                                  'Show:',
+                                                  choices = c('Observed data',
+                                                              'Simulated data'),
+                                                  selected = c('Observed data',
+                                                              'Simulated data'))),
+                        column(6,
+                               selectInput('peril_simulation',
+                                           'Peril',
+                                           choices = c('Flood',
+                                                       'Drought',
+                                                       'Earthquake',
+                                                       'Storm')))
                       ),
                       fluidRow(
-                        br(),
-                        
-                        column(12,
-                               box(
-                                 title = 'AIC',
-                                 width = 12,
-                                 status = 'primary',
-                                 DT::dataTableOutput('simulation_table')))
+                        box(
+                          title = 'Simulation chart',
+                          width = 6,
+                          status = 'primary',
+                          plotOutput('simulation_plot')),
+                        box(
+                          title = 'Simulation table',
+                          width = 6,
+                          status = 'primary',
+                          DT::dataTableOutput('simulation_table'))
                       ),
                       fluidRow(
                         column(6,
@@ -524,12 +529,7 @@ server <- function(input, output, session) {
       the_input <- selectInput('archetype', 'Choose an archetype',
                                choices = archetypes)
     }
-    fluidPage(
-      fluidRow(
-        column(12,
-               the_input)
-      )
-    )
+    the_input
     
   })
 
@@ -1431,23 +1431,40 @@ server <- function(input, output, session) {
   
   output$delete <- DT::renderDataTable({
     corrected_data <- ran_simulations()
-    message('CORRECTED DATA IS')
-    print(head(corrected_data))
+    save(corrected_data, file = 'corrected_data.RData')
     corrected_data
   })
   
   output$simulation_plot <- renderPlot({
-    delete_me <- prepare_simulations()
-    delete_me <- run_simulations(delete_me)
-    message('the required format for run_simulations output is')
-    print(head(delete_me))
     rs <- ran_simulations()
-    plot_simulations(rs)
+    rd <- get_right_data()
+    plot_simulations(rs = rs,
+                     right_data = rd,
+                     peril = input$peril_simulation,
+                     overlap = input$overlap_choices)
   })
   
   output$simulation_table <- DT::renderDataTable({
-    fd <- fitted_distribution()
-    
+    fd <- fitted_distribution() 
+    ok <- FALSE
+    if(!is.null(fd)){
+      if(nrow(fd) > 0){
+        ok <- TRUE
+      }
+    }
+    if(ok){
+      selected_peril <- input$peril_simulation
+      fd <- fd %>%
+        filter(peril == selected_peril) %>%
+        dplyr::select(-peril)
+      names(fd) <- c('Distribution',
+                     'AIC',
+                     'MLE 1',
+                     'MLE 2')
+      return(fd)
+    } else{
+      return(NULL)
+    }
   })
   # 
   #   data <- readRDS('~/Desktop/data.rda')
