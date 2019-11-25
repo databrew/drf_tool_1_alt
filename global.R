@@ -66,8 +66,7 @@ other_currencies <- c('EUR', 'CNY')
 
 # create a placeholder for disturbution types
 basic_parametric <- c('Log normal', 'Beta', 'Gamma', 
-                      'Frechet', 'Gumbel', 'Weilbull',
-                      'Poisson', ' Bernoulli')
+                      'Frechet', 'Gumbel', 'Weilbull')
 advanced_parametric <- c('Log normal', 'Beta', 'Gamma', 
                          'Frechet', 'Gumbel', 'Weibull',
                          'Pareto')

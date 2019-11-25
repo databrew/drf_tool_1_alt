@@ -11,12 +11,9 @@ fit_distribution <- function(the_right_data = NULL){
   }
   if(ok){
     # right now, just giving some fake data
-    out <- expand.grid(distribution = c('Log-Normal',
-                                        'Normal',
-                                        'Random',
-                                        'Uniform',
-                                        'Backwards',
-                                        'Forwards'),
+    message('USING FAKE DATA IN FIT_DISTRIBUTION')
+    out <- expand.grid(distribution = c('Log normal', 'Beta', 'Gamma', 
+                                        'Frechet', 'Gumbel', 'Weilbull'),
                        peril = c('Flood', 'Drought', 'Storm', 'Earthquake'))
     out$mle1 <- rnorm(n = nrow(out))
     out$mle2 <- rnorm(n = nrow(out))
@@ -37,11 +34,11 @@ filter_distribution <- function(fitted_distribution = NULL){
   }
   if(ok){
     out <- fitted_distribution %>%
-      group_by(distribution, peril) %>%
+      group_by(peril) %>%
       mutate(min_aic = min(aic, na.rm = TRUE)) %>%
       ungroup %>%
       filter(aic == min_aic) %>%
-      dplyr::distinct(distribution, peril, .keep_all = TRUE)
+      dplyr::distinct(peril, .keep_all = TRUE)
   }
   return(out)
 }
@@ -90,6 +87,7 @@ run_simulations <- function(prepared_simulation_data = NULL){
     if(nrow(prepared_simulation_data) != 4){
       message('Prepared simulation data should have exactly 4 rows!!!')
     }
+    message('RUN_SIMULATIONS IS USING FAKE METHODOLOGY')
     perils <- sort(unique(prepared_simulation_data$peril))
     
     # The following is fake data code

@@ -6,6 +6,7 @@ library(shinyjs)
 # Source the data set-up
 source('functions.R')
 source('global.R')
+source('helpers.R')
 
 # # Create a dictionary of tab names / numbers
 tab_dict <- data_frame(number = 1:5,
@@ -177,7 +178,7 @@ body <- dashboardBody(
                     #  start new row that encompasses inputs for country, download buttons, damage type, and currency
                     fluidPage(
                       fluidRow(column(12,
-                                      uiOutput('peril_type'))),
+                                      uiOutput('peril_ui'))),
                       
                       fluidRow(uiOutput('select_scale_ui')),
                       uiOutput('trend_test_ui'),
@@ -207,7 +208,7 @@ body <- dashboardBody(
                           title = 'Simulation data',
                           width = 6,
                           status = 'primary',
-                          plotOutput('sim_plot'))
+                          plotOutput('simulation_plot'))
                       ),
                       fluidRow(
                         br(),
@@ -217,7 +218,7 @@ body <- dashboardBody(
                                  title = 'AIC',
                                  width = 12,
                                  status = 'primary',
-                                 DT::dataTableOutput('aic_table')))
+                                 DT::dataTableOutput('simulation_table')))
                       ),
                       fluidRow(
                         column(6,
@@ -263,8 +264,6 @@ body <- dashboardBody(
                                div(class = 'well',
                                    numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0)))
                       ),
-                      
-                      
                       # 
                       bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1', 
                                 content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happend every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expectedto happen every 10 years (ie 10% probability.", 
@@ -1308,6 +1307,98 @@ server <- function(input, output, session) {
     corrected_data
   })
   
+  
+  fitted_distribution <- reactive({
+    rd <- get_right_data()
+    fit_distribution(rd)
+  })
+  
+  filtered_distribution <- reactive({
+    fd <- fitted_distribution()
+    filter_distribution(fd)
+  })
+  
+  
+  
+  output$peril_ui <- renderUI({
+    is_advanced <- input$advanced == 'Advanced'
+    fd <- filtered_distribution()
+    if(is.null(fd)){
+      return(NULL)
+    } else {
+      message('this is fd')
+      print(head(fd))
+      chosen_flood <- fd %>% filter(peril == 'Flood') %>% .$distribution
+      chosen_earthquake <- fd %>% filter(peril == 'Earthquake') %>% .$distribution
+      chosen_drought <- fd %>% filter(peril == 'Drought') %>% .$distribution
+      chosen_storm <- fd %>% filter(peril == 'Storm') %>% .$distribution
+      
+      if(!is_advanced){
+        flood_choices <- chosen_flood
+        earthquake_choices <- chosen_earthquake
+        drought_choices <- chosen_drought
+        storm_choices <- chosen_storm
+      } else {
+        flood_choices <- earthquake_choices <- drought_choices <- storm_choices <- advanced_parametric
+      }
+      message('flood choices is ', flood_choices)
+      message('chosen flood ', chosen_flood)
+      fluidPage(
+        fluidRow(
+          radioButtons('dist_flood_input', 
+                       'Distribution for flood', 
+                       choices = flood_choices,
+                       selected = chosen_flood,
+                       inline = TRUE)
+          
+        ),
+        fluidRow(
+          radioButtons('dist_drought_input', 
+                       'Distribution for drout', 
+                       choices = drought_choices,
+                       selected = chosen_drought,
+                       inline = TRUE)
+        ),
+        fluidRow(
+          radioButtons('dist_storm_input', 
+                       'Distribution for storm', 
+                       choices = storm_choices,
+                       selected = chosen_storm,
+                       inline = TRUE)
+        ),
+        fluidRow(
+          radioButtons('dist_earthquake_input', 
+                       'Distribution for earthquake', 
+                       choices = earthquake_choices,
+                       selected = chosen_earthquake,
+                       inline = TRUE)
+        )
+      )
+    }
+  })
+  
+  prepared_simulations <- reactive({
+    fd <- fitted_distribution()
+    prepare_simulations(fd, dist_flood = input$dist_flood_input, 
+                        dist_drought = input$dist_drought_input,
+                        dist_storm = input$dist_storm_input,
+                        dist_earthquake = input$dist_earthquake_input)
+  })
+  
+  ran_simulations <- reactive({
+    ps <- prepare_simulations()
+    run_simulations(ps)
+  })
+  
+  output$simulation_plot <- renderPlot({
+    rs <- ran_simulations()
+    plot_simulations(rs)
+  })
+  
+  output$simulation_table <- DT::renderDataTable({
+    fd <- fitted_distribution()
+    
+  })
   # 
   #   data <- readRDS('~/Desktop/data.rda')
   #   
