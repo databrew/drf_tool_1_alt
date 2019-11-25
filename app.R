@@ -369,46 +369,50 @@ server <- function(input, output, session) {
   set.seed(122)
   histdata <- rnorm(1)
   observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, { 
-    # event will be called when histdata changes, which only happens once, when it is initially calculated
-    showModal(modalDialog(
-      title = "", easyClose = FALSE, footer = NULL,
-      
-      fluidPage(
-        fluidRow(
-          column(12, align = 'center',
-                 h2('Welcome to World Bank Group!'))
-        ),
-        fluidRow(
-          column(12, align = 'center',
-                 p('Please tell us your name, email and create a password so we can get started.'))
-        ),
-        fluidRow(
-          column(6,
-                 textInput('first_name', '',
-                           placeholder = 'First name')),
-          column(6,
-                 textInput('last_name', '',
-                           placeholder = 'Last name'))
-        ),
-        fluidRow(column(12, textInput('email', '', placeholder = 'Email'))),
-        fluidRow(column(12, textInput('password', '', placeholder = 'Password'))),
-        fluidRow(column(12, textInput('confirm_password', '', placeholder = 'Confirm password'))),
-        fluidRow(
-          column(12, align = 'center',
-                 actionButton('get_started', 'Get started'))
-        )
-      )
-    ))
+    
+    # UNCOMMENT TO SHOW MODAL
+    # # event will be called when histdata changes, which only happens once, when it is initially calculated
+    # showModal(modalDialog(
+    #   title = "", easyClose = FALSE, footer = NULL,
+    #   
+    #   fluidPage(
+    #     fluidRow(
+    #       column(12, align = 'center',
+    #              h2('Welcome to World Bank Group!'))
+    #     ),
+    #     fluidRow(
+    #       column(12, align = 'center',
+    #              p('Please tell us your name, email and create a password so we can get started.'))
+    #     ),
+    #     fluidRow(
+    #       column(6,
+    #              textInput('first_name', '',
+    #                        placeholder = 'First name')),
+    #       column(6,
+    #              textInput('last_name', '',
+    #                        placeholder = 'Last name'))
+    #     ),
+    #     fluidRow(column(12, textInput('email', '', placeholder = 'Email'))),
+    #     fluidRow(column(12, textInput('password', '', placeholder = 'Password'))),
+    #     fluidRow(column(12, textInput('confirm_password', '', placeholder = 'Confirm password'))),
+    #     fluidRow(
+    #       column(12, align = 'center',
+    #              actionButton('get_started', 'Get started'))
+    #     )
+    #   )
+    # )
+    # )
   })
   
   # Observe the "Get started" button on the log-in page and remove the modal
   observeEvent(input$get_started, {
     removeModal()
     
-    showModal(modalDialog(
-      title = "Disaster Risk Financing Tool 1", easyClose = FALSE, footer = NULL,
-      welcome_modal
-    ))
+    # UNCOMMENT BEFORE DEPLOY    
+    # showModal(modalDialog(
+    #   title = "Disaster Risk Financing Tool 1", easyClose = FALSE, footer = NULL,
+    #   welcome_modal
+    # ))
   })
   observeEvent(input$accept,{
     removeModal()
@@ -1066,8 +1070,6 @@ server <- function(input, output, session) {
     cored <- core_data()
     sd <- prepare_scale_data()
     is_archetype <- input$data_type == 'Archetype'
-    message('ARCHETyPE ISSUE: input$data_type is ', input$data_type)
-    message('ARCHETyPE ISSUE: is_archetype is ', is_archetype)
     
     is_advanced <- input$advanced == 'Advanced'
     ss <- input$select_scale
@@ -1274,16 +1276,13 @@ server <- function(input, output, session) {
     trend_dat <- correct_trend()
     is_trend <- input$trend_test
     out <- NULL
-    message('core_dat is '); print(head(core_dat))
-    message('scale_dat is '); print(head(scale_dat))
-    message('trend_dat is '); print(head(trend_dat))
-    message('A')
     # if(is.null(core_dat) & is.null(scale_dat) & is.null(trend_dat)){
     #   NULL
     # }
     if(input$data_type == 'Archetype'){
       out <- core_dat
       out <- out[[1]]
+      names(out) <- c('archetype', 'year', 'peril', 'value')
       message('archetype selected, so core_dat!!!')
     } else {
       # capture whether there are significant trends
@@ -1310,7 +1309,9 @@ server <- function(input, output, session) {
   
   fitted_distribution <- reactive({
     rd <- get_right_data()
-    fit_distribution(rd)
+    temp <- fit_distribution(rd)
+    message('fit_distribution outcome')
+    head(temp)
   })
   
   filtered_distribution <- reactive({
@@ -1343,36 +1344,68 @@ server <- function(input, output, session) {
       }
       message('flood choices is ', flood_choices)
       message('chosen flood ', chosen_flood)
-      fluidPage(
-        fluidRow(
+      
+      no_go <- c()
+      if(length(flood_choices) == 0){
+        no_go <- c(no_go, 'Flood')
+        flood_go <- br()
+      } else {
+        flood_go <- fluidRow(
           radioButtons('dist_flood_input', 
                        'Distribution for flood', 
                        choices = flood_choices,
                        selected = chosen_flood,
-                       inline = TRUE)
-          
-        ),
-        fluidRow(
-          radioButtons('dist_drought_input', 
-                       'Distribution for drout', 
-                       choices = drought_choices,
-                       selected = chosen_drought,
-                       inline = TRUE)
-        ),
-        fluidRow(
-          radioButtons('dist_storm_input', 
-                       'Distribution for storm', 
-                       choices = storm_choices,
-                       selected = chosen_storm,
-                       inline = TRUE)
-        ),
-        fluidRow(
+                       inline = TRUE))
+      }
+      if(length(earthquake_choices) == 0){
+        no_go <- c(no_go, 'Earthquake')
+        earthquake_go <- br()
+      } else {
+        earthquake_go <- fluidRow(
           radioButtons('dist_earthquake_input', 
                        'Distribution for earthquake', 
                        choices = earthquake_choices,
                        selected = chosen_earthquake,
                        inline = TRUE)
         )
+      }
+      if(length(drought_choices) == 0){
+        no_go <- c(no_go, 'Drought')
+        drought_go <- br()
+      } else {
+        drought_go <- fluidRow(
+          radioButtons('dist_drought_input', 
+                       'Distribution for drought', 
+                       choices = drought_choices,
+                       selected = chosen_drought,
+                       inline = TRUE)
+        )
+      }
+      if(length(storm_choices) == 0){
+        no_go <- c(no_go, 'Storm')
+        storm_go <- br()
+      } else {
+        storm_go <- fluidRow(
+          radioButtons('dist_storm_input', 
+                       'Distribution for storm', 
+                       choices = storm_choices,
+                       selected = chosen_storm,
+                       inline = TRUE)
+        )
+      }
+      no_go <- paste0(no_go, collapse = ', ')
+      if(length(no_go) > 0){
+        ht <- helpText(paste0('No distributions could fit the data for the following perils: ', no_go))
+      } else {
+        ht <- br()
+      }
+      
+      fluidPage(
+        fluidRow(ht),
+        flood_go,
+        drought_go,
+        storm_go,
+        earthquake_go
       )
     }
   })
@@ -1391,6 +1424,10 @@ server <- function(input, output, session) {
   })
   
   output$simulation_plot <- renderPlot({
+    delete_me <- prepare_simulations()
+    delete_me <- run_simulations(delete_me)
+    message('the required format for run_simulations output is')
+    print(head(delete_me))
     rs <- ran_simulations()
     plot_simulations(rs)
   })

@@ -293,22 +293,21 @@ plot_bar <- function(temp_dat, bar_color, border_color, alpha, plot_title){
 
 
 
-fit_distribution <- function(data){
+get_aic_mle <- function(dat){
   # get aic mle  by looping through perils 
-  data <- data[[1]]
-  
-  data <- data[data$value > 0,]
-  temp <- data %>% group_by(peril) %>% summarise(counts = sum(value))
+
+  dat <- dat[dat$value > 0,]
+  temp <- dat %>% group_by(peril) %>% summarise(counts = sum(value))
   present_perils <- unique(temp$peril)
   
-  # subset data by present perils
-  data <- data %>% filter(peril %in% present_perils)
-  data_list <- list()
+  # subset dat by present perils
+  dat <- dat %>% filter(peril %in% present_perils)
+  dat_list <- list()
   for(i in 1:length(present_perils)){
     peril_name <- present_perils[i]
-    sub_data <- data[data$peril == peril_name,]
+    sub_dat <- dat[dat$peril == peril_name,]
     
-    log_normal <- try(fitdistr(sub_data$value, "lognormal"),silent = TRUE)
+    log_normal <- try(fitdistr(sub_dat$value, "lognormal"),silent = TRUE)
     if(class(log_normal) == 'try-error'){
       log_normal <- NULL
       log_normal_aic <- NA
@@ -331,14 +330,14 @@ fit_distribution <- function(data){
       # log_normal_lower_mle_2 <- log_normal$estimate[2] - log_normal$sd[2]
       
       # if there is an error, fill object with NA
-      message('log normal AIC is ', log_normal_aic)
+     
       
       # get MLE
       log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
-      message('log normal mle is ', log_normal_mle)
+     
     }
-    # create data frame to store aic and MLEs
-    log_normal_data <- data_frame(name = 'log_normal',
+    # create dat frame to store aic and MLEs
+    log_normal_dat <- data_frame(name = 'log_normal',
                                   aic = log_normal_aic,
                                   mle_1 = log_normal$estimate[1],
                                   mle_2 = log_normal$estimate[2])
@@ -347,7 +346,7 @@ fit_distribution <- function(data){
     # upper_mle_2 = log_normal_upper_mle_2,
     # lower_mle_2 = log_normal_lower_mle_2)
     
-    beta <- try(eBeta_ab(sub_data$value, method = "numerical.MLE"), silent = TRUE)
+    beta <- try(eBeta_ab(sub_dat$value, method = "numerical.MLE"), silent = TRUE)
     if(class(beta) == 'try-error'){
       beta <- NULL
       beta_aic <- NA
@@ -355,15 +354,14 @@ fit_distribution <- function(data){
       beta$shape2 <- NA
       beta_mle <- c(beta$shape1, beta$shape2)
     } else {
-      beta_ll <- lBeta_ab(X = sub_data$value, params = beta, logL = TRUE)
+      beta_ll <- lBeta_ab(X = sub_dat$value, params = beta, logL = TRUE)
       beta_aic <- -(2*beta_ll + 2)
       beta_mle <- c(beta$shape1, beta$shape2)
       
       # beta_aic <- round(beta$aic, 4)
-      message('beta AIC is ', beta_aic)
-      message('beta mle is ', beta_mle)
+     
     }
-    beta_data <- data_frame(name = 'beta',
+    beta_dat <- data_frame(name = 'beta',
                             aic = round(beta_aic, 4),
                             mle_1 = beta_mle[1],
                             mle_2 = beta_mle[2])
@@ -374,8 +372,8 @@ fit_distribution <- function(data){
     # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
     
     # fit gamma
-    # gamma <- fitdistr(sub_data$value, 'gamma')
-    gamma <- try(fitdistrplus::fitdist(sub_data$value, "gamma", start=list(shape=0.5, scale=1), method="mle"), silent = TRUE)
+    # gamma <- fitdistr(sub_dat$value, 'gamma')
+    gamma <- try(fitdistrplus::fitdist(sub_dat$value, "gamma", start=list(shape=0.5, scale=1), method="mle"), silent = TRUE)
     
     if(class(gamma) == 'try-error'){
       gamma <- NULL
@@ -386,8 +384,7 @@ fit_distribution <- function(data){
     } else {
       # get aic
       gamma_aic <- round(gamma$aic, 4)
-      message('gamma AIC is ', gamma_aic)
-      
+
       # upper and lower bound for each estimate
       # gamma_upper_mle_1 <- gamma$estimate[1] + gamma$sd[1]
       # gamm_lower_mle_1 <- gamma$estimate[1] - gamma$sd[1]
@@ -397,9 +394,8 @@ fit_distribution <- function(data){
       #
       # get mle
       gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
-      message('gamme mle is ', gamma_mle)
     }
-    gamma_data <- data_frame(name = 'gamma',
+    gamma_dat <- data_frame(name = 'gamma',
                              aic = gamma_aic,
                              mle_1 = gamma$estimate[1],
                              mle_2 = gamma$estimate[2])
@@ -411,8 +407,8 @@ fit_distribution <- function(data){
     
     
     # fit frechet
-    # dfrechet(sub_data$value, lambda = 1, mu = 1, sigma = 1, log = TRUE)
-    frechet <- try(fitdistrplus::fitdist(sub_data$value, "frechet", start=list(scale=0.1, shape=0.1), method="mle"),
+    # dfrechet(sub_dat$value, lambda = 1, mu = 1, sigma = 1, log = TRUE)
+    frechet <- try(fitdistrplus::fitdist(sub_dat$value, "frechet", start=list(scale=0.1, shape=0.1), method="mle"),
                    silent = TRUE)
     if(class(frechet) == 'try-error'){
       frechet <- NULL
@@ -422,12 +418,10 @@ fit_distribution <- function(data){
       
     } else {
       frechet_aic <- round(frechet$aic, 4)
-      message('frechet AIC is ', frechet_aic)
       # get mle
       frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
-      message('frechet mle is ', frechet_mle)
     }
-    frechet_data <- data_frame(name = 'frechet',
+    frechet_dat <- data_frame(name = 'frechet',
                                aic = frechet_aic,
                                mle_1 = frechet$estimate[1],
                                mle_2 = frechet$estimate[2])
@@ -435,7 +429,7 @@ fit_distribution <- function(data){
     
     
     # git gumbel
-    gumbel_fit <- try(fit_gumbel(sub_data$value), silent = TRUE)
+    gumbel_fit <- try(fit_gumbel(sub_dat$value), silent = TRUE)
     if(class(gumbel_fit) == 'try-error'){
       gumbel_fit <- NULL
       gumbel_aic <- NA
@@ -444,12 +438,10 @@ fit_distribution <- function(data){
       
     } else {
       gumbel_aic <- round(gumbel_fit$aic, 4)
-      message('gumbel AIC is ', gumbel_aic)
       # get mle
       gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
-      message('gumbel mle is ', gumbel_mle)
     }
-    gumbel_data <- data_frame(name = 'gumbel',
+    gumbel_dat <- data_frame(name = 'gumbel',
                               aic = gumbel_aic,
                               mle_1 = gumbel_fit$estimate[1],
                               mle_2 = gumbel_fit$estimate[2])
@@ -457,7 +449,7 @@ fit_distribution <- function(data){
     
     
     # fit weibull
-    weibull <- try(fitdistrplus::fitdist(sub_data$value, "weibull", start=list(shape=0.1, scale=1), method="mle"), silent = TRUE)
+    weibull <- try(fitdistrplus::fitdist(sub_dat$value, "weibull", start=list(shape=0.1, scale=1), method="mle"), silent = TRUE)
     if(class(weibull) == 'try-error'){
       weibull <- NULL
       weibull_aic <- NA
@@ -466,13 +458,13 @@ fit_distribution <- function(data){
       
     } else {
       weibull_aic <- round(weibull$aic, 4)
-      message('weibull AIC is ', weibull_aic)
+     
       
       # get mle
       weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
-      message('weibull mle is ', weibull_mle)
+      
     }
-    weibull_data <- data_frame(name = 'weibull',
+    weibull_dat <- data_frame(name = 'weibull',
                                aic = weibull_aic,
                                mle_1 = weibull$estimate[1],
                                mle_2 = weibull$estimate[2])
@@ -480,7 +472,7 @@ fit_distribution <- function(data){
     
     
     # fit pareto
-    pareto <-try(ParetoPosStable::pareto.fit(sub_data$value, estim.method = 'MLE'), silent = TRUE)
+    pareto <-try(ParetoPosStable::pareto.fit(sub_dat$value, estim.method = 'MLE'), silent = TRUE)
     if(class(pareto) == 'try-error'){
       pareto <- NULL
       pareto_aic <- NA
@@ -489,12 +481,12 @@ fit_distribution <- function(data){
       
     } else {
       pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
-      message('pareto AIC is ', pareto_aic)
+      
       # get mle
       pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
-      message('pareto mle is ', pareto_mle)
+     
     }
-    pareto_data <- data_frame(name = 'pareto',
+    pareto_dat <- data_frame(name = 'pareto',
                               aic = pareto_aic,
                               mle_1 = pareto$estimate[[1]],
                               mle_2 = pareto$estimate[[2]])
@@ -502,34 +494,34 @@ fit_distribution <- function(data){
     
     
     
-    # create a data frame out of data results
-    aic_mle_data <- rbind(log_normal_data,
-                          gamma_data,
-                          beta_data,
-                          frechet_data,
-                          gumbel_data,
-                          weibull_data,
-                          pareto_data)
+    # create a dat frame out of dat results
+    aic_mle_dat <- rbind(log_normal_dat,
+                          gamma_dat,
+                          beta_dat,
+                          frechet_dat,
+                          gumbel_dat,
+                          weibull_dat,
+                          pareto_dat)
     
     # change names of variable
-    names(aic_mle_data) <- c('Distribution', 'AIC', 'MLE 1', 'MLE 2')
+    names(aic_mle_dat) <- c('distribution', 'aic', 'mle1', 'mle2')
     
-    # capitalize and remove underscore of Distribution
-    aic_mle_data$Distribution <- Hmisc::capitalize(aic_mle_data$Distribution)
-    aic_mle_data$Distribution <- gsub('_', ' ', aic_mle_data$Distribution)
-    aic_mle_data$AIC <- round(aic_mle_data$AIC, 2)
-    aic_mle_data$`MLE 1`<- round(aic_mle_data$`MLE 1`, 2)
-    aic_mle_data$`MLE 2` <- round(aic_mle_data$`MLE 2`, 2)
+    # capitalize and remove underscore of distribution
+    aic_mle_dat$distribution <- Hmisc::capitalize(aic_mle_dat$distribution)
+    aic_mle_dat$distribution <- gsub('_', ' ', aic_mle_dat$distribution)
+    aic_mle_dat$aic <- round(aic_mle_dat$aic, 2)
+    aic_mle_dat$mle1<- round(aic_mle_dat$mle1, 2)
+    aic_mle_dat$mle2 <- round(aic_mle_dat$mle2, 2)
     
-    aic_mle_data$peril <- peril_name
+    aic_mle_dat$peril <- peril_name
     
-    data_list[[i]] <- aic_mle_data
+    dat_list[[i]] <- aic_mle_dat
     
   }
   
-  aic_data <- do.call('rbind', data_list)
+  aic_dat <- do.call('rbind', dat_list)
   
-  return(aic_data)
+  return(aic_dat)
   
 }
 
@@ -581,7 +573,7 @@ plot_sim <- function(temp_dat){
     geom_histogram(alpha = 0.6) +
     labs(x="Simulated Loss", 
          y="Frequency",
-         title='Distribution of simulated loss',
+         title='distribution of simulated loss',
          subtitle = '15k simulations') +
     theme_databrew()
   return(p)

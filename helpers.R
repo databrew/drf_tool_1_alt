@@ -1,3 +1,53 @@
+make_simulation <- function(dis_name, dat){
+  if(dis_name == 'Log normal'){
+    if(any(is.na(dat$aic))){
+      sim <- NA
+    }  else {
+      sim <- rlnorm(n = 15000, meanlog = dat$`mle1`, sdlog = dat$`mle2`)
+    }
+  } else if (dis_name == 'Gamma'){
+    if(any(is.na(dat$aic))){
+      sim <- NA
+    }  else {
+      # check to see how much seed matters
+      sim <- rgamma(n = 15000, shape = dat$`mle1`, scale = dat$`mle2`)
+    }
+  } else if (dis_name == 'Beta'){
+    if(any(is.na(dat$aic))){
+      sim <- NA
+    } else {
+      sim <- rbeta(n = 15000, shape1 = dat$`mle1`, scale2 = dat$`mle2`)
+    }
+  }  else if (dis_name == 'Frechet'){
+    if(any(is.na(dat$aic))){
+      sim <- NA
+    }  else {
+      sim <- rfrechet(n = 15000, loc=0, scale=dat$`mle1`, shape=dat$`mle2`)
+    }
+  } else if (dis_name == 'Gumbel'){
+    if(any(is.na(dat$aic))){
+      sim <- NA
+    } else {
+      sim <- actuar::rgumbel(n = 15000, alpha = dat$`mle1`, scale = dat$`mle2`)
+    }
+  } else if (dis_name == 'Weibull'){
+    if(any(is.na(dat$aic))){
+      sim <- NA
+    }  else {
+      sim <- rweibull(n = 15000, shape = dat$`mle1`, scale = dat$`mle2`)
+    }
+  } else {
+    if(any(is.na(dat$aic))){
+      sim <- NA
+    }  else {
+      sim <- extraDistr::rpareto(n = 15000, a = dat$`mle1`, b = dat$`mle2`)
+    }
+  }
+  return(sim)
+}
+
+
+
 fit_distribution <- function(the_right_data = NULL){
   require(tidyverse)
   # the right data should be either scaled, detrended or core data, depending on inputs
@@ -10,14 +60,8 @@ fit_distribution <- function(the_right_data = NULL){
     }
   }
   if(ok){
-    # right now, just giving some fake data
-    message('USING FAKE DATA IN FIT_DISTRIBUTION')
-    out <- expand.grid(distribution = c('Log normal', 'Beta', 'Gamma', 
-                                        'Frechet', 'Gumbel', 'Weilbull'),
-                       peril = c('Flood', 'Drought', 'Storm', 'Earthquake'))
-    out$mle1 <- rnorm(n = nrow(out))
-    out$mle2 <- rnorm(n = nrow(out))
-    out$aic <- sample(1:100000, size = nrow(out))
+    out <- get_aic_mle(the_right_data)
+    # save(out, file = 'out.RData')
   }
   return(out)
 }
@@ -39,6 +83,10 @@ filter_distribution <- function(fitted_distribution = NULL){
       ungroup %>%
       filter(aic == min_aic) %>%
       dplyr::distinct(peril, .keep_all = TRUE)
+    # out$aic <- sample(1:100000, size = nrow(out))
+    message('this is result of filter_dis')
+    print(head(out))
+  
   }
   return(out)
 }
@@ -66,7 +114,7 @@ prepare_simulations <- function(fitted_distribution = NULL,
           (peril == 'Storm' & distribution == dist_storm) | 
           (peril == 'Earthquake' & distribution == dist_earthquake) 
       )
- }
+  }
   return(out)
 }
 
@@ -75,6 +123,7 @@ run_simulations <- function(prepared_simulation_data = NULL){
   # from the prepare_simulations function, a 5 column df as produced by
   # fit_distribution, but filtered down to only include 1 distribution for 
   # each peril, ie only 4 rows total
+  # column names should be distribution, peril, mle1, mle2, aic
   out <- NULL
   ok <- FALSE
   if(!is.null(prepared_simulation_data)){
@@ -94,12 +143,17 @@ run_simulations <- function(prepared_simulation_data = NULL){
     out_list <- list()
     for(i in 1:length(perils)){
       this_peril <- perils[i]
+      sub_peril <- prepared_simulation_data %>% filter(peril == this_peril)
+      x <-make_simulation(dis_name = sub_peril$distribution, dat = sub_peril)
+      
       out_list[[i]] <- tibble(key = this_peril,
-                         value = rnorm(n = 15000),
+                         value = x,
+                         # freq is still not working
                          freq = sample(0:1, size = 15000, replace = TRUE)) %>% mutate(n = 1:15000) %>%
         mutate(outcome = freq * value)
     }
     out <- bind_rows(out_list)
+    # returns a dataframe with key, value, freq, n, and outcome
   }
   return(out)
 }
