@@ -1303,8 +1303,6 @@ server <- function(input, output, session) {
         }
       }
     }
-    
-    save(out, file = 'out.RData')
     return(out)
   })
   
@@ -1319,10 +1317,8 @@ server <- function(input, output, session) {
   
   filtered_distribution <- reactive({
     fd <- fitted_distribution()
-    save(fd, file = 'fitted_distribution.RData')
     message('the fitted_distribution() reactive is:')
     print(head(fd))
-    save(fd, file = 'fdx.RData')
     filter_distribution(fd)
   })
   
@@ -1433,7 +1429,6 @@ server <- function(input, output, session) {
     message('PS IS')
     print(head(ps))
     x <- run_simulations(ps)
-    save(x, file = 'x.RData')
   })
   
   
