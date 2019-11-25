@@ -1342,7 +1342,7 @@ server <- function(input, output, session) {
       message('chosen flood ', chosen_flood)
       
       no_go <- c()
-      if(length(flood_choices) == 0){
+      if(length(chosen_flood) == 0){
         no_go <- c(no_go, 'Flood')
         flood_go <- br()
       } else {
@@ -1353,7 +1353,7 @@ server <- function(input, output, session) {
                        selected = chosen_flood,
                        inline = TRUE))
       }
-      if(length(earthquake_choices) == 0){
+      if(length(chosen_earthquake) == 0){
         no_go <- c(no_go, 'Earthquake')
         earthquake_go <- br()
       } else {
@@ -1365,7 +1365,7 @@ server <- function(input, output, session) {
                        inline = TRUE)
         )
       }
-      if(length(drought_choices) == 0){
+      if(length(chosen_drought) == 0){
         no_go <- c(no_go, 'Drought')
         drought_go <- br()
       } else {
@@ -1377,7 +1377,7 @@ server <- function(input, output, session) {
                        inline = TRUE)
         )
       }
-      if(length(storm_choices) == 0){
+      if(length(chosen_storm) == 0){
         no_go <- c(no_go, 'Storm')
         storm_go <- br()
       } else {
