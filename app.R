@@ -1312,6 +1312,10 @@ server <- function(input, output, session) {
   
   filtered_distribution <- reactive({
     fd <- fitted_distribution()
+    save(fd, file = 'fitted_distribution.RData')
+    message('the fitted_distribution() reactive is:')
+    print(head(fd))
+    save(fd, file = 'fdx.RData')
     filter_distribution(fd)
   })
   
@@ -1323,8 +1327,6 @@ server <- function(input, output, session) {
     if(is.null(fd)){
       return(NULL)
     } else {
-      message('this is fd')
-      print(head(fd))
       chosen_flood <- fd %>% filter(peril == 'Flood') %>% .$distribution
       chosen_earthquake <- fd %>% filter(peril == 'Earthquake') %>% .$distribution
       chosen_drought <- fd %>% filter(peril == 'Drought') %>% .$distribution
@@ -1408,20 +1410,29 @@ server <- function(input, output, session) {
   
   prepared_simulations <- reactive({
     fd <- fitted_distribution()
-    prepare_simulations(fd, dist_flood = input$dist_flood_input, 
+    message('fd here is :')
+    print(head(fd))
+    x <- prepare_simulations(fd, dist_flood = input$dist_flood_input, 
                         dist_drought = input$dist_drought_input,
                         dist_storm = input$dist_storm_input,
                         dist_earthquake = input$dist_earthquake_input)
+    message('x is')
+    print(head(x))
+    x
   })
   
   ran_simulations <- reactive({
-    ps <- prepare_simulations()
+    ps <- prepared_simulations()
+    message('PS IS')
+    print(head(ps))
     run_simulations(ps)
   })
   
   
   output$delete <- DT::renderDataTable({
     corrected_data <- ran_simulations()
+    message('CORRECTED DATA IS')
+    print(head(corrected_data))
     corrected_data
   })
   

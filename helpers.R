@@ -83,21 +83,36 @@ filter_distribution <- function(fitted_distribution = NULL){
       ungroup %>%
       filter(aic == min_aic) %>%
       dplyr::distinct(peril, .keep_all = TRUE)
-    # out$aic <- sample(1:100000, size = nrow(out))
-    message('this is result of filter_dis')
-    print(head(out))
-  
   }
   return(out)
 }
 
 prepare_simulations <- function(fitted_distribution = NULL,
-                            dist_flood = 'Gamma',
-                            dist_drought = 'Gamma',
-                            dist_storm = 'Gamma',
-                            dist_earthquake = 'Gamma'){
+                            dist_flood = NULL,
+                            dist_drought = NULL,
+                            dist_storm = NULL,
+                            dist_earthquake = NULL){
   # fitted_distribution should be a 5 column df as produced by
   # fit_distribution
+  
+  if(is.null(dist_flood)){
+    dist_flood = 'Gamma'  
+  }
+  if(is.null(dist_drought)){
+    dist_drought = 'Gamma'  
+  }
+  if(is.null(dist_storm)){
+    dist_storm = 'Gamma'  
+  }
+  if(is.null(dist_earthquake)){
+    dist_earthquake = 'Gamma'  
+  }
+  
+  
+  
+  
+  
+  
   out <- NULL
   ok <- FALSE
   if(!is.null(fitted_distribution)){
