@@ -1199,23 +1199,13 @@ server <- function(input, output, session) {
   # trend_perils$p_value[trend_perils$peril == 'Storm'] <- 0.03
   
   correct_trend <- reactive({
-    if((is.null(prepare_loss_data()) & is.null(prepare_cost_data())) | is.null(input$trend_test) | is.null(execute_trend_test())){
+    if(is.null(input$trend_test)){
       return(NULL)
     } else {
       
-      if(input$damage_type == 'Total damage'){
-        data <- prepare_loss_data()
-        
-      } else {
-        data <- prepare_cost_data()
-      }    
-      
-      if(input$advanced == 'Basic'){
-        return(data)
-      } else {
-        if(input$trend_test  == 'No'){
-          return(data)
-        }
+      if(input$trend_test  == 'No'){
+        return(NULL)
+      }
         trend_perils <- execute_trend_test()
         peril_type <- trend_perils$peril[trend_perils$p_value <= 0.05 & !is.na(trend_perils$p_value)]
         
@@ -1240,11 +1230,14 @@ server <- function(input, output, session) {
         return(data)
       }
       
-    }
+    
     
   })
   
-  
+  output$correct_trend_table <- DT::renderDataTable({
+    corrected_data <- correct_trend()
+    corrected_data
+  })
   
   
   ################
