@@ -1063,9 +1063,10 @@ server <- function(input, output, session) {
       out <- data %>%
         tidyr::spread(key = peril, value = value)
       names(out)[1:2] <- c('Country', 'Year')
-      out
+      datatable(out, rownames = FALSE)
     }
-  })
+  },options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
+  ))
   
   # reactive object to scale data
   scale_data_reactive <- reactive({
@@ -1265,12 +1266,15 @@ server <- function(input, output, session) {
         # datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
       } else {
         out <- prepare_scale_data()
+        names(out) <- c('Country', 'Year', 'Population', 'Inflation',
+                        'GDP')
         # datatable(data, options = list(dom='t',ordering=F))
       }
-      out
+      datatable(out, rownames = FALSE)
     }
     
-  })
+  }, options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
+  ))
   
   # reactive object to create right data 
   get_right_data <- reactive({
@@ -1435,9 +1439,10 @@ server <- function(input, output, session) {
   
   output$delete <- DT::renderDataTable({
     corrected_data <- ran_simulations()
-    save(corrected_data, file = 'corrected_data.RData')
-    corrected_data
-  })
+    # save(corrected_data, file = 'corrected_data.RData')
+    datatable(corrected_data, rownames = FALSE)
+  }, options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
+  ))
   
   output$simulation_plot <- renderPlot({
     rs <- ran_simulations()
@@ -1465,11 +1470,12 @@ server <- function(input, output, session) {
                      'AIC',
                      'MLE 1',
                      'MLE 2')
-      return(fd)
+      return(datatable(fd, rownames = FALSE))
     } else{
       return(NULL)
     }
-  })
+  },options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
+  ))
   # 
   #   data <- readRDS('~/Desktop/data.rda')
   #   
