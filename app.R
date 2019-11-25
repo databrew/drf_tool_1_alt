@@ -1301,10 +1301,6 @@ server <- function(input, output, session) {
     return(out)
   })
   
-  output$delete <- DT::renderDataTable({
-    corrected_data <- get_right_data()
-    corrected_data
-  })
   
   
   fitted_distribution <- reactive({
@@ -1421,6 +1417,12 @@ server <- function(input, output, session) {
   ran_simulations <- reactive({
     ps <- prepare_simulations()
     run_simulations(ps)
+  })
+  
+  
+  output$delete <- DT::renderDataTable({
+    corrected_data <- ran_simulations()
+    corrected_data
   })
   
   output$simulation_plot <- renderPlot({

@@ -126,6 +126,7 @@ run_simulations <- function(prepared_simulation_data = NULL){
   # column names should be distribution, peril, mle1, mle2, aic
   out <- NULL
   ok <- FALSE
+  print(head(prepared_simulation_data))
   if(!is.null(prepared_simulation_data)){
     if(nrow(prepared_simulation_data) > 0){
       ok <- TRUE
@@ -134,7 +135,7 @@ run_simulations <- function(prepared_simulation_data = NULL){
 
   if(ok){
     if(nrow(prepared_simulation_data) != 4){
-      message('Prepared simulation data should have exactly 4 rows!!!')
+      message('Prepared simulation data should have more than 4 rows')
     }
     message('RUN_SIMULATIONS IS USING FAKE METHODOLOGY')
     perils <- sort(unique(prepared_simulation_data$peril))
@@ -145,7 +146,6 @@ run_simulations <- function(prepared_simulation_data = NULL){
       this_peril <- perils[i]
       sub_peril <- prepared_simulation_data %>% filter(peril == this_peril)
       x <-make_simulation(dis_name = sub_peril$distribution, dat = sub_peril)
-      
       out_list[[i]] <- tibble(key = this_peril,
                          value = x,
                          # freq is still not working
