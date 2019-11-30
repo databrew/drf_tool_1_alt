@@ -1044,11 +1044,12 @@ server <- function(input, output, session) {
     }
     
     # At this point, if we've made to here, there is an object called data
-    # save(data, file = 'data.RData')
     out <- NULL
     if(!is.null(dat)){
       out <- dat
+      out <- transform_core_data(out)
     }
+    # save(out, file = 'out.RData')
     out
   })
   output$raw_data_table <- DT::renderDataTable({
@@ -1069,7 +1070,8 @@ server <- function(input, output, session) {
       out <- data %>%
         tidyr::spread(key = peril, value = value)
       names(out)[1:2] <- c('Country', 'Year')
-      datatable(out, rownames = FALSE)
+      datatable(out, rownames = FALSE,
+                editable = list(target = 'cell', disable = list(columns = 0:1)))
     }
   },options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
   ))

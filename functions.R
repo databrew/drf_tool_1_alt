@@ -577,3 +577,24 @@ plot_sim <- function(temp_dat){
     theme_databrew()
   return(p)
 }
+
+# Function for making core data a one row per peril-year data set
+transform_core_data <- function(cdx){
+  if(is.null(cdx)){
+    return(NULL)
+  }
+  if(!is.list(cdx)){
+    return(NULL)
+  }
+  if(length(cdx) != 2){
+    return(NULL)
+  }
+  cdx2 <- cdx[[2]]
+  cdx1 <- cdx[[1]]
+  cdx1 <- cdx2 %>%
+    dplyr::select(-value) %>%
+    left_join(cdx1) %>%
+    mutate(value = ifelse(is.na(value), 0, value))
+  out <- list(cdx1, cdx2)
+  return(out)
+}
