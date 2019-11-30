@@ -92,8 +92,6 @@ body <- dashboardBody(
                                uiOutput('code_ui'))
                       ),
                       fluidRow(uiOutput('country_ui')),
-                      fluidRow(uiOutput('data_source_ui')),
-                      
                     )),
                   tabPanel(uiOutput('data_ui'),
                            value = 'DATA',
@@ -177,6 +175,8 @@ body <- dashboardBody(
                     
                     #  start new row that encompasses inputs for country, download buttons, damage type, and currency
                     fluidPage(
+                      
+                      fluidRow(uiOutput('data_source_ui')),
                       fluidRow(column(12,
                                       uiOutput('peril_ui'))),
                       
@@ -1001,6 +1001,8 @@ server <- function(input, output, session) {
   })
   
   core_data <- reactive({
+    # Get this to update on any tab run
+    x <- tab_data$data
     dat <- NULL
     ad <- prepare_archetype_data()
     ld <- prepare_loss_data()
@@ -1060,6 +1062,11 @@ server <- function(input, output, session) {
       data <- cored[[1]]
     } else {
       data <- cored[[2]]
+    }
+    not_ok <- is.null(data)
+    if(not_ok){
+      message('core_data() is null, so returning null')
+      return(NULL)
     }
     if(nrow(data) <=3){
       message('Not enough obs')
