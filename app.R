@@ -1638,8 +1638,7 @@ server <- function(input, output, session) {
       }
       
       plot_dat <- do.call('rbind', data_list)
-      save(plot_dat, file = 'plot_dat.RData')
-      
+
       if(input$ci){
         y_min <- plot_dat$value - mean(plot_dat$value)
         y_min <- ifelse(y_min < 0, 0, y_min)
