@@ -214,7 +214,7 @@ scale_data <- full_join(scale_data, gdp_data)
 
 # get all archetype cost data into one data frame
 archetype_cost_data <- read_in_archetype_cost_data('cost_data', archetype_names = archetypes)
-names(archetype_cost_data) <- c('archetype', 'year', 'peril', 'outcome', 'data_type')
+names(archetype_cost_data) <- c('archetype', 'year', 'peril', 'value', 'data_type')
 
 # ge all archetype frequency data into data frame
 archetype_freq_data <- read_in_archetype_freq_data('freq_data', archetype_names = archetypes)

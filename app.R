@@ -775,7 +775,7 @@ server <- function(input, output, session) {
     } else {
       country_name <- input$country
       scale_data <- scale_data[scale_data$Country == country_name,]
-      names(scale_data) <- c('country', 'year', 'population','scale_factor_population', '', 'inflation', 'gdp')
+      names(scale_data) <- c('country', 'year', 'population','inflation', 'gdp')
       return(scale_data)
     }
   })
@@ -935,11 +935,11 @@ server <- function(input, output, session) {
       archetype_data <- selected_archetype()
       archetype_frequency <- archetype_frequency()
       cost = 50
-      
+
       # remove emdat and
       archetype_frequency$data_type <- archetype_data$data_type <-  NULL
       
-      archetype_data$outcome <- archetype_data$outcome*cost
+      archetype_data$value <- archetype_data$value*cost
       
       message(head(archetype_data), 'this is good')
       
@@ -1012,7 +1012,6 @@ server <- function(input, output, session) {
     if(is.null(dt)){
       ok <- FALSE
     }
-    
     possible_tables <- c('cost', 'loss', 'arch')
     if(is.null(ad)){
       message('here')
@@ -1161,8 +1160,6 @@ server <- function(input, output, session) {
   
   
 
-  
- 
   
   # data <- data_list
   
