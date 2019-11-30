@@ -41,6 +41,8 @@ sidebar <- dashboardSidebar(
 )
 
 body <- dashboardBody(
+  tags$head(tags$style(HTML(".small-box {height: 50px}"))),
+  valueBoxOutput(outputId = "vb"),
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
   ),
@@ -2154,11 +2156,90 @@ server <- function(input, output, session) {
   output$output_top_ui <- renderUI({
     
     the_country <- input$country
+    the_perils <- input$select_peril
+    the_damage_type <- input$damage_type
     
-    fluidPage(
-      h4(
-        paste0('Risk & Disaster Analysis Output')
-      ))
+    the_country_ok <- FALSE
+    the_perils_ok <- FALSE
+    the_damage_type_ok <- FALSE
+    
+    if(!is.null(the_country)){
+      the_country_ok <- TRUE
+    }
+    
+    if(!is.null(the_perils)){
+      if(length(the_perils) > 0){
+        the_perils_ok <- TRUE
+      }
+    }
+    
+    cpp <- FALSE
+    if(!is.null(the_damage_type)){
+      the_damage_type_ok <- TRUE
+      if(the_damage_type == 'Cost per person'){
+        cpp <- TRUE
+      }
+    }
+    
+    oks <- c(the_country_ok, the_perils_ok, the_damage_type_ok)
+    if(length(oks) == 0){
+      out <- fluidPage(
+        fluidRow(
+          h4(
+            paste0('Risk & Disaster Analysis Output')
+          )
+        )
+      )
+    } else {
+      if(the_country_ok){
+        vb1 <- valueBox(value = tags$p(paste0('Country: ', the_country, collapse = ''), style = "font-size: 40%;"),
+                        subtitle = '',
+                        width = 3)
+      } else {
+        vb1 <- valueBox(value = '', subtitle = '',
+                        width = 3)
+      }
+      
+      if(the_perils_ok){
+        fs <- 40 / ((length(the_perils))^(1/4))
+        vb2 <- valueBox(value = tags$p(paste0('Perils: ', paste0(the_perils, collapse = ', '), collapse = ''), style = paste0("font-size: ", fs, "%;")),
+                        subtitle = '',
+                        width = 3)
+      } else {
+        vb2 <- valueBox(value = '', subtitle = '',
+                        width = 3)
+      }
+      
+      if(the_damage_type_ok){
+        if(cpp){
+          the_val <- input$cost_per_person
+          cpp_subtitle <- 'Cost per person:'
+        } else {
+          the_val <- 'damage'
+          cpp_subtitle <- 'Total'
+        }
+        vb3 <- valueBox(value = tags$p(paste0(cpp_subtitle, ' ', the_val, collapse = ''), style = "font-size: 40%;"),
+                        subtitle = '',
+                        width = 3)
+      } else {
+        vb3 <- valueBox(value = '', subtitle = '',
+                        width = 3)
+      }
+      
+      out <- fluidPage(
+        fluidRow(
+          column(3,
+                 h4(
+                   paste0('Risk & Disaster Analysis Output for:')
+                 )),
+          vb1,
+          vb2,
+          vb3
+        )
+      )
+    }
+    
+    
     
   })
 }
