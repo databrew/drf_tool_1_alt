@@ -1,4 +1,3 @@
-
 library(shiny)
 library(shinydashboard)
 library(DT)
@@ -80,7 +79,7 @@ advanced_parametric <- c('Log normal', 'Beta', 'Gamma',
 emdat_data <- read.csv('data/Countries/emdat_country.csv', stringsAsFactors = FALSE)
 
 # add column for data origin
-emdat_data$origin <- 'EMDAT'
+emdat_data$origin <- 'EM_DAT'
 
 # desinventar
 des_data <- read.csv('data/Countries/desinventer_country.csv', stringsAsFactors = FALSE)
@@ -88,9 +87,19 @@ des_data <- read.csv('data/Countries/desinventer_country.csv', stringsAsFactors 
 # add column for data origin
 des_data$origin <- 'DesInventar'
 
+# read in ocha data
+# desinventar
+ocha_data <- read.csv('data/Countries/ocha_data.csv', stringsAsFactors = FALSE)
+
+# add column for data origin
+ocha_data$origin <- 'OCHA'
+
+ocha_data$Total.affected <- NA
+
 # combine data
-country_data <- rbind(emdat_data, des_data)
-rm(emdat_data, des_data)
+country_data <- rbind(emdat_data, des_data, ocha_data)
+rm(emdat_data, des_data, ocha_data)
+
 # rename columns
 names(country_data) <- c('country', 'year', 'peril', 'affected', 'damage', 'origin')
 
@@ -99,18 +108,37 @@ country_data <- melt(country_data, id.vars = c('country', 'year', 'peril', 'orig
 
 names(country_data)[5] <- 'damage_type'
 
+# read in best data key
+best_data <- read.csv('data/Countries/best_data_emdat_investar_ocha.csv', stringsAsFactors = FALSE)
+
+names(best_data) <- c('country', 'desinventar', 'em_dat', 'ocha', 'affected', 'damage')
+
+# remove columns
+best_data$em_dat <- best_data$ocha <- best_data$desinventar <- NULL
+
+best_data <- melt(best_data, id.vars = 'country')
+names(best_data)[2:3] <- c('damage_type', 'best_source')
+# 
+# best_data_cost <- best_data %>% filter(damage_type == 'affected')
+# best_data_damage <- best_data %>% filter(damage_type == 'damage')
+# rm(best_data)
 ##########
 # determing best source based on years available
 ##########
 
-# split data into affected and total damage
+# # split data into affected and total damage
 cost_data <- country_data[country_data$damage_type == 'affected',]
 damage_data <-  country_data[country_data$damage_type == 'damage',]
 rm(country_data)
+# 
+# cost_data <- left_join(cost_data, best_data_cost, c('country', 'damage_type'))
+# 
+# damage_data <- left_join(damage_data, best_data_cost, c('country', 'damage_type'))
+# rm(best_data_cost, best_data_damage)
 
-# get best data
-cost_data <- get_best_data(cost_data)
-damage_data <- get_best_data(damage_data)
+# # get best data
+# cost_data <- get_best_data(cost_data)
+# damage_data <- get_best_data(damage_data)
 
 # get frequency data
 cost_freq <- expand_data(cost_data)
@@ -130,6 +158,11 @@ rm(cost_freq, damage_freq, cost_data, damage_data)
 population_data <- read.csv('data/Scale/population_data.csv')
 gdp_data <- read.csv('data/Scale/gdp.csv')
 inflation_data <- read.csv('data/Scale/inflation.csv')
+
+# get scaled_factor for each country for population, inflation, and gdp
+get_scaled_factor <- function(dat, scale_data_type){
+  
+}
 
 # join data 
 scale_data <- full_join(population_data, inflation_data)

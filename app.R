@@ -256,7 +256,7 @@ body <- dashboardBody(
                     
                     h4('Risk & Disaster Analysis Output'),
                     fluidPage(
-                      DT::dataTableOutput('delete'),
+                      # DT::dataTableOutput('delete'),
                       br(),
                       fluidRow(
                         column(3,
@@ -281,7 +281,6 @@ body <- dashboardBody(
                                 placement = "left", trigger = "hover", options = list(container ='body')),
                       
                       fluidRow(
-                        
                         box(title = "Estimated Average Annual Loss by Time Period",
                             plotOutput('annual_loss_plotly')),
                         box(title = "Estimated Average Annual Loss by Severity",
@@ -709,33 +708,38 @@ server <- function(input, output, session) {
     }
   })
   
+  
   output$data_source_ui <- renderUI({
-    if(is.null(input$data_type) | is.null(selected_country())){
+    if(is.null(input$damage_type) | is.null(selected_country())){
       NULL
     } else {
       if(input$data_type == 'Archetype'){
         return(NULL)
       } else {
-        
         country_data <- selected_country()
-        if(length(unique(country_data$origin)) > 1){
-          best_source <- unique(country_data$origin[which(country_data$best_data == TRUE)])
+        country_name <- unique(country_data$country)
+        best_source <- best_data %>% filter(country == country_name)
+        damage_type <- input$damage_type
+        if(damage_type == 'Total damage'){
+          source_name <- best_source %>% filter(damage_type == 'damage') %>% .$best_source
           selectInput('data_source', 
                       'Choose data source (default is best)', 
-                      choices = c('EMDAT', 'DesInventar'),
-                      selected = best_source)
+                      choices = source_name,
+                      selected = source_name)
         } else {
-          best_source <- unique(country_data$origin[which(country_data$best_data == TRUE)])
+          source_name <- best_source %>% filter(damage_type == 'affected') %>% .$best_source
           selectInput('data_source', 
                       'Choose data source (default is best)', 
-                      choices = best_source,
-                      selected = best_source)
+                      choices = source_name,
+                      selected = source_name)
         }
         
       }
     }
   })
   
+  
+
   
   prepare_loss_data <- reactive({
     if(is.null(input$data_source) | is.null(country_frequency())){
@@ -744,6 +748,7 @@ server <- function(input, output, session) {
       best_source <- input$data_source
       country_data <- selected_country()
       country_frequency <- country_frequency()
+      
       
       # subset data by best source
       country_data <- country_data[country_data$origin == best_source & country_data$damage_type == 'damage',]
@@ -890,11 +895,11 @@ server <- function(input, output, session) {
     if(ok){
       
       country_frequency <- country_frequency()
-      message('Here is what our stuff looks like:')
-      message('---best_source is ', best_source)
-      message('---rate is ', rate)
-      message('---code is ', code)
-      message('---cost is ', cost)
+      # message('Here is what our stuff looks like:')
+      # message('---best_source is ', best_source)
+      # message('---rate is ', rate)
+      # message('---code is ', code)
+      # message('---cost is ', cost)
       # subset data by best source
       country_data <- country_data[country_data$origin == best_source & country_data$damage_type == 'affected',]
       country_frequency <- country_frequency[country_frequency$origin == best_source & country_frequency$damage_type == 'affected',]
@@ -965,7 +970,7 @@ server <- function(input, output, session) {
       } else {
         data <- prepare_scale_data()
         scaled_choices <- names(data)[names(data) %in% scaled_data]
-        scaled_choices <- Hmisc::capitalize(c(scaled_choices, ' No scaling'))
+        scaled_choices <- toupper(c(scaled_choices, ' No scaling'))
         selectInput('select_scale', 
                     'Choose from preloaded scaling data',
                     choices = scaled_choices,
@@ -1106,14 +1111,33 @@ server <- function(input, output, session) {
       if(is.null(cored) | is.null(sd)){
         out <- NULL
       } else {
-        combined_data <- inner_join(cored, sd)
+        combined_data <- left_join(cored, sd)
         out <- combined_data %>%  group_by(peril) %>% arrange(-year) %>% mutate(scaled_factor = population[1]/population) %>%
           mutate(value = value * scaled_factor)
       }
     } else if(ss == 'GDP'){
-      out <- cored
-    } else if(ss == 'Inflation'){
-      out <- cored
+      if(is.null(cored) | is.null(sd)){
+        out <- NULL
+      } else {
+        combined_data <- left_join(cored, sd)
+        # save(combined_data, file = 'combined_data.RData')
+        out <- combined_data %>%  group_by(peril) %>% arrange(-year) %>% mutate(scaled_factor = population[1]/population) %>%
+          mutate(value = value * scaled_factor)
+      }
+    } else if(ss == 'INFLATION'){
+      if(is.null(cored) | is.null(sd)){
+        out <- NULL
+      } else {
+        # load(file = 'cored.RData')
+        # load(file = 'sd.RData')
+        combined_data <- left_join(cored, sd)
+        # d <- temp %>% arrange(-year) %>% mutate(scaled_factor = inflation[2]/inflation) %>%
+        #   mutate(value = value * scaled_factor)
+        # save(combined_data, file = 'combined_data.RData')
+        out <- combined_data %>%  group_by(peril) %>% arrange(-year) %>% mutate(scaled_factor = population[1]/population) %>%
+          mutate(value = value * scaled_factor)
+        
+      }
     } else {
       out <- cored
     }
@@ -1310,9 +1334,8 @@ server <- function(input, output, session) {
   
   fitted_distribution <- reactive({
     rd <- get_right_data()
-    temp <- fit_distribution(rd)
-    message('fit_distribution outcome')
-    head(temp)
+    fit_distribution(rd)
+  
   })
   
   filtered_distribution <- reactive({
@@ -1429,15 +1452,16 @@ server <- function(input, output, session) {
     message('PS IS')
     print(head(ps))
     x <- run_simulations(ps)
+    return(x)
   })
   
   
-  output$delete <- DT::renderDataTable({
-    corrected_data <- ran_simulations()
-    # save(corrected_data, file = 'corrected_data.RData')
-    datatable(corrected_data, rownames = FALSE)
-  }, options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
-  ))
+  # output$delete <- DT::renderDataTable({
+  #   corrected_data <- ran_simulations()
+  #   # save(corrected_data, file = 'corrected_data.RData')
+  #   datatable(corrected_data, rownames = FALSE)
+  # }, options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
+  # ))
   
   output$simulation_plot <- renderPlot({
     rs <- ran_simulations()
@@ -1471,980 +1495,492 @@ server <- function(input, output, session) {
     }
   },options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
   ))
-  # 
-  #   data <- readRDS('~/Desktop/data.rda')
-  #   
-  #   fit_dis <- reactive({
-  #     if(is.null(correct_trend())){
-  #       NULL
-  #     } else {
-  #       data <- correct_trend()
-  #       out <- fit_distribution(data)
-  #       return(out)
-  #     }
-  #     
-  #   })
-  #   
-  #   # make a reactive object that grabs the name of the best distribution - this is the default for basic users. Advanced users can choose a new one
-  #   get_best_dis <- reactive({
-  #     if(is.null(fit_dis())){
-  #       return(NULL)
-  #     } else {
-  #       # get aic_mle_data
-  #       dat <- fit_dis()
-  #       peril_names <- unique(dat$peril)
-  #       data_list <- list()
-  #       for(i in 1:length(peril_names)){
-  #         peril_name <- peril_names[i]
-  #         sub_dat <- dat[dat$peril == peril_name,]
-  #         aic_min_ind <- which(sub_dat$AIC == min(sub_dat$AIC, na.rm = T))
-  #         sub_dat <- sub_dat[aic_min_ind,]
-  #         sub_dat$best_dis <- sub_dat$Distribution
-  #         data_list[[i]] <- sub_dat
-  #         
-  #       }
-  #       
-  #       out <- do.call('rbind', data_list)
-  #       return(out)
-  #   
-  #     }
-  #   })
-  #   
-  #   
-  #   # ui for prob_dis - right now the output is dependent on the best distribution
-  #   # if advanced is selected the distribution has multiple choices, otherwise it defaults to best
-  #   output$prob_dis_drought_ui <- renderUI({
-  #     gg <- get_best_dis()
-  #     if(is.null(gg)){
-  #       return(NULL)
-  #     } else {
-  #       # get aic_mle_data
-  #       dat <- get_best_dis()
-  #       
-  #       if(input$advanced == 'Advanced'){
-  #         selectInput('prob_dis_drought', 'Choose distribution (default is best fit)',
-  #                     choices = advanced_parametric,
-  #                     selected = best_dis)
-  #       } else {
-  #         selectInput('prob_dis_drought', 'Default is best fit',
-  #                     choices = best_dis,
-  #                     selected = best_dis)
-  #       }
-  #     }
-  #     
-  #   })
-  #   
-  #   utput$prob_dis_earthquake_ui <- renderUI({
-  #     gg <- get_best_dis()
-  #     if(is.null(gg)){
-  #       return(NULL)
-  #     } else {
-  #       # get aic_mle_data
-  #       dat <- get_best_dis()
-  #       
-  #       if(input$advanced == 'Advanced'){
-  #         selectInput('prob_dis_earthquake', 'Choose distribution (default is best fit)',
-  #                     choices = advanced_parametric,
-  #                     selected = best_dis)
-  #       } else {
-  #         selectInput('prob_dis_earthquake', 'Default is best fit',
-  #                     choices = best_dis,
-  #                     selected = best_dis)
-  #       }
-  #     }
-  #     
-  #   })
-  #   
-  #   utput$prob_dis_flood_ui <- renderUI({
-  #     gg <- get_best_dis()
-  #     if(is.null(gg)){
-  #       return(NULL)
-  #     } else {
-  #       # get aic_mle_data
-  #       dat <- get_best_dis()
-  #       
-  #       if(input$advanced == 'Advanced'){
-  #         selectInput('prob_dis_flood', 'Choose distribution (default is best fit)',
-  #                     choices = advanced_parametric,
-  #                     selected = best_dis)
-  #       } else {
-  #         selectInput('prob_dis_flood', 'Default is best fit',
-  #                     choices = best_dis,
-  #                     selected = best_dis)
-  #       }
-  #     }
-  #     
-  #   })
-  #   
-  #   utput$prob_dis_storm_ui <- renderUI({
-  #     gg <- get_best_dis()
-  #     if(is.null(gg)){
-  #       return(NULL)
-  #     } else {
-  #       # get aic_mle_data
-  #       dat <- get_best_dis()
-  #       
-  #       if(input$advanced == 'Advanced'){
-  #         selectInput('prob_dis_storm', 'Choose distribution (default is best fit)',
-  #                     choices = advanced_parametric,
-  #                     selected = best_dis)
-  #       } else {
-  #         selectInput('prob_dis_storm', 'Default is best fit',
-  #                     choices = best_dis,
-  #                     selected = best_dis)
-  #       }
-  #     }
-  #     
-  #   })
-  #   
-  
-  
-  #   
-  # Log normal ci
-  # log_normal_statistic <- function(x, inds) {try(fitdistr(x[inds],"lognormal")$estimate, silent = TRUE)}
-  # bs_log_normal <- boot(data$Loss, log_normal_statistic, R = 1000)
-  # log_normal_ci <- boot.ci(bs_log_normal, conf=0.95, type="bca")
-  #   ###############
-  #   # Simulations tab
-  #   ###############
-  # 
-  #   get_aic_mle <- reactive({
-  #     if(is.null(correct_trend())){
-  #       NULL
-  #     } else {
-  #       data <- correct_trend()
-  #       message(head(data), 'get_aic_mle data here')
-  #     }
-  # 
-  #   })
-  # 
-  #   get_aic_mle <- reactive({
-  #     if(is.null(selected_damage_type())){
-  #       return(NULL)
-  #     } else {
-  # 
-  #       # data <- country_data
-  #       data <- selected_damage_type()
-  #       # remove obsevations with 0, if any
-  #       data <- data[data$Loss > 0,]
-  # 
-  #       ##########
-  #       # fit lognormal
-  #       #########
-  #       log_normal <- try(fitdistr(data$Loss, "lognormal"),silent = TRUE)
-  #       if(class(log_normal) == 'try-error'){
-  #         log_normal <- NULL
-  #         log_normal_aic <- NA
-  #         log_normal$estimate[1] <- NA
-  #         log_normal$estimate[2] <- NA
-  #         # log_norma$upper_mle_1 <- NA
-  #         # log_normal$lower_mle_1 <- NA
-  #         # log_norma$upper_mle_2 <- NA
-  #         # log_normal$lower_mle_2 <- NA
-  #         #
-  #       } else {
-  #         # get aic
-  #         log_normal_aic <- round(AIC(log_normal), 4)
-  #         #
-  #         # # upper and lower bound for each estimate
-  #         # log_normal_upper_mle_1 <- log_normal$estimate[1] + log_normal$sd[1]
-  #         # log_normal_lower_mle_1 <- log_normal$estimate[1] - log_normal$sd[1]
-  #         #
-  #         # log_normal_upper_mle_2 <- log_normal$estimate[2] + log_normal$sd[2]
-  #         # log_normal_lower_mle_2 <- log_normal$estimate[2] - log_normal$sd[2]
-  # 
-  #         # if there is an error, fill object with NA
-  #         message('log normal AIC is ', log_normal_aic)
-  # 
-  #         # get MLE
-  #         log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
-  #         message('log normal mle is ', log_normal_mle)
-  #       }
-  #       # create data frame to store aic and MLEs
-  #       log_normal_data <- data_frame(name = 'log_normal',
-  #                                     aic = log_normal_aic,
-  #                                     mle_1 = log_normal$estimate[1],
-  #                                     mle_2 = log_normal$estimate[2])
-  #       # upper_mle_1 = log_normal_upper_mle_1,
-  #       # lower_mle_1 = log_normal_lower_mle_1,
-  #       # upper_mle_2 = log_normal_upper_mle_2,
-  #       # lower_mle_2 = log_normal_lower_mle_2)
-  # 
-  #       beta <- try(eBeta_ab(data$Loss, method = "numerical.MLE"), silent = TRUE)
-  #       if(class(beta) == 'try-error'){
-  #         beta <- NULL
-  #         beta_aic <- NA
-  #         beta$shape1 <- NA
-  #         beta$shape2 <- NA
-  #         beta_mle <- c(beta$shape1, beta$shape2)
-  #       } else {
-  #         beta_ll <- lBeta_ab(X = data$Loss, params = beta, logL = TRUE)
-  #         beta_aic <- -(2*beta_ll + 2)
-  #         beta_mle <- c(beta$shape1, beta$shape2)
-  # 
-  #         # beta_aic <- round(beta$aic, 4)
-  #         message('beta AIC is ', beta_aic)
-  #         message('beta mle is ', beta_mle)
-  #       }
-  #       beta_data <- data_frame(name = 'beta',
-  #                               aic = round(beta_aic, 4),
-  #                               mle_1 = beta_mle[1],
-  #                               mle_2 = beta_mle[2])
-  # 
-  # 
-  # 
-  #       # EQUATION FOR AIC
-  #       # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
-  # 
-  #       # fit gamma
-  #       # gamma <- fitdistr(data$Loss, 'gamma')
-  #       gamma <- try(fitdistrplus::fitdist(data$Loss, "gamma", start=list(shape=0.5, scale=1), method="mle"), silent = TRUE)
-  # 
-  #       if(class(gamma) == 'try-error'){
-  #         gamma <- NULL
-  #         gamma_aic <- NA
-  #         gamma$estimate[1] <- NA
-  #         gamma$estimate[2] <- NA
-  # 
-  #       } else {
-  #         # get aic
-  #         gamma_aic <- round(gamma$aic, 4)
-  #         message('gamma AIC is ', gamma_aic)
-  # 
-  #         # upper and lower bound for each estimate
-  #         # gamma_upper_mle_1 <- gamma$estimate[1] + gamma$sd[1]
-  #         # gamm_lower_mle_1 <- gamma$estimate[1] - gamma$sd[1]
-  #         #
-  #         # gamma_upper_mle_2 <- gamma$estimate[2] + gamma$sd[2]
-  #         # gamma_lower_mle_2 <- gamma$estimate[2] - gamma$sd[2]
-  #         #
-  #         # get mle
-  #         gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
-  #         message('gamme mle is ', gamma_mle)
-  #       }
-  #       gamma_data <- data_frame(name = 'gamma',
-  #                                aic = gamma_aic,
-  #                                mle_1 = gamma$estimate[1],
-  #                                mle_2 = gamma$estimate[2])
-  #       # upper_mle_1 = log_normal_upper_mle_1,
-  #       # lower_mle_1 = log_normal_lower_mle_1,
-  #       # upper_mle_2 = log_normal_upper_mle_2,
-  #       # lower_mle_2 = log_normal_lower_mle_2)
-  # 
-  # 
-  # 
-  #       # fit frechet
-  #       # dfrechet(data$Loss, lambda = 1, mu = 1, sigma = 1, log = TRUE)
-  #       frechet <- try(fitdistrplus::fitdist(data$Loss, "frechet", start=list(scale=0.1, shape=0.1), method="mle"),
-  #                      silent = TRUE)
-  #       if(class(frechet) == 'try-error'){
-  #         frechet <- NULL
-  #         frechet_aic <- NA
-  #         frechet$estimate[1] <- NA
-  #         frechet$estimate[2] <- NA
-  # 
-  #       } else {
-  #         frechet_aic <- round(frechet$aic, 4)
-  #         message('frechet AIC is ', frechet_aic)
-  #         # get mle
-  #         frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
-  #         message('frechet mle is ', frechet_mle)
-  #       }
-  #       frechet_data <- data_frame(name = 'frechet',
-  #                                  aic = frechet_aic,
-  #                                  mle_1 = frechet$estimate[1],
-  #                                  mle_2 = frechet$estimate[2])
-  # 
-  # 
-  # 
-  #       # git gumbel
-  #       gumbel_fit <- try(fit_gumbel(data$Loss), silent = TRUE)
-  #       if(class(gumbel_fit) == 'try-error'){
-  #         gumbel_fit <- NULL
-  #         gumbel_aic <- NA
-  #         gumbel_fit$estimate[1] <- NA
-  #         gumbel_fit$estimate[2] <- NA
-  # 
-  #       } else {
-  #         gumbel_aic <- round(gumbel_fit$aic, 4)
-  #         message('gumbel AIC is ', gumbel_aic)
-  #         # get mle
-  #         gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
-  #         message('gumbel mle is ', gumbel_mle)
-  #       }
-  #       gumbel_data <- data_frame(name = 'gumbel',
-  #                                 aic = gumbel_aic,
-  #                                 mle_1 = gumbel_fit$estimate[1],
-  #                                 mle_2 = gumbel_fit$estimate[2])
-  # 
-  # 
-  # 
-  #       # fit weibull
-  #       weibull <- try(fitdistrplus::fitdist(data$Loss, "weibull", start=list(shape=0.1, scale=1), method="mle"), silent = TRUE)
-  #       if(class(weibull) == 'try-error'){
-  #         weibull <- NULL
-  #         weibull_aic <- NA
-  #         weibull$estimate[1] <- NA
-  #         weibull$estimate[2] <- NA
-  # 
-  #       } else {
-  #         weibull_aic <- round(weibull$aic, 4)
-  #         message('weibull AIC is ', weibull_aic)
-  # 
-  #         # get mle
-  #         weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
-  #         message('weibull mle is ', weibull_mle)
-  #       }
-  #       weibull_data <- data_frame(name = 'weibull',
-  #                                  aic = weibull_aic,
-  #                                  mle_1 = weibull$estimate[1],
-  #                                  mle_2 = weibull$estimate[2])
-  # 
-  # 
-  # 
-  #       # fit pareto
-  #       pareto <-ParetoPosStable::pareto.fit(data$Loss, estim.method = 'MLE')
-  #       if(class(pareto) == 'try-error'){
-  #         pareto <- NULL
-  #         pareto_aic <- NA
-  #         pareto_fit$estimate[1] <- NA
-  #         pareto_fit$estimate[2] <- NA
-  # 
-  #       } else {
-  #         pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
-  #         message('pareto AIC is ', pareto_aic)
-  #         # get mle
-  #         pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
-  #         message('pareto mle is ', pareto_mle)
-  #       }
-  #       pareto_data <- data_frame(name = 'pareto',
-  #                                 aic = pareto_aic,
-  #                                 mle_1 = pareto$estimate[[1]],
-  #                                 mle_2 = pareto$estimate[[2]])
-  # 
-  # 
-  # 
-  # 
-  #       # create a data frame out of data results
-  #       aic_mle_data <- rbind(log_normal_data,
-  #                             gamma_data,
-  #                             beta_data,
-  #                             frechet_data,
-  #                             gumbel_data,
-  #                             weibull_data,
-  #                             pareto_data)
-  # 
-  #       # change names of variable
-  #       names(aic_mle_data) <- c('Distribution', 'AIC', 'MLE 1', 'MLE 2')
-  # 
-  #       # capitalize and remove underscore of Distribution
-  #       aic_mle_data$Distribution <- Hmisc::capitalize(aic_mle_data$Distribution)
-  #       aic_mle_data$Distribution <- gsub('_', ' ', aic_mle_data$Distribution)
-  #       aic_mle_data$AIC <- round(aic_mle_data$AIC, 2)
-  #       aic_mle_data$`MLE 1`<- round(aic_mle_data$`MLE 1`, 2)
-  #       aic_mle_data$`MLE 2` <- round(aic_mle_data$`MLE 2`, 2)
-  # 
-  #       return(aic_mle_data)
-  #     }
-  # 
-  # 
-  # 
-  #   })
-  
-  # 
-  # # create table for aic
-  # output$aic_table <- renderDataTable({
-  #   aic_mle_data <- get_aic_mle()
-  #   DT::datatable(aic_mle_data, options = list(dom = 't'))
-  # }) 
-  # 
-  # # 
-  # # create a reactive object that takes the aic_mle_data runs simulations on the 
-  # # best distribution (found from min aic)
-  # run_best_simulation <- reactive({
-  #   set.seed(11)
-  #   
-  #   if(is.null(input$prob_dis)){
-  #     return(NULL)
-  #   } else {
-  #     best_dis <- get_best_dis()
-  #     # get aic_mle_data
-  #     dat <- get_aic_mle()
-  #     
-  #     if(best_dis == input$prob_dis){
-  #       # for now remove beta
-  #       # dat <- dat[dat$Distribution != 'Beta',]
-  #       # get index for minimum aic
-  #       aic_min_ind <- which(dat$AIC == min(dat$AIC, na.rm = T))
-  #       # # subset my index
-  #       dat <- dat[aic_min_ind,]  
-  #     } else {
-  #       # dat <- dat[dat$Distribution != 'Beta',]
-  #       dat <- dat[dat$Distribution ==  input$prob_dis,]
-  #     }
-  #     
-  #     # set conditions for each distribution
-  #     if(dat$Distribution == 'Log normal'){
-  #       if(any(is.na(dat$AIC))){
-  #         sim <- NA
-  #       }  else {
-  #         sim <- rlnorm(n = 15000, meanlog = dat$`MLE 1`, sdlog = dat$`MLE 2`)
-  #       }
-  #     } else if (dat$Distribution == 'Gamma'){
-  #       if(any(is.na(dat$AIC))){
-  #         sim <- NA
-  #       }  else {
-  #         # check to see how much seed matters
-  #         sim <- rgamma(n = 15000, shape = dat$`MLE 1`, scale = dat$`MLE 2`)
-  #       }
-  #     } else if (dat$Distribution == 'Beta'){
-  #       if(any(is.na(dat$AIC))){
-  #         sim <- NA
-  #       } else {
-  #         sim <- rbeta(n = 15000, shape1 = dat$`MLE 1`, scale2 = dat$`MLE 2`)
-  #       }
-  #     }  else if (dat$Distribution == 'Frechet'){
-  #       if(any(is.na(dat$AIC))){
-  #         sim <- NA
-  #       }  else {
-  #         sim <- rfrechet(n = 15000, loc=0, scale=dat$`MLE 1`, shape=dat$`MLE 2`)
-  #       }
-  #     } else if (dat$Distribution == 'Gumbel'){
-  #       if(any(is.na(dat$AIC))){
-  #         sim <- NA 
-  #       } else {
-  #         sim <- actuar::rgumbel(n = 15000, alpha = dat$`MLE 1`, scale = dat$`MLE 2`)
-  #       }
-  #     } else if (dat$Distribution == 'Weibull'){
-  #       if(any(is.na(dat$AIC))){
-  #         sim <- NA
-  #       }  else {
-  #         sim <- rweibull(n = 15000, shape = dat$`MLE 1`, scale = dat$`MLE 2`)
-  #       }
-  #     } else {
-  #       if(any(is.na(dat$AIC))){
-  #         sim <- NA
-  #       }  else {
-  #         sim <- extraDistr::rpareto(n = 15000, a = dat$`MLE 1`, b = dat$`MLE 2`)
-  #       }
-  #     }
-  #     return(sim)
-  #   }
-  #   
-  # })
-  # 
-  # # create a ouput plot that draws a density of the distribution over the 
-  # # histogram of raw data
-  # output$hist_plot <- renderPlot({
-  #   data <- selected_damage_type()
-  #   g <- ggplot(data, aes(data$Loss)) +
-  #     geom_histogram(bins = 5, fill = 'black', color = 'black', alpha = 0.6) + 
-  #     labs(x = 'Loss', 
-  #          y = 'Counts') +
-  #     theme_clean() +
-  #     theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 1, size = 12),
-  #           axis.text.y = element_text(size = 12),
-  #           axis.title = element_text(size = 12)) 
-  #   return(g)
-  #   
-  # })
-  # output$sim_plot <- renderPlot({
-  #   if(is.null(input$prob_dis)){
-  #     return(NULL)
-  #   } else {
-  #     dat_sim <- run_best_simulation()
-  #     dat_sim <- as.data.frame(dat_sim)
-  #     names(dat_sim) <- 'Simulated loss'
-  #     g =  ggplot(dat_sim, aes(`Simulated loss`)) +
-  #       geom_density(fill = 'black', color = 'black', alpha = 0.5) +
-  #       labs(y = 'Density') +
-  #       theme_clean() +
-  #       theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 1, size = 12),
-  #             axis.text.y = element_text(size = 12),
-  #             axis.title = element_text(size = 12)) 
-  #     return(g)
-  #   }
-  #   
-  # })
-  # 
-  # ################
-  # # Output tab
-  # ################
-  # 
+
+  ################
+  # Output tab
+  ################
+
   # # make reactive object to store probability of exceeding budget
-  # probability_of_exceeding <- reactive({
+  probability_of_exceeding <- reactive({
+    
+    budget <- input$budget
+    if(is.null(budget)){
+      NULL
+    } else {
+      
+      dat_sim <- ran_simulations()
+      dat_sim <- dat_sim %>% filter(!is.na(value))
+      # get budget
+      output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
+      output$x <- rownames(output)
+      rownames(output) <- NULL
+      names(output)[1] <- 'y'
+      
+      # remove percent and turn numeric
+      output$x <- gsub('%', '', output$x)
+      output$x <- as.numeric(output$x)
+      output$x <- output$x/100
+      names(output)[1] <- 'Total Loss'
+      names(output)[2] <- 'Probability'
+      output$Probability <- 1 - output$Probability
+      
+      # find where budget equals curve
+      prob_exceed <- output$Probability[which.min(abs(output$`Total Loss` - budget))]
+      return(prob_exceed)
+      
+      
+    }
+    
+
+
+  })
   # 
-  #   if(is.null(selected_damage_type())){
-  #     NULL
-  #   } else {
-  #     dat_sim <- run_best_simulation()
-  #     if(any(is.na(dat_sim))){
-  #       return(NULL)
-  #     } else {
-  # 
-  #       # get budget
-  #       budget <- input$budget
-  #       peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
-  #       peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
-  #       rownames(peril_exceedance_curve) <- NULL
-  #       names(peril_exceedance_curve)[1] <- 'y'
-  # 
-  #       # remove percent and turn numeric
-  #       peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
-  #       peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
-  #       peril_exceedance_curve$x <- peril_exceedance_curve$x/100
-  #       names(peril_exceedance_curve)[1] <- 'Total Loss'
-  #       names(peril_exceedance_curve)[2] <- 'Probability'
-  #       peril_exceedance_curve$Probability <- 1 - peril_exceedance_curve$Probability
-  # 
-  #       # find where budget equals curve
-  #       prob_exceed <- peril_exceedance_curve$Probability[which.min(abs(peril_exceedance_curve$`Total Loss` - budget))]
-  #       return(prob_exceed)
-  #     }
-  #   }
-  # 
-  # 
-  # })
-  # 
-  # # create a reactive object that takes new input 
-  # probability_of_exceeding_suplus_deficit <- reactive({
-  #   
-  #   if(is.null(selected_damage_type())){
-  #     NULL
-  #   } else {
-  #     dat_sim <- run_best_simulation()
-  #     if(any(is.na(dat_sim))){
-  #       return(NULL)
-  #     } else {
-  #       
-  #       # get budget
-  #       budget <- input$budget
-  #       exceed_budget <- input$exceed_budget
-  #       budget <- exceed_budget + budget
-  #       peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
-  #       peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
-  #       rownames(peril_exceedance_curve) <- NULL
-  #       names(peril_exceedance_curve)[1] <- 'y'
-  #       
-  #       # remove percent and turn numeric
-  #       peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
-  #       peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
-  #       peril_exceedance_curve$x <- peril_exceedance_curve$x/100
-  #       names(peril_exceedance_curve)[1] <- 'Total Loss'
-  #       names(peril_exceedance_curve)[2] <- 'Probability'
-  #       peril_exceedance_curve$Probability <- 1 - peril_exceedance_curve$Probability
-  #       
-  #       # find where budget equals curve
-  #       prob_exceed_surplus_deficit <- peril_exceedance_curve$Probability[which.min(abs(peril_exceedance_curve$`Total Loss` - budget))]
-  #       return(prob_exceed_surplus_deficit)
-  #     }
-  #   }
-  #   
-  #   
-  # })
+  # create a reactive object that takes new input
+  probability_of_exceeding_suplus_deficit <- reactive({
+    
+    budget <- input$budget
+    if(is.null(budget)){
+      NULL
+    } else {
+      
+      dat_sim <- ran_simulations()
+      dat_sim <- dat_sim %>% filter(!is.na(value))
+      # get budget
+      exceed_budget <- input$exceed_budget
+      budget <- exceed_budget + budget
+      output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
+      output$x <- rownames(output)
+      rownames(output) <- NULL
+      names(output)[1] <- 'y'
+      
+      # remove percent and turn numeric
+      output$x <- gsub('%', '', output$x)
+      output$x <- as.numeric(output$x)
+      output$x <- output$x/100
+      names(output)[1] <- 'Total Loss'
+      names(output)[2] <- 'Probability'
+      output$Probability <- 1 - output$Probability
+      
+      # find where budget equals curve
+      prob_exceed_surplus_deficit <- output$Probability[which.min(abs(output$`Total Loss` - budget))]
+      return(prob_exceed_surplus_deficit)
+      
+    }
+    
+  })
   # 
   # 
   # 
   # # OUTPUT 1
-  
-  dat <- out
-  dat_sim = x
+  # 
+  # load('x.RData')
+  # load('out.RData')
+  # dat <- out
+  # dat_sim = x
+  # budget = 50
+  # plot_title = 'hello'
   output$annual_loss_plotly <- renderPlot({
-
-    dat <- get_right_data()
-    dat_sim <- ran_simulations()
-    # remove obsevations with 0, if any
-    dat <- dat[dat$value > 0,]
-    dat <- dat[order(dat$year, decreasing = FALSE),]
-        # get budget
-        budget <- input$budget
-
-        # remove obsevations with 0, if any
-        dat <- dat[dat$value > 0,]
-        dat <- dat[order(dat$year, decreasing = FALSE),]
-        is_archetype <- input$data_type == 'Archetype'
-        # get country input for plot title
-        if(is_archetype){
-          plot_title <- 'Archetype'
-        } else {
-          plot_title <- input$country
-        }
-        
-        data_list <- list()
-        for(i in 1:length(unique(dat_sim$key))){
-          peril_name <- unique(dat_sim$key)[i]
-          sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
-          sub_dat <- dat %>% filter(peril == peril_name)
-          output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
-
-          # create sub_data frame sub_dat to store output with chart labels
-          sub_dat <- data_frame(`Annual average` = annual_avg,
-                            `1 in 5 Years` = output[1],
-                            `1 in 10 Years` = output[2],
-                            `1 in 25 Years` = output[3],
-                            `1 in 50 Years` = output[4],
-                            `1 in 100 Years` = output[5],
-                            `Highest historical annual loss` = max(sub_dat$value),
-                            `Most recent annual loss` = sub_dat$value[nrow(sub_dat)])
-          
-          # melt the sub_data frame to get value and variable
-          sub_dat <- melt(sub_dat)
-          
-          sub_dat$variable <- factor(sub_dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
-                                                          'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
-          sub_dat$value <- round(sub_dat$value, 2)
-          
-          # melt the data frame to get value and variable
-          sub_plot_dat <- melt(sub_plot_dat)
-          data_list[[i]] <- sub_plot_dat
-        }
-        
-        plot_dat <- do.call('rbind', data_list)
-        
-      
-
-        if(input$ci){
-          y_min <- dat$value - mean(dat$value)
-          y_min <- ifelse(y_min < 0, 0, y_min)
-
-          y_max <-  dat$value + mean(dat$value)
-          # Plot
-          g <- ggplot(dat, aes(x=variable,
-                               y=value,
-                               text = value)) +
-            geom_bar(stat = 'identity',
-                     fill = '#5B84B1FF',
-                     col = '#FC766AFF',
-                     alpha = 0.6) +
-            geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
-            geom_hline(yintercept = budget) +
-            theme_bw(base_size = 14,
-                     base_family = 'Ubuntu')  +
-            theme(axis.text.x = element_text(angle = 45,
-                                             hjust = 1)) +
-            xlab('') + ylab('') +
-            ggtitle(plot_title)
-        } else {
-          # Plot
-          g <- ggplot(dat, aes(x=variable,
-                               y=value,
-                               text = value)) +
-            geom_bar(stat = 'identity',
-                     fill = '#5B84B1FF',
-                     col = '#FC766AFF',
-                     alpha = 0.6) +
-            geom_hline(yintercept = budget) +
-            theme_bw(base_size = 14,
-                     base_family = 'Ubuntu')  +
-            theme(axis.text.x = element_text(angle = 45,
-                                             hjust = 1)) +
-            xlab('') + ylab('') +
-            ggtitle(plot_title)
-        }
-
-
-        return(g)
-      
-
-  })
-  # 
-  # 
-  # ############ OUTPUT 2
-  # 
-  # 
-  output$loss_exceedance_plotly <- renderPlot({
-    if(is.null(selected_damage_type()) | is.na(input$budget)){
+ 
+    budget <- input$budget
+    if(is.na(budget)){
       NULL
     } else {
-      dat_sim <- run_best_simulation()
-      if(any(is.na(dat_sim))){
-        return(NULL)
+      
+      dat <- get_right_data()
+      dat_sim <- ran_simulations()
+      dat_sim <- dat_sim %>% filter(!is.na(value))
+      # save(dat_sim, file = 'dat_sim.RData')
+      # remove obsevations with 0, if any
+      dat <- dat[dat$value > 0,]
+      dat <- dat[order(dat$year, decreasing = FALSE),]
+      # get budget
+      
+      # remove obsevations with 0, if any
+      dat <- dat[dat$value > 0,]
+      dat <- dat[order(dat$year, decreasing = FALSE),]
+      is_archetype <- input$data_type == 'Archetype'
+      # get country input for plot title
+      if(is_archetype){
+        plot_title <- 'Archetype'
       } else {
-
-        data <- selected_damage_type()
-
-        country_name <- unique(data$Country)
-
-        data <- data[order(data$Year, decreasing = FALSE),]
-        largest_loss_num <- max(data$Loss)
-        largest_loss_year <- data$Year[data$Loss == max(data$Loss)]
-
-        # find where budget equals curve
-        prob_exceed <- probability_of_exceeding()
-        # get country input for plot title
         plot_title <- input$country
-        exceed_budget <- paste0('Probability of exceeding budget = ', prob_exceed)
-        plot_title <- paste0(plot_title, ' : ', exceed_budget)
-
-        # get budget
-        budget <- input$budget
-        peril_exceedance_curve <- as.data.frame(quantile(dat_sim,seq(0.5,0.98,by=0.002), na.rm = TRUE))
-        peril_exceedance_curve$x <- rownames(peril_exceedance_curve)
-        rownames(peril_exceedance_curve) <- NULL
-        names(peril_exceedance_curve)[1] <- 'y'
-
-        # remove percent and turn numeric
-        peril_exceedance_curve$x <- gsub('%', '', peril_exceedance_curve$x)
-        peril_exceedance_curve$x <- as.numeric(peril_exceedance_curve$x)
-        peril_exceedance_curve$x <- peril_exceedance_curve$x/100
-        names(peril_exceedance_curve)[1] <- 'Total Loss'
-        names(peril_exceedance_curve)[2] <- 'Probability'
-        peril_exceedance_curve$Probability <- 1 - peril_exceedance_curve$Probability
-
-        if(input$ci){
-          dat <- peril_exceedance_curve
-          dat$y_min <- dat$`Total Loss`- mean(dat$`Total Loss`)
-          dat$y_min <- ifelse(dat$y_min < 0, 0, dat$y_min)
-
-          dat$y_max <-  dat$`Total Loss` + mean(dat$`Total Loss`)
-          g <- ggplot(dat, aes(Probability, `Total Loss`)) +
-            geom_line(col = 'blue', size = 1, alpha = 0.7) +
-            geom_line(aes(Probability, y_min), linetype = 'dotted') +
-            geom_line(aes(Probability, y_max), linetype = 'dotted') +
-            scale_x_reverse() +
-            ggtitle(plot_title) +
-            geom_hline(yintercept = largest_loss_num) +
-            geom_hline(yintercept = budget) +
-            geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
-            annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
-            annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
-            theme_bw(base_size = 14,
-                     base_family = 'Ubuntu')
-
-        } else {
-          g <- ggplot(peril_exceedance_curve, aes(Probability, `Total Loss`)) +
-            geom_line(col = 'blue', size = 1, alpha = 0.7) +
-            scale_x_reverse() +
-            ggtitle(plot_title) +
-            geom_hline(yintercept = largest_loss_num) +
-            geom_hline(yintercept = budget) +
-            geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
-            annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
-            annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
-            theme_bw(base_size = 14,
-                     base_family = 'Ubuntu')
-
-        }
-
-
-        return(g)
-
       }
+      
+      # save(dat_sim, file = 'data_simulation.RData')
+      data_list <- list()
+      for(i in 1:length(unique(dat_sim$key))){
+        peril_name <- unique(dat_sim$key)[i]
+        sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
+        sub_dat <- dat %>% filter(peril == peril_name)
+        output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
+        annual_avg = round(mean(sub_dat$value), 2)
+        
+        # create sub_data frame sub_dat to store output with chart labels
+        sub_dat <- data_frame(`Annual average` = annual_avg,
+                              `1 in 5 Years` = output[1],
+                              `1 in 10 Years` = output[2],
+                              `1 in 25 Years` = output[3],
+                              `1 in 50 Years` = output[4],
+                              `1 in 100 Years` = output[5],
+                              `Highest historical annual loss` = max(sub_dat$value),
+                              `Most recent annual loss` = sub_dat$value[nrow(sub_dat)])
+        
+        # melt the sub_data frame to get value and variable
+        sub_dat <- melt(sub_dat)
+        
+        sub_dat$variable <- factor(sub_dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
+                                                                'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
+        sub_dat$value <- round(sub_dat$value, 2)
+        
+        # melt the data frame to get value and variable
+        data_list[[i]] <- sub_dat
+      }
+      
+      plot_dat <- do.call('rbind', data_list)
+      save(plot_dat, file = 'plot_dat.RData')
+      
+      if(input$ci){
+        y_min <- plot_dat$value - mean(plot_dat$value)
+        y_min <- ifelse(y_min < 0, 0, y_min)
+        
+        y_max <-  plot_dat$value + mean(plot_dat$value)
+        # Plot
+        g <- ggplot(plot_dat, aes(x=variable,
+                                  y=value,
+                                  text = value)) +
+          geom_bar(stat = 'identity',
+                   fill = '#5B84B1FF',
+                   col = '#FC766AFF',
+                   alpha = 0.6) +
+          geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
+          geom_hline(yintercept = budget) +
+          theme_bw(base_size = 14,
+                   base_family = 'Ubuntu')  +
+          theme(axis.text.x = element_text(angle = 45,
+                                           hjust = 1)) +
+          xlab('') + ylab('') +
+          ggtitle(plot_title)
+      } else {
+        # Plot
+        g <- ggplot(plot_dat, aes(x=variable,
+                                  y=value,
+                                  text = value)) +
+          geom_bar(stat = 'identity',
+                   fill = '#5B84B1FF',
+                   col = '#FC766AFF',
+                   alpha = 0.6) +
+          geom_hline(yintercept = budget) +
+          theme_bw(base_size = 14,
+                   base_family = 'Ubuntu')  +
+          theme(axis.text.x = element_text(angle = 45,
+                                           hjust = 1)) +
+          xlab('') + ylab('') +
+          ggtitle(plot_title)
+      }
+      
+      
+      return(g)
+      
+    }
+    
+
+  })
+  # # 
+  # # 
+########### OUTPUT 2
+
+
+  output$loss_exceedance_plotly <- renderPlot({
+
+    prob_exceed <- probability_of_exceeding()
+    budget <- input$budget
+    
+    if(is.null(prob_exceed) | is.na(budget)){
+      NULL
+    } else {
+      
+      dat <- get_right_data()
+      dat_sim <- ran_simulations()
+      country_name <- unique(dat$country)
+      
+      dat <- dat[order(dat$year, decreasing = FALSE),]
+      largest_loss_num <- round(max(dat$value), 2)
+      largest_loss_year <- dat$year[dat$value == max(dat$value)]
+      
+      # find where budget equals curve
+      
+      # get country input for plot title
+      plot_title <- input$country
+      exceed_budget <- paste0('Probability of exceeding budget = ', prob_exceed)
+      plot_title <- paste0(plot_title, ' : ', exceed_budget)
+      
+      data_list <- list()
+      for(i in 1:length(unique(dat_sim$key))){
+        peril_type <- unique(dat_sim$key)[i]
+        sub_dat <- dat_sim %>% filter(key == peril_type)
+        
+        # budget <- input$budget
+        output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
+        output$x <- rownames(output)
+        rownames(output) <- NULL
+        names(output)[1] <- 'y'
+        
+        # remove percent and turn numeric
+        output$x <- gsub('%', '', output$x)
+        output$x <- as.numeric(output$x)
+        output$x <- output$x/100
+        names(output)[1] <- 'Total Loss'
+        names(output)[2] <- 'Probability'
+        output$Probability <- 1 - output$Probability
+        
+        data_list[[i]] <- output
+        
+      }
+      
+      plot_dat <- do.call('rbind', data_list)
+      # get budget
+      if(input$ci){
+        plot_dat$y_min <- plot_dat$`Total Loss`- mean(plot_dat$`Total Loss`)
+        plot_dat$y_min <- ifelse(plot_dat$y_min < 0, 0, plot_dat$y_min)
+        
+        plot_dat$y_max <-  plot_dat$`Total Loss` + mean(plot_dat$`Total Loss`)
+        g <- ggplot(plot_dat, aes(Probability, `Total Loss`)) +
+          geom_line(col = 'blue', size = 1, alpha = 0.7) +
+          geom_line(aes(Probability, y_min), linetype = 'dotted') +
+          geom_line(aes(Probability, y_max), linetype = 'dotted') +
+          scale_x_reverse() +
+          ggtitle(plot_title) +
+          geom_hline(yintercept = largest_loss_num) +
+          geom_hline(yintercept = budget) +
+          geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
+          annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
+          annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
+          theme_bw(base_size = 14,
+                   base_family = 'Ubuntu')
+        
+      } else {
+        g <- ggplot(plot_dat, aes(Probability, `Total Loss`)) +
+          geom_line(col = 'blue', size = 1, alpha = 0.7) +
+          scale_x_reverse() +
+          ggtitle(plot_title) +
+          geom_hline(yintercept = largest_loss_num) +
+          geom_hline(yintercept = budget) +
+          geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
+          annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
+          annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
+          theme_bw(base_size = 14,
+                   base_family = 'Ubuntu')
+        
+      }
+      
+      
+      return(g)
+      
     }
 
 
+
+
   })
-  # 
-  # 
+#   # # # 
+#   # # # 
   # ############ OUTPUT 3
- 
+  #
+
   output$annual_loss_gap_plotly <- renderPlot({
-    dat <- out
-    dat_sim = x
-        dat <- get_right_data()
-        dat_sim <- ran_simulations()
-        # remove obsevations with 0, if any
-        dat <- dat[dat$value > 0,]
-        dat <- dat[order(dat$year, decreasing = FALSE),]
-        is_archetype <- input$data_type == 'Archetype'
-        # get country input for plot title
-        if(is_archetype){
-          plot_title <- 'Archetype'
-        } else {
-          plot_title <- input$country
-        }
 
-        data_list <- list()
-        for(i in 1:length(unique(dat_sim$key))){
-          peril_name <- unique(dat_sim$key)[i]
-          sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
-          sub_dat <- dat %>% filter(peril == peril_name)
-          output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
-          annual_avg <- mean(sub_dat$value)
-          # create data frame dat to store output with chart labels
-          sub_plot_dat <- data_frame(`Average` = annual_avg,
-                                 `Severe` = output[2],
-                                 `Extreme` = output[5])
+    budget <- input$budget
+    if(is.na(budget)){
+      NULL
+    } else {
+      dat <- get_right_data()
+      dat_sim <- ran_simulations()
+      dat_sim <- dat_sim %>% filter(!is.na(value))
+      # remove obsevations with 0, if any
+      dat <- dat[dat$value > 0,]
+      dat <- dat[order(dat$year, decreasing = FALSE),]
+      is_archetype <- input$data_type == 'Archetype'
+      # get country input for plot title
+      if(is_archetype){
+        plot_title <- 'Archetype'
+      } else {
+        plot_title <- input$country
+      }
+      
+      data_list <- list()
+      for(i in 1:length(unique(dat_sim$key))){
+        peril_name <- unique(dat_sim$key)[i]
+        sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
+        sub_dat <- dat %>% filter(peril == peril_name)
+        output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
+        annual_avg <- mean(sub_dat$value)
+        # create data frame dat to store output with chart labels
+        sub_plot_dat <- data_frame(`Average` = annual_avg,
+                                   `Severe` = output[2],
+                                   `Extreme` = output[5])
+        
+        # melt the data frame to get value and variable
+        sub_plot_dat <- melt(sub_plot_dat)
+        data_list[[i]] <- sub_plot_dat
+      }
+      
+      plot_dat <- do.call('rbind', data_list)
+      
+      
+      
+      if(input$ci){
+        y_min <- plot_dat$value - mean(plot_dat$value)
+        y_min <- ifelse(y_min < 0, 0, y_min)
+        
+        y_max <-  plot_dat$value + mean(plot_dat$value)
+        # plot
+        g <- ggplot(plot_dat, aes(x=variable,
+                                  y=value,
+                                  text = value)) +
+          geom_bar(stat = 'identity',
+                   fill = '#5B84B1FF',
+                   col = '#FC766AFF',
+                   alpha = 0.6) +
+          geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
           
-          # melt the data frame to get value and variable
-          sub_plot_dat <- melt(sub_plot_dat)
-          data_list[[i]] <- sub_plot_dat
-        }
+          theme_bw(base_size = 14,
+                   base_family = 'Ubuntu')  +
+          theme(axis.text.x = element_text(angle = 45,
+                                           hjust = 1)) +
+          xlab('') + ylab('') +
+          
+          ggtitle(plot_title)
         
-        plot_dat <- do.call('rbind', data_list)
+      }else {
+        # plot
+        g <- ggplot(plot_dat, aes(x=variable,
+                                  y=value,
+                                  text = value)) +
+          geom_bar(stat = 'identity',
+                   fill = '#5B84B1FF',
+                   col = '#FC766AFF',
+                   alpha = 0.6) +
+          theme_bw(base_size = 14,
+                   base_family = 'Ubuntu')  +
+          theme(axis.text.x = element_text(angle = 45,
+                                           hjust = 1)) +
+          xlab('') + ylab('') +
+          
+          ggtitle(plot_title)
         
-        
-
-        if(input$ci){
-          y_min <- plot_dat$value - mean(plot_dat$value)
-          y_min <- ifelse(y_min < 0, 0, y_min)
-
-          y_max <-  plot_dat$value + mean(plot_dat$value)
-          # plot
-          g <- ggplot(plot_dat, aes(x=variable,
-                               y=value,
-                               text = value)) +
-            geom_bar(stat = 'identity',
-                     fill = '#5B84B1FF',
-                     col = '#FC766AFF',
-                     alpha = 0.6) +
-            geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
-
-            theme_bw(base_size = 14,
-                     base_family = 'Ubuntu')  +
-            theme(axis.text.x = element_text(angle = 45,
-                                             hjust = 1)) +
-            xlab('') + ylab('') +
-
-            ggtitle(plot_title)
-
-        }else {
-          # plot
-          g <- ggplot(plot_dat, aes(x=variable,
-                               y=value,
-                               text = value)) +
-            geom_bar(stat = 'identity',
-                     fill = '#5B84B1FF',
-                     col = '#FC766AFF',
-                     alpha = 0.6) +
-            theme_bw(base_size = 14,
-                     base_family = 'Ubuntu')  +
-            theme(axis.text.x = element_text(angle = 45,
-                                             hjust = 1)) +
-            xlab('') + ylab('') +
-
-            ggtitle(plot_title)
-
-        }
-
-        return(g)
-
+      }
+      
+      return(g)
+      
+    }
+    
   })
-  # 
-  # # OUTPUT 4
-  dat <- out
-  dat_sim <- x
+#   # # # # 
+#   # load('x.RData')
+#   # load('out.RData')
+#   # dat <- out
+#   # dat_sim = x
+#   # budget = 50
+#   # plot_title = 'hello'
+#   # prob_exceed = .5
   output$loss_exceedance_gap_plotly <- renderPlot({
 
-        # prob_exceed_suprplus_deficit <- probability_of_exceeding_suplus_deficit()
-        # data <- selected_damage_type()
-    dat <- out
-    dat_sim = x
-    dat <- get_right_data()
-    dat_sim <- ran_simulations()
-        dat <- dat[order(dat$year, decreasing = FALSE),]
-        largest_loss_num <- max(dat$value)
-        largest_loss_year <- dat$Year[dat$loss == max(dat$loss)]
+        prob_exceed_suprplus_deficit <- probability_of_exceeding_suplus_deficit()
         budget <- input$budget
-        exceed_budget <- input$exceed_budget
-
-        # # get country input for plot title
-        # if(input$budget == 0){
-        #   plot_title <- input$country
-        # 
-        # } else {
-        #   plot_title <- input$country
-        #   exceed_surplus_deficit <- paste0('Probability of exceeding funding gap/surplus by \n', exceed_budget, ' is ', prob_exceed_suprplus_deficit)
-        #   plot_title <- paste0(plot_title, ' : ', exceed_surplus_deficit)
-        # 
-        # }
-
-        is_archetype <- input$data_type == 'Archetype'
-        # get country input for plot title
-        if(is_archetype){
-          plot_title <- 'Archetype'
+        data_type <- input$data_type
+        
+        if(is.null(prob_exceed_suprplus_deficit) | is.na(budget) | is.null(data_type)){
+          NULL
         } else {
-          plot_title <- input$country
-        }
-        
-        data_list <- list()
-        for(i in 1:length(unique(dat_sim$key))){
-          peril_name <- unique(dat_sim$key)[i]
-          sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
-          sub_dat <- dat %>% filter(peril == peril_name)
-          # get best distirbution
-          funding_gap_curve <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002)))
-          funding_gap_curve$x <- rownames(funding_gap_curve)
-          rownames(funding_gap_curve) <- NULL
-          names(funding_gap_curve)[1] <- 'y'
           
-          # remove percent and turn numeric
-          funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
-          funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
+          dat <- get_right_data()
+          dat_sim <- ran_simulations()
           
-          # divide y by 100k, so get data in millions
-          funding_gap_curve$x <- (1 - funding_gap_curve$x)
-          # funding_gap_curve$y <- funding_gap_curve$y/scale_by
+          dat_sim <- dat_sim %>% filter(!is.na(value))
+          dat <- dat[order(dat$year, decreasing = FALSE),]
+          largest_loss_num <- max(dat$value)
+          largest_loss_year <- dat$year[dat$value == max(dat$value)]
+          exceed_budget <- input$exceed_budget
           
-          names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
-          names(funding_gap_curve)[1] <- 'Funding gap'
-          funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
-          funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
-          data_list[[i]] <- funding_gap_curve
-        }
-        
-        plot_dat <- do.call('rbind', data_list)
-        
-        
-        if(input$ci){
-          dat <- plot_dat
-          dat$y_min <- dat$`Funding gap`- mean(dat$`Funding gap`)
-          dat$y_min <- dat$y_min
-          # dat$y_min <- ifelse(y_min > 0, 0, y_min)
-          dat$y_max <-  dat$`Funding gap` + mean(dat$`Funding gap`)
-          g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`)) +
-            geom_line(col = 'blue', size = 1, alpha = 0.7) +
-            geom_line(aes(`Probability of exceeding loss`, y_min), linetype = 'dotted') +
-            geom_line(aes(`Probability of exceeding loss`, y_max), linetype = 'dotted') +
-            scale_x_reverse(position = 'top') +
-            geom_hline(yintercept = 0, size = 2) +
-            ggtitle(plot_title) +
-            theme_bw(base_size = 14,
-                     base_family = 'Ubuntu')
+          # get country input for plot title
+          message('here is budget')
+          if(budget == 0){
+            is_archetype <- input$data_type == 'Archetype'
+            # get country input for plot title
+            if(is_archetype){
+              plot_title <- 'Archetype'
+            } else {
+              plot_title <- input$country
+            }
+
+          } else {
+            plot_title <- input$country
+            exceed_surplus_deficit <- paste0('Probability of exceeding funding gap/surplus by \n', exceed_budget, ' is ', prob_exceed_suprplus_deficit)
+            plot_title <- paste0(plot_title, ' : ', exceed_surplus_deficit)
+            
+          }
+          
+          data_list <- list()
+          for(i in 1:length(unique(dat_sim$key))){
+            peril_name <- unique(dat_sim$key)[i]
+            sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
+            sub_dat <- dat %>% filter(peril == peril_name)
+            # get best distirbution
+            funding_gap_curve <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002)))
+            funding_gap_curve$x <- rownames(funding_gap_curve)
+            rownames(funding_gap_curve) <- NULL
+            names(funding_gap_curve)[1] <- 'y'
+            
+            # remove percent and turn numeric
+            funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
+            funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
+            
+            # divide y by 100k, so get data in millions
+            funding_gap_curve$x <- (1 - funding_gap_curve$x)
+            # funding_gap_curve$y <- funding_gap_curve$y/scale_by
+            
+            names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
+            names(funding_gap_curve)[1] <- 'Funding gap'
+            funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
+            funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
+            data_list[[i]] <- funding_gap_curve
+          }
+          
+          plot_dat <- do.call('rbind', data_list)
+          
+          if(input$ci){
+            dat <- plot_dat
+            dat$y_min <- dat$`Funding gap`- mean(dat$`Funding gap`)
+            dat$y_min <- dat$y_min
+            # dat$y_min <- ifelse(y_min > 0, 0, y_min)
+            dat$y_max <-  dat$`Funding gap` + mean(dat$`Funding gap`)
+            g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`)) +
+              geom_line(col = 'blue', size = 1, alpha = 0.7) +
+              geom_line(aes(`Probability of exceeding loss`, y_min), linetype = 'dotted') +
+              geom_line(aes(`Probability of exceeding loss`, y_max), linetype = 'dotted') +
+              scale_x_reverse(position = 'top') +
+              geom_hline(yintercept = 0, size = 2) +
+              ggtitle(plot_title) +
+              theme_bw(base_size = 14,
+                       base_family = 'Ubuntu')
+            g
+          } else {
+            dat <- plot_dat
+            
+            g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`)) +
+              geom_line(col = 'blue', size = 1, alpha = 0.7) +
+              scale_x_reverse(position = 'top') +
+              geom_hline(yintercept = 0, size = 2) +
+              ggtitle(plot_title) +
+              theme_bw(base_size = 14,
+                       base_family = 'Ubuntu')
+          }
           g
-        } else {
-          g <-  ggplot(funding_gap_curve, aes(`Probability of exceeding loss`, `Funding gap`)) +
-            geom_line(col = 'blue', size = 1, alpha = 0.7) +
-            scale_x_reverse(position = 'top') +
-            geom_hline(yintercept = 0, size = 2) +
-            ggtitle(plot_title) +
-            theme_bw(base_size = 14,
-                     base_family = 'Ubuntu')
         }
 
-
-        g
-
-      
   })
+#   # # 
   # 
-  # DONT DO ANYTHING WITH BERNOULLI UNTILL YOU GET MORE INFO
-  # # The basic user will not see this, only the advanced user
-  # frequency_distribution_bernoulli <- reactive({
-  #   # will have other options for different scales later
-  #   freq_data <- scale_by_pop()
-  #   # temporarily do simulation 
-  #   freq_data <- freq_data[complete.cases(freq_data),]
-  #   # sum of success (disaster) over sum if trials (years). 6 success in 8 years
-  #   # get trials max year minus min year
-  #   num_trials <- as.numeric(as.character(max(freq_data$Year))) - min(as.numeric(as.character(freq_data$Year)))
-  #   num_trials <- num_trials + 1
-  #   mle_bern <- sum(nrow(freq_data)/num_trials)
-  #   uniform_dis <- runif(1000, 0, 1)
-  #   sim_freq_data <- as.data.frame(cbind(simulation_num = 1:1000, uniform_dis = uniform_dis))
-  #   # create a variable to show success (mle?uniform_dis, then success)
-  #   sim_freq_data$outcome <- ifelse(sim_freq_data$uniform_dis < mle_bern, 'success', 'fail')
-  #   
-  # })
-  # 
-  # DONT USE YET
-  
-  # 
-  # get_poisson({
-  #   # poisson <- fitdistr(data$Loss, "Poisson")
-  #   # poisson_aic <- AIC(poisson)
-  #   
-  # })
   
   # UIs for panel headers
   output$tool_settings_ui <- renderUI({

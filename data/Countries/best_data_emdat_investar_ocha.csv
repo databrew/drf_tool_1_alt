@@ -1,0 +1,41 @@
+Country,DesInventar,EM_DAT,OCHA,Default Data Source (CPP),Default Data Source (Total Damage)
+Afghanistan,N,Y,Y,EM_DAT,OCHA
+Algeria,N,Y,Y,EM_DAT,EM_DAT
+Angola,N,Y,Y,EM_DAT,EM_DAT
+Azerbaijan,N,Y,Y,EM_DAT,EM_DAT
+Bangladesh,N,Y,Y,EM_DAT,EM_DAT
+Bosnia and Herzegovina,N,Y,Y,EM_DAT,EM_DAT
+Bulgaria,N,Y,Y,EM_DAT,EM_DAT
+Costa Rica,Y,Y,Y,DesInventar,EM_DAT
+Djibouti,Y,Y,Y,EM_DAT,EM_DAT
+El Salvador,Y,Y,Y,DesInventar,DesInventar
+Ethiopia,Y,Y,Y,DesInventar,EM_DAT
+Guatemala,Y,Y,Y,DesInventar,DesInventar
+Haiti,N,Y,Y,EM_DAT,EM_DAT
+Honduras,Y,Y,Y,DesInventar,DesInventar
+India,N,Y,Y,EM_DAT,EM_DAT
+Indonesia,Y,Y,Y,DesInventar,EM_DAT
+Iran (Islamic Republic Of),Y,Y,Y,DesInventar,EM_DAT
+Jamaica,Y,Y,Y,DesInventar,DesInventar
+Kenya,Y,Y,Y,EM_DAT,EM_DAT
+Kyrgyzstan,N,Y,Y,EM_DAT,EM_DAT
+Laos,Y,N,N,DesInventar,DesInventar
+Madagascar,Y,Y,Y,EM_DAT,DesInventar
+Mexico,Y,Y,Y,DesInventar,EM_DAT
+Morocco,Y,Y,Y,EM_DAT,DesInventar
+Mozambique,Y,Y,Y,DesInventar,EM_DAT
+Myanmar,N,Y,Y,EM_DAT,EM_DAT
+Namibia,N,Y,Y,EM_DAT,OCHA
+Nepal,Y,Y,Y,DesInventar,EM_DAT
+Nicaragua,Y,Y,Y,DesInventar,DesInventar
+Niger (the),N,Y,Y,EM_DAT,EM_DAT
+Pakistan,Y,Y,Y,DesInventar,EM_DAT
+Peru,Y,Y,Y,DesInventar,OCHA
+Philippines (the),N,Y,Y,EM_DAT,EM_DAT
+Romania,N,Y,Y,EM_DAT,EM_DAT
+Somalia,N,Y,Y,EM_DAT,EM_DAT
+South Africa,N,Y,Y,EM_DAT,EM_DAT
+Sri Lanka,Y,Y,Y,DesInventar,EM_DAT
+Tajikistan,N,Y,Y,EM_DAT,EM_DAT
+Viet Nam,Y,Y,Y,EM_DAT,EM_DAT
+Yemen,Y,Y,Y,EM_DAT,EM_DAT

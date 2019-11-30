@@ -62,10 +62,9 @@ expand_data <- function(data){
   
 }
 
-
+# data <- cost_freq
 fill_na <- function(data){
   
-  data$best_data <- NULL
   data_list <- list()
   for(i in 1:length(unique(data$country))){
     country_name <- unique(data$country)[i]

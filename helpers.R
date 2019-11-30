@@ -191,6 +191,7 @@ plot_simulations <- function(rs = NULL,
   out <- ggplot() +
     theme_bw()
   ok <- FALSE
+  rd <- right_data
   if(!is.null(rs)){
     if(nrow(rs) > 0){
       if(!is.null(rd)){
