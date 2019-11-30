@@ -775,7 +775,7 @@ server <- function(input, output, session) {
     } else {
       country_name <- input$country
       scale_data <- scale_data[scale_data$Country == country_name,]
-      names(scale_data) <- c('country', 'year', 'population', 'inflation', 'gdp')
+      names(scale_data) <- c('country', 'year', 'population','scale_factor_population', '', 'inflation', 'gdp')
       return(scale_data)
     }
   })

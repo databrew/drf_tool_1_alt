@@ -155,11 +155,55 @@ rm(cost_freq, damage_freq, cost_data, damage_data)
 ##########
 # read in scaling data
 ##########
+
+# population_data <- read.csv('data/Scale/population_data.csv')
+# 
+# # get scaled_factor for each country for population
+# country_names <- unique(population_data$Country)
+# population_list <- list()
+# for(i in 1:length(country_names)){
+#   country_name <- country_names[i]
+#   sub_dat <- population_data %>% filter(Country == country_name) %>% 
+#     arrange(-Year) %>% mutate(scale_factor_population = Population[1]/Population)
+#   population_list[[i]] <- sub_dat
+# }
+# population_data <- do.call('rbind', population_list)
+# 
+# gdp_data <- read.csv('data/Scale/gdp.csv')
+# 
+# # get scaled_factor for each country for gdp
+# country_names <- unique(gdp_data$Country)
+# gdp_list <- list()
+# for(i in 1:length(country_names)){
+#   country_name <- country_names[i]
+#   sub_dat <- gdp_data %>% filter(Country == country_name) %>% 
+#     arrange(-Year) %>% mutate(scale_factor_gdp = GDP[2]/GDP)
+#   gdp_list[[i]] <- sub_dat
+# }
+# gdp_data <- do.call('rbind', gdp_list)
+# 
+# # INFLATION
+# inflation_data <- read.csv('data/Scale/inflation.csv')
+# # get scaled_factor for each country for inflation
+# country_names <- unique(inflation_data$Country)
+# inflation_list <- list()
+# for(i in 1:length(country_names)){
+#   country_name <- country_names[i]
+#   sub_dat <- inflation_data %>% filter(Country == country_name) %>% 
+#     arrange(-Year) %>% mutate(scale_factor_inflation = Inflation.Index[2]/Inflation.Index)
+#   inflation_list[[i]] <- sub_dat
+# }
+# inflation_data <- do.call('rbind', inflation_list)
+# 
+# # join data 
+# scale_data <- full_join(population_data, inflation_data, by = c('Country', 'Year'))
+# scale_data <- full_join(scale_data, gdp_data, by = c('Country', 'Year'))
+
 population_data <- read.csv('data/Scale/population_data.csv')
 gdp_data <- read.csv('data/Scale/gdp.csv')
 inflation_data <- read.csv('data/Scale/inflation.csv')
 
-# join data 
+# join data
 scale_data <- full_join(population_data, inflation_data)
 scale_data <- full_join(scale_data, gdp_data)
 
