@@ -1061,7 +1061,6 @@ server <- function(input, output, session) {
     }
     
     # At this point, if we've made to here, there is an object called data
-    # save(data, file = 'data.RData')
     out <- NULL
     if(!is.null(dat)){
       out <- dat
@@ -1302,7 +1301,6 @@ server <- function(input, output, session) {
         # datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
       } else {
         out <- prepare_scale_data()
-        load(file = 'new_scaled.RData')
         out$population_factor <- out$gdp_factor <- out$gdp_ok <- out$inflation_factor <- out$inflation_ok <- NULL
         names(out) <- c('Country', 'Year', 'Population', 'Inflation',
                         'GDP')
@@ -1472,7 +1470,6 @@ server <- function(input, output, session) {
   
   # output$delete <- DT::renderDataTable({
   #   corrected_data <- ran_simulations()
-  #   # save(corrected_data, file = 'corrected_data.RData')
   #   datatable(corrected_data, rownames = FALSE)
   # }, options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
   # ))
@@ -1651,8 +1648,7 @@ server <- function(input, output, session) {
       }
       
       plot_dat <- do.call('rbind', data_list)
-      save(plot_dat, file = 'plot_dat.RData')
-      
+
       if(input$ci){
         y_min <- plot_dat$value - mean(plot_dat$value)
         y_min <- ifelse(y_min < 0, 0, y_min)
