@@ -598,3 +598,37 @@ transform_core_data <- function(cdx){
   out <- list(cdx1, cdx2)
   return(out)
 }
+
+# Transofrm core data back to long format
+elongate_core_data <- function(cdx){
+  message('about to elongate this core data')
+  if(is.null(cdx)){
+    return(NULL)
+  }
+  if(!is.data.frame(cdx)){
+    return(NULL)
+  }
+  if(nrow(cdx) == 0){
+    return(NULL)
+  }
+  names(cdx)[1:2] <- tolower(names(cdx)[1:2])
+  print(head(cdx))
+  out <- cdx %>% gather(peril, value, names(cdx)[3:ncol(cdx)])
+  message('----elongated to look like this:')
+  print(head(out))
+  return(out)
+}
+
+widen_core_data <- function(cdx){
+  message('about to widen this core data')
+  print(head(cdx))
+  if(is.null(cdx)){
+    return(cdx)
+  }
+  cdx <- cdx %>%
+    tidyr::spread(key = peril, value = value)
+  names(cdx)[1:2] <- c('Year', 'Country')
+  message('---widened to look like this:')
+  print(head(cdx))
+  return(cdx)
+}

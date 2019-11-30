@@ -1091,9 +1091,7 @@ server <- function(input, output, session) {
       message('Not enough obs')
       return(NULL)
     } else {
-      out <- data %>%
-        tidyr::spread(key = peril, value = value)
-      names(out)[1:2] <- c('Country', 'Year')
+      out <- widen_core_data(data)
       if(editit){
         editit <- list(target = 'cell', disable = list(columns = 0:1))
       }
@@ -1119,7 +1117,10 @@ server <- function(input, output, session) {
     cdx <- core_data()
     cdx1 <- cdx[[1]]
     cdx2 <- cdx[[2]]
-    cdx1[i,j] <- as.numeric(v)
+    cdx1 <- widen_core_data(cdx1)
+    cdx1[i,j+1] <- as.numeric(v)
+    cdx1 <- elongate_core_data(cdx1)
+    # Now put back in long format
     edited <- list(cdx1, cdx2)
     core_data_edited$data <- edited
     
@@ -1133,12 +1134,8 @@ server <- function(input, output, session) {
     message('in scale_data_reactive')
     if(usde){
       cored <- core_data_edited$data
-      message('---using core_data_edited$data. it looks like:')
-      print(cored)
     } else {
       cored <- core_data()
-      message('---using core_data(). it looks like:')
-      print(cored)
     }
     sd <- prepare_scale_data()
     is_archetype <- input$data_type == 'Archetype'
