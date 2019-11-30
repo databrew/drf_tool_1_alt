@@ -1074,7 +1074,13 @@ server <- function(input, output, session) {
   })
   output$raw_data_table <- DT::renderDataTable({
 
-    cored <- core_data()
+    usde <- use_core_data_edited()
+    message('in scale_data_reactive')
+    if(usde){
+      cored <- core_data_edited$data
+    } else {
+      cored <- core_data()
+    }
     
     view_data <- input$view_data
     editit <- FALSE
@@ -1120,7 +1126,7 @@ server <- function(input, output, session) {
     cdx1 <- widen_core_data(cdx1)
     cdx1[i,j+1] <- as.numeric(v)
     cdx1 <- elongate_core_data(cdx1)
-    # Now put back in long format
+    cdx2 <- values_to_frequency(cdx1)
     edited <- list(cdx1, cdx2)
     core_data_edited$data <- edited
     
@@ -1131,7 +1137,6 @@ server <- function(input, output, session) {
   scale_data_reactive <- reactive({
 
     usde <- use_core_data_edited()
-    message('in scale_data_reactive')
     if(usde){
       cored <- core_data_edited$data
     } else {

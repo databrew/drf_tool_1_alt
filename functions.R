@@ -601,7 +601,6 @@ transform_core_data <- function(cdx){
 
 # Transofrm core data back to long format
 elongate_core_data <- function(cdx){
-  message('about to elongate this core data')
   if(is.null(cdx)){
     return(NULL)
   }
@@ -614,21 +613,35 @@ elongate_core_data <- function(cdx){
   names(cdx)[1:2] <- tolower(names(cdx)[1:2])
   print(head(cdx))
   out <- cdx %>% gather(peril, value, names(cdx)[3:ncol(cdx)])
-  message('----elongated to look like this:')
-  print(head(out))
   return(out)
 }
 
 widen_core_data <- function(cdx){
-  message('about to widen this core data')
-  print(head(cdx))
   if(is.null(cdx)){
     return(cdx)
   }
   cdx <- cdx %>%
     tidyr::spread(key = peril, value = value)
   names(cdx)[1:2] <- c('Year', 'Country')
-  message('---widened to look like this:')
+  return(cdx)
+}
+
+values_to_frequency <- function(cdx){
+  message('Converting a values table to a frequency table')
+  message('--- the original values table looks like')
+  print(head(cdx))
+  # takes the first item in the core-data() list and returns its frequency equivalent
+  if(is.null(cdx)){
+    return(NULL)
+  }
+  these_columns <- names(cdx)[!tolower(names(cdx)) %in% c('country', 'year', 'peril')]
+  for(j in 1:length(these_columns)){
+    this_column <- these_columns[j]
+    old_vals <- cdx[,this_column]
+    new_vals <- ifelse(old_vals > 0, 1, 0)
+    cdx[,this_column] <- new_vals
+  }
+  message('--- the new frequency table looks like')
   print(head(cdx))
   return(cdx)
 }
