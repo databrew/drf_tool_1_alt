@@ -62,6 +62,42 @@ expand_data <- function(data){
   
 }
 
+sim_bern <- function(the_right_data = NULL){
+  require(tidyverse)
+  # the right data should be either scaled, detrended or core data, depending on inputs
+  data_list <- list()
+  out <- NULL
+  ok <- FALSE
+  if(!is.null(the_right_data)){
+    if(nrow(the_right_data) > 0){
+      ok <- TRUE
+    }
+  }
+  if(ok){
+    freq_data <- the_right_data
+    num_trials <- max(freq_data$year) - min(freq_data$year)
+    num_trials <- num_trials + 1
+    all_perils <- unique(freq_data$peril)
+    for(i in 1:length(all_perils)){
+      peril_name <- all_perils[i]
+      sub_dat <- freq_data %>% filter(peril == peril_name)
+      if(sum(sub_dat$value) > 0){
+        mle_bern <- nrow(sub_dat[sub_dat$value == 1,])/num_trials
+        uniform_dis <- runif(15000,0 ,1)
+        uni_dat <- as.data.frame(cbind(simulation_num = 1:15000, uniform_dis = uniform_dis))
+        uni_dat$value <- ifelse(uni_dat$uniform_dis < mle_bern, 1, 0)
+        uni_dat$uniform_dis <- NULL
+        uni_dat$simulation_num <- NULL
+        uni_dat$peril <- peril_name
+        uni_dat <- uni_dat[, c('peril', 'value')]
+        data_list[[i]] <- uni_dat
+      }
+    }
+   out <- do.call('rbind', data_list)
+  }
+  return(out)
+}
+
 # data <- cost_freq
 fill_na <- function(data){
   

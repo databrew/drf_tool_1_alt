@@ -134,7 +134,7 @@ prepare_simulations <- function(fitted_distribution = NULL,
   return(out)
 }
 
-run_simulations <- function(prepared_simulation_data = NULL){
+run_simulations <- function(prepared_simulation_data = NULL, prepared_frequency_data = NULL){
   # prepared_simulation_data is the format that comes
   # from the prepare_simulations function, a 5 column df as produced by
   # fit_distribution, but filtered down to only include 1 distribution for 
@@ -155,17 +155,18 @@ run_simulations <- function(prepared_simulation_data = NULL){
     }
     message('RUN_SIMULATIONS IS USING FAKE METHODOLOGY')
     perils <- sort(unique(prepared_simulation_data$peril))
-    
+    names(prepared_frequency_data) <- c('peril', 'freq')
     # The following is fake data code
     out_list <- list()
     for(i in 1:length(perils)){
       this_peril <- perils[i]
       sub_peril <- prepared_simulation_data %>% filter(peril == this_peril)
+      sub_peril_freq <- prepared_frequency_data %>% filter(peril == this_peril)
       x <-make_simulation(dis_name = sub_peril$distribution, dat = sub_peril)
       out_list[[i]] <- tibble(key = this_peril,
                          value = x,
                          # freq is still not working
-                         freq = sample(0:1, size = 15000, replace = TRUE)) %>% mutate(n = 1:15000) %>%
+                         freq = sub_peril_freq$freq) %>% 
         mutate(outcome = freq * value)
     }
     out <- bind_rows(out_list)

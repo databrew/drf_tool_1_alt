@@ -179,6 +179,8 @@ body <- dashboardBody(
                     #  start new row that encompasses inputs for country, download buttons, damage type, and currency
                     fluidPage(
                       fluidRow(column(12,
+                                      uiOutput('select_peril_ui'))),
+                      fluidRow(column(12,
                                       uiOutput('peril_ui'))),
                       uiOutput('trend_test_ui'),
                       
@@ -941,7 +943,7 @@ server <- function(input, output, session) {
       archetype_frequency$data_type <- archetype_data$data_type <-  NULL
       
       archetype_data$value <- archetype_data$value*cost
-      
+
       message(head(archetype_data), 'this is good')
       
       # store in list
@@ -997,24 +999,24 @@ server <- function(input, output, session) {
   })
   
   
-  # create a uioutput for peril type  - this is dependent on the country selected.
-  output$peril_type_ui <- renderUI({
-    if(is.null(selected_country())){
-      NULL
-    } else {
-      # get country data
-      data  <- selected_country()
-      temp <- data
-      # get the peril names for choices in peril input
-      peril_names <- as.character(unique(temp$Peril))
-      checkboxGroupInput('peril_type', 
-                         'Choose a peril',
-                         choices = peril_names,
-                         selected = peril_names,
-                         inline = TRUE)
-    }
-    
-  })
+  # # create a uioutput for peril type  - this is dependent on the country selected.
+  # output$peril_type_ui <- renderUI({
+  #   if(is.null(selected_country())){
+  #     NULL
+  #   } else {
+  #     # get country data
+  #     data  <- selected_country()
+  #     temp <- data
+  #     # get the peril names for choices in peril input
+  #     peril_names <- as.character(unique(temp$Peril))
+  #     checkboxGroupInput('peril_type', 
+  #                        'Choose a peril',
+  #                        choices = peril_names,
+  #                        selected = peril_names,
+  #                        inline = TRUE)
+  #   }
+  #   
+  # })
   
   
   core_data_edited <- reactiveValues(data = data.frame())
@@ -1022,6 +1024,7 @@ server <- function(input, output, session) {
   core_data <- reactive({
     dat <- NULL
     ad <- prepare_archetype_data()
+    
     ld <- prepare_loss_data()
     cored <- prepare_cost_data()
     dt <- input$data_type
@@ -1058,6 +1061,7 @@ server <- function(input, output, session) {
       } else {
         # Not country, but archetype
         dat <- ad
+        
       }
     } else {
       out <- NULL
@@ -1135,7 +1139,7 @@ server <- function(input, output, session) {
   
   # reactive object to scale data
   scale_data_reactive <- reactive({
-
+    final_list <- list()
     usde <- use_core_data_edited()
     if(usde){
       cored <- core_data_edited$data
@@ -1164,75 +1168,91 @@ server <- function(input, output, session) {
     # message('cored looks like this')
     # print(cored)
     if(is.list(cored)){
+      second_part <- cored[[2]]
       cored <- cored[[1]]
+      
     } else {
       return(NULL)
     }
-  
-  if(is_advanced){
-    if(ss == 'POPULATION'){
-      # store frequenc
+    
+    if(is_advanced){
+      if(ss == 'POPULATION'){
+        # store frequenc
+        if(is.null(cored) | is.null(sd)){
+          out <- NULL
+        } else {
+          combined_data <- left_join(cored, sd)
+          combined_data$value <- combined_data$population_factor*combined_data$value
+          out <- combined_data
+          out <- out %>% dplyr::select(year:value)
+          final_list[[1]] <- out
+          final_list[[2]] <- second_part
+          return(final_list)
+          
+        }
+      } else if(ss == 'GDP'){
+        if(is.null(cored) | is.null(sd)){
+          out <- NULL
+        } else {
+          combined_data <- left_join(cored, sd)
+          combined_data$value <- combined_data$gdp_factor*combined_data$value
+          out <- combined_data
+          out <- out %>% dplyr::select(year:value)
+          final_list[[1]] <- out
+          final_list[[2]] <- second_part
+          return(final_list)
+          
+        }
+      } else if(ss == 'INFLATION'){
+        if(is.null(cored) | is.null(sd)){
+          out <- NULL
+        } else {
+         
+          combined_data <- left_join(cored, sd)
+          combined_data$value <- combined_data$inflation_factor*combined_data$value
+          out <- combined_data
+          out <- out %>% dplyr::select(year:value)
+          final_list[[1]] <- out
+          final_list[[2]] <- second_part
+          return(final_list)
+        }
+      } else {
+        out <- cored
+        out <- out %>% dplyr::select(year:value)
+        final_list[[1]] <- out
+        final_list[[2]] <- second_part
+        return(final_list)
+      }
+    } else { # not advanced user
+      message('cored is-----------------')
+      print(head(cored))
+      message('ss is-------------')
+      print(head(sd))
       if(is.null(cored) | is.null(sd)){
         out <- NULL
       } else {
         combined_data <- left_join(cored, sd)
         combined_data$value <- combined_data$population_factor*combined_data$value
         out <- combined_data
-        
       }
-    } else if(ss == 'GDP'){
-      if(is.null(cored) | is.null(sd)){
-        out <- NULL
-      } else {
-        combined_data <- left_join(cored, sd)
-        combined_data$value <- combined_data$gdp_factor*combined_data$value
-        out <- combined_data
-        
-      }
-    } else if(ss == 'INFLATION'){
-      if(is.null(cored) | is.null(sd)){
-        out <- NULL
-      } else {
-        # load(file = 'cored.RData')
-        # load(file = 'sd.RData')
-        combined_data <- left_join(cored, sd)
-        combined_data$value <- combined_data$inflation_factor*combined_data$value
-        out <- combined_data
-      }
-    } else {
-      out <- cored
+      out <- out %>% dplyr::select(year:value)
+      final_list[[1]] <- out
+      final_list[[2]] <- second_part
+      return(final_list)
     }
-  } else { # not advanced user
-    message('cored is-----------------')
-    print(head(cored))
-    message('ss is-------------')
-    print(head(sd))
-    if(is.null(cored) | is.null(sd)){
-      out <- NULL
-    } else {
-      combined_data <- left_join(cored, sd)
-      combined_data$value <- combined_data$population_factor*combined_data$value
-      out <- combined_data
-    }
-    out
-  }
-})
-  
-  
+    out <- out %>% dplyr::select(year:value)
+    final_list[[1]] <- out
+    final_list[[2]] <- second_part
+    return(final_list)
+    
+  })
 
-  
-  # data <- data_list
-  
-  
-  # reactive object to test for a trend
-  # peril_names <- all_perils
-  # peril_names$p_value[peril_names$peril == 'Storm'] <- 0.03
-  
   significant_trends <- reactiveVal(FALSE)
   
   output$trend_test_ui <- renderUI({
     
     sdr <- scale_data_reactive()
+    sdr <- sdr[[1]]
     ok <- FALSE
     if(!is.null(sdr)){
       if(nrow(sdr) > 0){
@@ -1243,19 +1263,18 @@ server <- function(input, output, session) {
       return(NULL)
     } else {
       test_data <- sdr
-        # split data by peril type
-        test_storm <-try(MannKendall(data$Outcome[data$peril == 'Storm'])$sl, silent = TRUE)
-        test_drought <-try(MannKendall(data$Outcome[data$peril == 'Drought'])$sl, silent = TRUE)
-        test_earthquake <-try(MannKendall(data$Outcome[data$peril == 'Earthquake'])$sl, silent = TRUE)
-        test_flood <-try(MannKendall(data$Outcome[data$peril == 'Flood'])$sl, silent = TRUE)
+        # split test_data by peril type
+        test_storm <-try(MannKendall(test_data$Outcome[test_data$peril == 'Storm'])$sl, silent = TRUE)
+        test_drought <-try(MannKendall(test_data$Outcome[test_data$peril == 'Drought'])$sl, silent = TRUE)
+        test_earthquake <-try(MannKendall(test_data$Outcome[test_data$peril == 'Earthquake'])$sl, silent = TRUE)
+        test_flood <-try(MannKendall(test_data$Outcome[test_data$peril == 'Flood'])$sl, silent = TRUE)
 
         # concatanate
         all_perils <- data_frame(peril = c('Storm', 'Drought', 'Earthquake', 'Flood'),
                                  p_value = c(test_storm,test_drought, test_earthquake, test_flood))
         all_perils$p_value <- as.numeric(all_perils$p_value)
-      
-      message('sdr is ')
-      print(head(sdr))
+        save(all_perils, file = 'all_perils.RData')
+        
       
       if(input$advanced == 'Basic'){
         return(NULL)
@@ -1277,10 +1296,42 @@ server <- function(input, output, session) {
       }
     }
 
- 
-
   })
   
+  execute_trend_test <- reactive({
+    
+    sdr <- scale_data_reactive()
+    sdr <- sdr[[1]]
+    ok <- FALSE
+    if(!is.null(sdr)){
+      if(nrow(sdr) > 0){
+        ok <- TRUE
+      }
+    }
+    if(!ok){
+      return(NULL)
+    } else {
+      test_data <- sdr
+      # split test_data by peril type
+      test_storm <-try(MannKendall(test_data$Outcome[test_data$peril == 'Storm'])$sl, silent = TRUE)
+      test_drought <-try(MannKendall(test_data$Outcome[test_data$peril == 'Drought'])$sl, silent = TRUE)
+      test_earthquake <-try(MannKendall(test_data$Outcome[test_data$peril == 'Earthquake'])$sl, silent = TRUE)
+      test_flood <-try(MannKendall(test_data$Outcome[test_data$peril == 'Flood'])$sl, silent = TRUE)
+      
+      # concatanate
+      all_perils <- data_frame(peril = c('Storm', 'Drought', 'Earthquake', 'Flood'),
+                               p_value = c(test_storm,test_drought, test_earthquake, test_flood))
+      all_perils$p_value <- as.numeric(all_perils$p_value)
+
+      
+      if(input$advanced == 'Basic'){
+        return(NULL)
+      } else {
+       return(all_perils)
+      }
+    }
+    
+  })
   
   
   
@@ -1289,7 +1340,7 @@ server <- function(input, output, session) {
   # trend_perils$p_value[trend_perils$peril == 'Storm'] <- 0.03
   
   correct_trend <- reactive({
-    if(is.null(input$trend_test)){
+    if(is.null(input$trend_test) | is.null(execute_trend_test())){
       return(NULL)
     } else {
       
@@ -1300,7 +1351,9 @@ server <- function(input, output, session) {
         peril_type <- trend_perils$peril[trend_perils$p_value <= 0.05 & !is.na(trend_perils$p_value)]
         
         # split data into 3 groups - loss trend perils, loss other perils, and other data
-        trend_data <- data[[1]]
+        trend_data <- scale_data_reactive()
+        second_part <- trend_data[[2]]
+        trend_data <- trend_data[[1]]
         trend_data_peril <-  trend_data[trend_data$peril %in% peril_type,]
         
         # apply trend to trend data for both trends
@@ -1316,15 +1369,13 @@ server <- function(input, output, session) {
         trend_data$value[trend_data$peril %in% peril_type] <- trended_data$trend_value
         final_data <- list()
         final_data[[1]] <- trend_data
-        final_data[[2]] <- data[[1]]
-        return(data)
+        final_data[[2]] <- second_part
+        return(final_data)
       }
       
     
     
   })
-  
-  
   
   
   ################
@@ -1395,10 +1446,15 @@ server <- function(input, output, session) {
     return(out)
   })
   
-  
+  simulate_bernoulli <- reactive({
+    rd <- get_right_data()
+    rd <- rd[[2]]
+    temp<- sim_bern(rd)
+  })
   
   fitted_distribution <- reactive({
     rd <- get_right_data()
+    rd <- rd[[1]]
     fit_distribution(rd)
   
   })
@@ -1513,10 +1569,12 @@ server <- function(input, output, session) {
   })
   
   ran_simulations <- reactive({
+    bs <- simulate_bernoulli()
     ps <- prepared_simulations()
-    message('PS IS')
-    print(head(ps))
-    x <- run_simulations(ps)
+    # save(bs, file = 'bs.RData')
+    x <- run_simulations(ps, bs)
+    # save(ps, file = 'ps.RData')
+    save(x, 'good_sims.RData')
     return(x)
   })
   
@@ -1563,7 +1621,29 @@ server <- function(input, output, session) {
   ################
   # Output tab
   ################
+  output$select_peril_ui <- renderUI({
+    dat_sim <- ran_simulations()
+    # save(dat_sim, file = 'peril_ui.RData')
+    dat_sim <- dat_sim %>% filter(!is.na(value))
+    peril_choices <- unique(dat_sim$key)
 
+    checkboxGroupInput('select_peril', 
+                       label = 'Select perils to view on output page',
+                       choices = peril_choices,
+                       selected = peril_choices,
+                       inline = TRUE)
+  })
+ 
+  gather_perils <- reactive({
+    selected_perils <- input$select_perils
+    if(is.null(selected_perils)){
+      NULL
+    } else {
+      dat_sim <- ran_simulations()
+      dat_sim <- dat_sim %>% filter(!is.na(outcome))
+      
+    }
+  })
   # # make reactive object to store probability of exceeding budget
   probability_of_exceeding <- reactive({
     
@@ -1637,12 +1717,7 @@ server <- function(input, output, session) {
   # 
   # # OUTPUT 1
   # 
-  # load('x.RData')
-  # load('out.RData')
-  # dat <- out
-  # dat_sim = x
-  # budget = 50
-  # plot_title = 'hello'
+ 
   output$annual_loss_plotly <- renderPlot({
  
     budget <- input$budget
@@ -1651,6 +1726,7 @@ server <- function(input, output, session) {
     } else {
       
       dat <- get_right_data()
+      dat <- dat[[1]]
       dat_sim <- ran_simulations()
       dat_sim <- dat_sim %>% filter(!is.na(value))
       # save(dat_sim, file = 'dat_sim.RData')
@@ -1763,6 +1839,8 @@ server <- function(input, output, session) {
     } else {
       
       dat <- get_right_data()
+      dat <- dat[[1]]
+      
       dat_sim <- ran_simulations()
       country_name <- unique(dat$country)
       
@@ -1857,6 +1935,8 @@ server <- function(input, output, session) {
       NULL
     } else {
       dat <- get_right_data()
+      dat <- dat[[1]]
+      
       dat_sim <- ran_simulations()
       dat_sim <- dat_sim %>% filter(!is.na(value))
       # remove obsevations with 0, if any
@@ -1938,14 +2018,7 @@ server <- function(input, output, session) {
     }
     
   })
-#   # # # # 
-#   # load('x.RData')
-#   # load('out.RData')
-#   # dat <- out
-#   # dat_sim = x
-#   # budget = 50
-#   # plot_title = 'hello'
-#   # prob_exceed = .5
+
   output$loss_exceedance_gap_plotly <- renderPlot({
 
         prob_exceed_suprplus_deficit <- probability_of_exceeding_suplus_deficit()
@@ -1957,6 +2030,8 @@ server <- function(input, output, session) {
         } else {
           
           dat <- get_right_data()
+          dat <- dat[[1]]
+          
           dat_sim <- ran_simulations()
           
           dat_sim <- dat_sim %>% filter(!is.na(value))

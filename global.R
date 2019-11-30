@@ -230,7 +230,7 @@ names(archetype_cost_data) <- c('archetype', 'year', 'peril', 'value', 'data_typ
 
 # ge all archetype frequency data into data frame
 archetype_freq_data <- read_in_archetype_freq_data('freq_data', archetype_names = archetypes)
-names(archetype_freq_data) <- c('year', 'peril', 'count','archetype', 'data_type')
+names(archetype_freq_data) <- c('year', 'peril', 'value','archetype', 'data_type')
 
 
 ####################
