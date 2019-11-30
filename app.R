@@ -999,6 +999,9 @@ server <- function(input, output, session) {
     
   })
   
+  
+  core_data_edited <- reactiveValues(data = data.frame())
+  use_core_data_edited <- reactiveVal(value = FALSE)
   core_data <- reactive({
     dat <- NULL
     ad <- prepare_archetype_data()
@@ -1053,10 +1056,14 @@ server <- function(input, output, session) {
     out
   })
   output$raw_data_table <- DT::renderDataTable({
+
     cored <- core_data()
+    
     view_data <- input$view_data
+    editit <- FALSE
     if(view_data != 'Frequency'){
       data <- cored[[1]]
+      editit <- TRUE
     } else {
       data <- cored[[2]]
     }
@@ -1070,16 +1077,52 @@ server <- function(input, output, session) {
       out <- data %>%
         tidyr::spread(key = peril, value = value)
       names(out)[1:2] <- c('Country', 'Year')
+      if(editit){
+        editit <- list(target = 'cell', disable = list(columns = 0:1))
+      }
       datatable(out, rownames = FALSE,
-                editable = list(target = 'cell', disable = list(columns = 0:1)))
+                editable = editit)
     }
   },options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
   ))
+  proxy <- dataTableProxy('raw_data_table')
+
+  # Capture the edits to the raw_data_table
+  observeEvent(input$raw_data_table_cell_edit, {
+    # Indicate that we should instead use edited core data, instead of the default
+    message('Woh, edited the core data. Now we are going to use core_data_edited$data instead of core_data()')
+    use_core_data_edited(TRUE)
+    # Capture edits
+    info = input$raw_data_table_cell_edit
+    print(info)
+    i = info$row
+    j = info$col
+    v = info$value
+    # Update core data accordingly
+    cdx <- core_data()
+    cdx1 <- cdx[[1]]
+    cdx2 <- cdx[[2]]
+    cdx1[i,j] <- as.numeric(v)
+    edited <- list(cdx1, cdx2)
+    core_data_edited$data <- edited
+    
+  })
+  
   
   # reactive object to scale data
   scale_data_reactive <- reactive({
 
-    cored <- core_data()
+    usde <- use_core_data_edited()
+    message('in scale_data_reactive')
+    if(usde){
+      cored <- core_data_edited$data
+      message('---using core_data_edited$data. it looks like:')
+      print(cored)
+    } else {
+      cored <- core_data()
+      message('---using core_data(). it looks like:')
+      print(cored)
+    }
     sd <- prepare_scale_data()
     is_archetype <- input$data_type == 'Archetype'
     
@@ -1303,7 +1346,12 @@ server <- function(input, output, session) {
   
   # reactive object to create right data 
   get_right_data <- reactive({
-    core_dat <- core_data()
+    usde <- use_core_data_edited()
+    if(usde){
+      cored <- core_data_edited$data
+    } else {
+      cored <- core_data()
+    }
     scale_dat <- scale_data_reactive()
     trend_dat <- correct_trend()
     is_trend <- input$trend_test
