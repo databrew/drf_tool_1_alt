@@ -1574,7 +1574,6 @@ server <- function(input, output, session) {
     # save(bs, file = 'bs.RData')
     x <- run_simulations(ps, bs)
     # save(ps, file = 'ps.RData')
-    save(x, 'good_sims.RData')
     return(x)
   })
   
