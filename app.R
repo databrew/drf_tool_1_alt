@@ -79,7 +79,6 @@ body <- dashboardBody(
                         radioButtons("data_type", "Select Data Type",
                                      choices = c('Country', 'Archetype'), selected = 'Country', inline = TRUE)
                       ),
-                      fluidRow(uiOutput('damage_type_ui')),
                       fluidRow(
                         column(3,
                                uiOutput('cost_per_person_ui')
@@ -177,6 +176,7 @@ body <- dashboardBody(
                     fluidPage(
                       
                       fluidRow(uiOutput('data_source_ui')),
+                      fluidRow(uiOutput('damage_type_ui')),
                       fluidRow(column(12,
                                       uiOutput('peril_ui'))),
                       
@@ -1320,6 +1320,9 @@ server <- function(input, output, session) {
     if(input$data_type == 'Archetype'){
       out <- core_dat
       out <- out[[1]]
+      if(is.null(out)){
+        return(scale_dat)
+      }
       names(out) <- c('archetype', 'year', 'peril', 'value')
       message('archetype selected, so core_dat!!!')
     } else {
