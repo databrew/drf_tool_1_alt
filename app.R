@@ -775,7 +775,8 @@ server <- function(input, output, session) {
     } else {
       country_name <- input$country
       scale_data <- scale_data[scale_data$Country == country_name,]
-      names(scale_data) <- c('country', 'year', 'population','inflation', 'gdp')
+      names(scale_data) <- c('country', 'year', 'population','population_factor','inflation',
+                             'inflation_factor', 'gdp', 'gdp_factor', 'inflation_ok', 'gdp_ok')
       return(scale_data)
     }
   })
@@ -964,11 +965,27 @@ server <- function(input, output, session) {
       if(input$advanced == 'Basic'){
         selectInput('select_scale', 
                     'Scale data by:',
-                    choices = 'Population',
-                    selected = 'Population')
+                    choices = 'POPULATION',
+                    selected = 'POPULATION')
       } else {
         data <- prepare_scale_data()
-        scaled_choices <- names(data)[names(data) %in% scaled_data]
+        
+        use_inflation <- isTRUE(unique(data$inflation_ok))
+        use_gdp <- isTRUE(unique(data$gdp_ok))
+        message('inflation')
+        print(use_inflation)
+        message('gdp')
+        print(use_gdp)
+        if(use_inflation & use_gdp){
+          scaled_choices <- c('Population', 'Inflation', 'GDP')
+        } else if(!use_inflation & use_gdp){
+          scaled_choices <- c('Population', 'GDP')
+        } else if(use_inflation & !use_gdp){
+          scaled_choices <- c('Population', 'Inflation')
+        } else if(!use_inflation & !use_gdp){
+          scaled_choices <- c('Population')
+        } 
+       
         scaled_choices <- toupper(c(scaled_choices, ' No scaling'))
         selectInput('select_scale', 
                     'Choose from preloaded scaling data',
@@ -1080,7 +1097,6 @@ server <- function(input, output, session) {
     cored <- core_data()
     sd <- prepare_scale_data()
     is_archetype <- input$data_type == 'Archetype'
-    
     is_advanced <- input$advanced == 'Advanced'
     ss <- input$select_scale
     out <- NULL
@@ -1107,23 +1123,24 @@ server <- function(input, output, session) {
     }
   
   if(is_advanced){
-    if(ss == 'Population'){
+    if(ss == 'POPULATION'){
       # store frequenc
       if(is.null(cored) | is.null(sd)){
         out <- NULL
       } else {
         combined_data <- left_join(cored, sd)
-        out <- combined_data %>%  group_by(peril) %>% arrange(-year) %>% mutate(scaled_factor = population[1]/population) %>%
-          mutate(value = value * scaled_factor)
+        combined_data$value <- combined_data$population_factor*combined_data$value
+        out <- combined_data
+        
       }
     } else if(ss == 'GDP'){
       if(is.null(cored) | is.null(sd)){
         out <- NULL
       } else {
         combined_data <- left_join(cored, sd)
-        # save(combined_data, file = 'combined_data.RData')
-        out <- combined_data %>%  group_by(peril) %>% arrange(-year) %>% mutate(scaled_factor = population[1]/population) %>%
-          mutate(value = value * scaled_factor)
+        combined_data$value <- combined_data$gdp_factor*combined_data$value
+        out <- combined_data
+        
       }
     } else if(ss == 'INFLATION'){
       if(is.null(cored) | is.null(sd)){
@@ -1132,12 +1149,8 @@ server <- function(input, output, session) {
         # load(file = 'cored.RData')
         # load(file = 'sd.RData')
         combined_data <- left_join(cored, sd)
-        # d <- temp %>% arrange(-year) %>% mutate(scaled_factor = inflation[2]/inflation) %>%
-        #   mutate(value = value * scaled_factor)
-        # save(combined_data, file = 'combined_data.RData')
-        out <- combined_data %>%  group_by(peril) %>% arrange(-year) %>% mutate(scaled_factor = population[1]/population) %>%
-          mutate(value = value * scaled_factor)
-        
+        combined_data$value <- combined_data$inflation_factor*combined_data$value
+        out <- combined_data
       }
     } else {
       out <- cored
@@ -1150,9 +1163,9 @@ server <- function(input, output, session) {
     if(is.null(cored) | is.null(sd)){
       out <- NULL
     } else {
-      combined_data <- inner_join(cored, sd)
-      out <- combined_data %>%  group_by(peril) %>% arrange(-year) %>% mutate(scaled_factor = population[1]/population) %>%
-        mutate(value = value * scaled_factor)
+      combined_data <- left_join(cored, sd)
+      combined_data$value <- combined_data$population_factor*combined_data$value
+      out <- combined_data
     }
     out
   }
@@ -1289,6 +1302,8 @@ server <- function(input, output, session) {
         # datatable(data, rownames = FALSE, colnames = NULL, options = list(dom='t',ordering=F))
       } else {
         out <- prepare_scale_data()
+        load(file = 'new_scaled.RData')
+        out$population_factor <- out$gdp_factor <- out$gdp_ok <- out$inflation_factor <- out$inflation_ok <- NULL
         names(out) <- c('Country', 'Year', 'Population', 'Inflation',
                         'GDP')
         # datatable(data, options = list(dom='t',ordering=F))
