@@ -255,7 +255,7 @@ body <- dashboardBody(
                     title = uiOutput('output_ui'),
                     value = 'OUTPUT',
                     
-                    h4('Risk & Disaster Analysis Output'),
+                    uiOutput('output_top_ui'),
                     fluidPage(
                       # DT::dataTableOutput('delete'),
                       br(),
@@ -2151,6 +2151,17 @@ server <- function(input, output, session) {
   #   sdr <- scale_data_reactive()
   #   sdr
   # })
+  
+  output$output_top_ui <- renderUI({
+    
+    the_country <- input$country
+    
+    fluidPage(
+      h4(
+        paste0('Risk & Disaster Analysis Output')
+      ))
+    
+  })
 }
 
 shinyApp(ui, server)
