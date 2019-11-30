@@ -99,6 +99,7 @@ body <- dashboardBody(
                            value = 'DATA',
                            
                            fluidPage(
+                             fluidRow(uiOutput('select_scale_ui')),
                              fluidRow(
                                h4('Review Data Samples')
                              ),
@@ -179,8 +180,6 @@ body <- dashboardBody(
                     fluidPage(
                       fluidRow(column(12,
                                       uiOutput('peril_ui'))),
-                      
-                      fluidRow(uiOutput('select_scale_ui')),
                       uiOutput('trend_test_ui'),
                       
                       
@@ -964,7 +963,7 @@ server <- function(input, output, session) {
     } else {
       if(input$advanced == 'Basic'){
         selectInput('select_scale', 
-                    'Scaled data by population',
+                    'Scale data by:',
                     choices = 'Population',
                     selected = 'Population')
       } else {
@@ -1060,6 +1059,9 @@ server <- function(input, output, session) {
       data <- cored[[1]]
     } else {
       data <- cored[[2]]
+    }
+    if(is.null(data)){
+      return(NULL)
     }
     if(nrow(data) <=3){
       message('Not enough obs')
