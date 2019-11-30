@@ -159,11 +159,6 @@ population_data <- read.csv('data/Scale/population_data.csv')
 gdp_data <- read.csv('data/Scale/gdp.csv')
 inflation_data <- read.csv('data/Scale/inflation.csv')
 
-# get scaled_factor for each country for population, inflation, and gdp
-get_scaled_factor <- function(dat, scale_data_type){
-  
-}
-
 # join data 
 scale_data <- full_join(population_data, inflation_data)
 scale_data <- full_join(scale_data, gdp_data)
