@@ -1474,6 +1474,10 @@ server <- function(input, output, session) {
         }
       }
     }
+    dat <- out[[1]]
+    dat$value <- dat$value/1000000
+    out[[1]] <- dat
+    
     return(out)
   })
   
