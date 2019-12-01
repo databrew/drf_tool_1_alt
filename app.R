@@ -2047,6 +2047,7 @@ server <- function(input, output, session) {
       dat <- gather_data()
       
       
+      
       dat_sim <- gather_perils()
       
       dat_sim <- dat_sim %>% filter(!is.na(value))
