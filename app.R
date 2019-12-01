@@ -2367,12 +2367,9 @@ server <- function(input, output, session) {
               input = input,
               tab_data = tab_data)
   })
-  # output$delete <- DT::renderDataTable({
-  #   sdr <- scale_data_reactive()
-  #   sdr
-  # })
-  
+
   output$output_top_ui <- renderUI({
+    is_archetype <- input$data_type == 'Archetype'
     
     the_country <- input$country
     the_perils <- input$select_peril
@@ -2412,6 +2409,9 @@ server <- function(input, output, session) {
       )
     } else {
       if(the_country_ok){
+        if(is_archetype){
+          the_country <- 'Archetype'
+        }
         vb1 <- valueBox(value = tags$p(paste0('Country: ', the_country, collapse = ''), style = "font-size: 40%;"),
                         subtitle = '',
                         width = 3)
