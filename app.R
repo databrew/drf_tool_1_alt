@@ -83,21 +83,31 @@ body <- dashboardBody(
                     
                     fluidPage(
                       bsPopover(id = "tabs", title = '',
-                                content = "Use the CONTINUE button at the top of the page to navigate.",
-                                placement = "middle", trigger = "hover", options = list(container ='body')),
+                                content = 'Use the "Continue" button at the top of the page to navigate.',
+                                placement = "top", trigger = "hover", options = list(container ='body')),
+
                       h3('Please select your preferred settings'),
                       fluidRow(
                         radioButtons("advanced", "Select a type of setting. If you are an advanced user, please select the advanced settings option below for more statistical flexibility.",
                                      choices = c('Basic', 'Advanced'),
                                      selected = 'Basic',
-                                     inline = TRUE)
+                                     inline = TRUE),
+                        bsPopover(id = "advanced", title = '',
+                                  content = 'For more statistical options and to view the Simulations tab, "Advanced"', trigger = "hover", options = list(container ='body')),
                       ),
                       
                       fluidRow(
                         radioButtons("data_type", "Select Data Type",
-                                     choices = c('Country', 'Archetype'), selected = 'Country', inline = TRUE)
+                                     choices = c('Country', 'Archetype'), selected = 'Country', inline = TRUE),
+                        bsPopover(id = "data_type", title = '',
+                                  content = 'If you pick "Country", you will be able to use real data at the national level. With "Archetype", you will instead use data which is representative of many countries.',
+                                  placement = "top", trigger = "hover", options = list(container ='body'))
                       ),
                       fluidRow(uiOutput('damage_type_ui')),
+                      fluidRow(
+                        bsPopover(id = "damage_type", title = '', content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, you will later be prompted for some currency information.",
+                                  placement = "top", trigger = "hover", options = list(container ='body'))
+                      ),
                       fluidRow(uiOutput('country_ui')),
                       fluidRow(uiOutput('data_source_ui')),
                       
@@ -117,65 +127,54 @@ body <- dashboardBody(
                                                              'User-supplied data'),
                                             choiceNames = c('No', 'Yes'),
                                             selected = 'Pre-loaded data',
-                                            inline = TRUE)
+                                            inline = TRUE),
+                               bsPopover(id = "upload_or_auto", title = '',
+                                         content = 'As an alternative to using the data built in to the app, you can upload your own data.',
+                                         placement = "top", trigger = "hover", options = list(container ='body'))
                              ),
                              fluidRow(
                                column(9,
                                       h4('Peril data')),
                                column(3,
-                                      downloadButton("download_peril_data",
-                                                     "Download Peril Data"))
+                                      fluidRow(
+                                        downloadButton("download_peril_data",
+                                                       "Download Peril Data"),
+                                        bsPopover(id = "download_peril_data", title = '',
+                                                  content = 'Download the peril raw data so as to view or edit on your computer, outside of this application.',
+                                                  placement = "top", 
+                                                  trigger = "hover", 
+                                                  options = list(container ='body'))
+                                      ))
                              ),
                              fluidRow(
                                column(12,
-                                      selectInput('view_data', 'View peril data', choices = c('Loss/cost', 'Frequency')),
+                                      fluidRow(
+                                        selectInput('view_data', 'View peril data', choices = c('Loss/cost', 'Frequency')),
+                                        bsPopover(id = "view_data", title = '',
+                                                  content = 'One can choose to view the data in terms of loss/cost or the frequency of the loss-related events.',
+                                                  placement = "top", trigger = "hover", options = list(container ='body'))
+                                      ),
                                       DT::dataTableOutput('raw_data_table'))),
                              br(),
                              fluidRow(
                                column(9,
                                       h4('Scaling data')),
                                column(3,
-                                      downloadButton("download_scaled_data",
-                                                     "Download Scaled Data"))),
+                                      fluidRow(
+                                        downloadButton("download_scaled_data",
+                                                       "Download Scaled Data"),
+                                                       bsPopover(id = "download_scaled_data", title = '',
+                                                                 content = 'Download the scaled raw data so as to view or edit on your computer, outside of this application.',
+                                                                 placement = "top", 
+                                                                 trigger = "hover", 
+                                                                 options = list(container ='body'))))),
                              fluidRow(
                                column(12,
                                       DT::dataTableOutput('raw_scaled_data')
                                )
                              )
                              
-                           ),
-                           
-                           fluidRow(
-                             bsPopover(id = "advanced", title = '',
-                                       content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'",
-                                       placement = "middle", trigger = "hover", options = list(container ='body')),
-                             bsPopover(id = "upload_data", title = '',
-                                       content = "To use your own dataset, push the 'Upload Peril Data' button",
-                                       placement = "middle", trigger = "hover", options = list(container ='body')),
-                             
-                             bsPopover(id = "download_data", title = '',
-                                       content = "Download the peril data for the country selected",
-                                       placement = "middle", trigger = "hover", options = list(container ='body')),
-                             
-                             bsPopover(id = "country", title = '',
-                                       content = "If you wish to upload your own data, please select the upload peril button",
-                                       placement = "middle", trigger = "hover", options = list(container ='body')),
-                             
-                             
-                           ),
-                           
-                           # popups for the inputs damage_type, currency.Need to add one on the server side for prob_dis
-                           bsPopover(id = "run_tool", title = '',
-                                     content ="After selecting all inputs, click this button to run the tool. It will generate simulation based on the best fitted distribution.",
-                                     placement = "right", trigger = "hover", options = list(container ='body')),
-                           bsPopover(id = "damage_type", title = '',
-                                     content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD",
-                                     placement = "middle", trigger = "hover", options = list(container ='body')),
-                           bsPopover(id = "currency", title = '',
-                                     content = "If other is chosen, please select a currency code and exchange rate.",
-                                     placement = "middle", trigger = "hover", options = list(container ='body'))
-                           
-                  ),
+                           )),
                   tabPanel(
                     
                     title = uiOutput('input_ui'),
@@ -216,48 +215,61 @@ body <- dashboardBody(
                     fluidPage(
                       fluidRow(
                         column(6,
-                               checkboxGroupInput('overlap_choices',
+                               fluidRow(
+                                 checkboxGroupInput('overlap_choices',
                                                   'Show:',
                                                   choices = c('Observed data',
                                                               'Simulated data'),
                                                   selected = c('Observed data',
-                                                               'Simulated data'))),
+                                                               'Simulated data'),
+                                                  inline = TRUE),
+                                 bsPopover(id = "overlap_choices", title = '',
+                                           content = 'The chart below will show one or both of the simulated and observed data',
+                                           placement = "top", 
+                                           trigger = "hover", 
+                                           options = list(container ='body')))),
                         column(6,
-                               selectInput('peril_simulation',
-                                           'Peril',
-                                           choices = c('Flood',
-                                                       'Drought',
-                                                       'Earthquake',
-                                                       'Storm')))
+                               fluidRow(
+                                 selectInput('peril_simulation',
+                                             'Peril:',
+                                             choices = c('Flood',
+                                                         'Drought',
+                                                         'Earthquake',
+                                                         'Storm')),
+                                 bsPopover(id = "peril_simulation", title = '',
+                                           content = 'Select one specific peril to examine details on the fit with the distributions below',
+                                           placement = "top", 
+                                           trigger = "hover", 
+                                           options = list(container ='body'))
+                               ))
                       ),
                       fluidRow(
                         box(
                           title = 'Simulation chart',
                           width = 6,
                           status = 'primary',
-                          plotOutput('simulation_plot')),
+                          fluidRow(
+                            plotOutput('simulation_plot'),
+                            bsPopover(id = "simulation_plot", title = '',
+                                      content = "This chart shows the historic distribution of loss from perils.",
+                                      placement = "top", trigger = "hover", options = list(container ='body'))
+                          )),
                         box(
                           title = 'Simulation table',
                           width = 6,
                           status = 'primary',
-                          DT::dataTableOutput('simulation_table'))
+                          fluidRow(
+                            DT::dataTableOutput('simulation_table'),
+                            bsPopover(id = "simulation_table", title = '',
+                                      content = "This table shows the AIC scores for each parametric distribution. NAs are a result of the non convergence in the optimization algorithm. The table also shows the Maximum Likelihood Estimators for each distribution.",
+                                      placement = "top", trigger = "hover", options = list(container ='body'))
+                          ))
                       ),
                       fluidRow(
                         column(6,
                                plotOutput('rag_ratings'))
                         
                       ),
-                      bsPopover(id = "hist_plot", title = '',
-                                content = "This chart shows the historic distribution of 'Loss' from perils.",
-                                placement = "middle", trigger = "hover", options = list(container ='body')),
-                      
-                      bsPopover(id = "sim_plot", title = '',
-                                content = "This chart shows the simulated distribution of 'Loss' using the best fit distribution, or if in advanced settings, the distribution chosen on the previous page. 15k simulations, with 1k representing one full year",
-                                placement = "bottom", trigger = "hover", options = list(container ='body')),
-                      
-                      bsPopover(id = "aic_table", title = '',
-                                content = "This table shows the AIC scores for each parametric distribution. NAs are a result of the non convergence in the optimization algorithm. The table also shows the Maximum Likelihood Estimators for each distribution.",
-                                placement = "bottom", trigger = "hover", options = list(container ='body')),
                       fluidRow(
                         column(6,
                                plotOutput('dist_plot')),
@@ -279,31 +291,40 @@ body <- dashboardBody(
                         column(3,
                                div(class = 'well',
                                    numericInput('budget', 'Budget', value = 0),
+                                   bsPopover(id = "budget", title = '',
+                                             content = 'The budget will be used for calculating the likelihood of exceeding funding, etc',
+                                             placement = "top", 
+                                             trigger = "hover", 
+                                             options = list(container ='body')),
                                    checkboxInput('ci',
                                                  'Show confidence intervals',
                                                  value = FALSE))),
                         column(3,
                                div(class = 'well',
-                                   numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0))),
+                                   numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0),
+                                   bsPopover(id = "exceed_budget", title = '',
+                                             content = 'This is the amount by which the funding gap can be exceeded',
+                                             placement = "top", 
+                                             trigger = "hover", 
+                                             options = list(container ='body')))),
                         column(3,
                                div(class = 'well',
-                                   numericInput('severe', 'Define the probability for a severe event' , value = 10))),
+                                   numericInput('severe', 'Define the probability for a severe event' , value = 10),
+                                   bsPopover(id = "severe", title = '',
+                                             content = 'This should be the estimated percentage likelihood of a severe event taking place',
+                                             placement = "top", 
+                                             trigger = "hover", 
+                                             options = list(container ='body')))),
                         column(3,
                                div(class = 'well',
-                                   numericInput('extreme', 'Define the probability for an extreme event' , value = 1)))
+                                   numericInput('extreme', 'Define the probability for an extreme event' , value = 1),
+                                   bsPopover(id = "extreme", title = '',
+                                             content = 'This should be the percentage likelihood of an extreme event taking place',
+                                             placement = "top", 
+                                             trigger = "hover", 
+                                             options = list(container ='body'))))
                         
                       ),
-                      #
-                      bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1',
-                                content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happend every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expectedto happen every 10 years (ie 10% probability.",
-                                placement = "middle", trigger = "hover", options = list(container ='body')),
-                      bsPopover(id = "loss_exceedance_plotly", title = 'Exhibit 2', content = "This graph shows the probability of a year taking place that exceeds the aggregate annual loss amount on the y-axis. The probability of exceeding the available budget is represented by the probability where the available budget line and the loss exceedance curve cross.",
-                                placement = "left", trigger = "hover", options = list(container ='body')),
-                      bsPopover(id = 'annual_loss_gap_plotly', title = 'Exhibit 3', content = "The funding gap is the difference between the available federal budget and the estimated annual loss at the return period. A loss value below the red budget line represents an estimated surplus (if above, it would be a deficit)",
-                                placement = "middle", trigger = "hover", options = list(container ='body')),
-                      bsPopover(id = 'loss_exceedance_gap_plotly', title = 'Exhibit 4', content = "The graph shows the probability of experiencing different sized funding gaps/surpluses. When the line is above the x-axis, it indicates a funding surplus - if below, it indicates a funding deficit.",
-                                placement = "left", trigger = "hover", options = list(container ='body')),
-                      
                       fluidRow(
                         box(title = "Estimated Average Annual Loss by Time Period",
                             checkboxInput(inputId = 'is_table_1',
@@ -317,9 +338,15 @@ body <- dashboardBody(
                             uiOutput('output3'))),
                       fluidRow(
                         box(title = "Loss Exceedance Curve",
-                            plotOutput('loss_exceedance_plotly')),
+                            fluidRow(plotOutput('loss_exceedance_plotly'),
+                            bsPopover(id = "loss_exceedance_plotly", title = 'Exhibit 2', content = "This graph shows the probability of a year taking place that exceeds the aggregate annual loss amount on the y-axis. The probability of exceeding the available budget is represented by the probability where the available budget line and the loss exceedance curve cross.",
+                                      placement = "top", trigger = "hover", options = list(container ='body')))),
                         box(title = "Funding Gap",
-                            plotOutput('loss_exceedance_gap_plotly'))),
+                            fluidRow(
+                              plotOutput('loss_exceedance_gap_plotly'),
+                              bsPopover(id = 'loss_exceedance_gap_plotly', title = 'Exhibit 4', content = "The graph shows the probability of experiencing different sized funding gaps/surpluses. When the line is above the x-axis, it indicates a funding surplus - if below, it indicates a funding deficit.",
+                                        placement = "top", trigger = "hover", options = list(container ='body'))
+                            ))),
                       fluidRow(
                         column(12,
                                align = 'center',
@@ -403,20 +430,59 @@ server <- function(input, output, session) {
   # Download controls
   output$download_peril_data <- downloadHandler(
     filename = function() {
-      paste("data-", Sys.Date(), ".csv", sep="")
+      paste("perild_data-", Sys.Date(), ".csv", sep="")
     },
     content = function(file) {
-      the_data <- selected_damage_type() # ASK JOE about this
+
+      usde <- use_core_data_edited()
+      if(usde){
+        cored <- core_data_edited$data
+      } else {
+        cored <- core_data()
+      }
+      
+      view_data <- input$view_data
+      editit <- FALSE
+      if(view_data != 'Frequency'){
+        data <- cored[[1]]
+      } else {
+        data <- cored[[2]]
+      }
+      if(is.null(data)){
+        the_data <- tibble(` ` = "No data available")
+      }
+      if(nrow(data) <=3){
+        the_data  <- tibble(` ` = "Not enough observations available")
+      } else {
+        the_data <- widen_core_data(data)
+      }
       write.csv(the_data, file)
     }
   )
   output$download_scaled_data <- downloadHandler(
     filename = function() {
-      paste("data-", Sys.Date(), ".csv", sep="")
+      paste("scaled_data-", Sys.Date(), ".csv", sep="")
     },
     content = function(file) {
-      the_data <- raw_scaled_data()
+      
+      
+      
+      psd <- prepare_scale_data()
+      if(is.null(psd)){
+        the_data <- tibble(` ` = 'No data available')
+      } else {
+        if(input$data_type == 'Archetype'){
+          the_data <- tibble(` ` = 'No data available')
+        } else {
+          out <- prepare_scale_data()
+          out$population_factor <- out$gdp_factor <- out$gdp_ok <- out$inflation_factor <- out$inflation_ok <- NULL
+          names(out) <- c('Country', 'Year', 'Population', 'Inflation',
+                          'GDP')
+          the_data <- out
+        }
+      }
       write.csv(the_data, file)
+    
     }
   )
   
@@ -566,9 +632,20 @@ server <- function(input, output, session) {
                                "Choose a country",
                                choices = countries,
                                selected = countries[1])
+      the_input <- fluidRow(
+        the_input,
+        bsPopover(id = "country", title = '',
+                  content = 'Select a country to examine real data from that country. If you wish to use "Archetype" data instead of data specific to one country, go above and change your choice in the "Select Data Type" menu',
+                  placement = "top", trigger = "hover", options = list(container ='body'))
+      )
     } else {
       the_input <- selectInput('archetype', 'Choose an archetype',
                                choices = archetypes)
+      the_input <- 
+        fluidRow(the_input,
+                 bsPopover(id = "archetype", title = '',
+                           content = 'Select an archetype that matches the characteristics of the country or countries of interest to you',
+                           placement = "top", trigger = "hover", options = list(container ='body')))
     }
     the_input
     
@@ -577,19 +654,25 @@ server <- function(input, output, session) {
   output$damage_type_ui <- renderUI({
     
     if(input$data_type == 'Archetype'){
-      radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
+      out <- radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
                    'Select how you want to view the loss',
                    choices = c('Cost per person'),
                    selected = 'Cost per person',
                    inline = TRUE)
     } else {
-      radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
+      out <- radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
                    'Select how you want to view the loss',
                    choices = c('Total damage', 'Cost per person'),
                    selected = 'Total damage',
                    inline = TRUE)
     }
-    
+    out <- fluidRow(
+      out,
+      bsPopover(id = "damage_type", title = '',
+                content = "Select whether you would like to view the loss as cost per person or as total damage. If archetype is chosen, you can only do the former.",
+                placement = "top", trigger = "hover", options = list(container ='body'))
+    )
+    out
   })
   
   
@@ -830,13 +913,16 @@ server <- function(input, output, session) {
       if(input$damage_type == 'Total damage'){
         NULL
       } else {
-        
-        radioButtons('currency',
-                     'Choose a currency',
-                     choices = currencies,
-                     selected = 'USD',
-                     inline = TRUE)
-      }
+        fluidRow(
+          radioButtons('currency',
+                       'Choose a currency',
+                       choices = currencies,
+                       selected = 'USD',
+                       inline = TRUE),
+          bsPopover(id = "currency", title = '',
+                    content = "If other is chosen, please select a currency code and exchange rate.",
+                    placement = "top", trigger = "hover", options = list(container ='body'))
+        )}
     }
   })
   
@@ -1000,7 +1086,7 @@ server <- function(input, output, session) {
       NULL
     } else {
       if(input$advanced == 'Basic'){
-        selectInput('select_scale',
+        out <- selectInput('select_scale',
                     'Scale data by:',
                     choices = 'POPULATION',
                     selected = 'POPULATION')
@@ -1020,12 +1106,17 @@ server <- function(input, output, session) {
         }
         
         scaled_choices <- toupper(c(scaled_choices, ' No scaling'))
-        selectInput('select_scale',
+        out <- selectInput('select_scale',
                     'Choose from preloaded scaling data',
                     choices = scaled_choices,
                     selected = scaled_choices[1])
       }
-      
+     fluidRow(
+       out,
+       bsPopover(id = "select_scale", title = '',
+                 content = 'Choose how you would like to see your data "scaled".',
+                 placement = "top", trigger = "hover", options = list(container ='body'))
+     ) 
     }
   })
   
@@ -1526,11 +1617,18 @@ server <- function(input, output, session) {
         flood_go <- br()
       } else {
         flood_go <- fluidRow(
-          radioButtons('dist_flood_input',
-                       'Distribution for flood',
-                       choices = flood_choices,
-                       selected = chosen_flood,
-                       inline = TRUE))
+          fluidRow(
+            radioButtons('dist_flood_input',
+                         'Distribution for flood',
+                         choices = flood_choices,
+                         selected = chosen_flood,
+                         inline = TRUE)),
+          bsPopover(id = "dist_flood_input", title = '',
+                    content = 'The selected distribution is the "best" distribution for the observed flood damage. In advanced mode, however, you can select other distributions as well.',
+                    placement = "top", 
+                    trigger = "hover", 
+                    options = list(container ='body'))
+          )
       }
       if(length(chosen_earthquake) == 0){
         no_go <- c(no_go, 'Earthquake')
@@ -1541,7 +1639,12 @@ server <- function(input, output, session) {
                        'Distribution for earthquake',
                        choices = earthquake_choices,
                        selected = chosen_earthquake,
-                       inline = TRUE)
+                       inline = TRUE),
+          bsPopover(id = "dist_earthquake_input", title = '',
+                    content = 'The selected distribution is the "best" distribution for the observed earthquake damage. In advanced mode, however, you can select other distributions as well.',
+                    placement = "top", 
+                    trigger = "hover", 
+                    options = list(container ='body'))
         )
       }
       if(length(chosen_drought) == 0){
@@ -1553,7 +1656,13 @@ server <- function(input, output, session) {
                        'Distribution for drought',
                        choices = drought_choices,
                        selected = chosen_drought,
-                       inline = TRUE)
+                       inline = TRUE),
+          bsPopover(id = "dist_drought_input", title = '',
+                    content = 'The selected distribution is the "best" distribution for the observed drought damage. In advanced mode, however, you can select other distributions as well.',
+                    placement = "top", 
+                    trigger = "hover", 
+                    options = list(container ='body'))
+          
         )
       }
       if(length(chosen_storm) == 0){
@@ -1565,7 +1674,12 @@ server <- function(input, output, session) {
                        'Distribution for storm',
                        choices = storm_choices,
                        selected = chosen_storm,
-                       inline = TRUE)
+                       inline = TRUE),
+          bsPopover(id = "dist_storm_input", title = '',
+                    content = 'The selected distribution is the "best" distribution for the observed storm damage. In advanced mode, however, you can select other distributions as well.',
+                    placement = "top", 
+                    trigger = "hover", 
+                    options = list(container ='body'))
         )
       }
       no_go <- paste0(no_go, collapse = ', ')
@@ -1655,11 +1769,18 @@ server <- function(input, output, session) {
     dat_sim <- dat_sim %>% filter(!is.na(value))
     peril_choices <- unique(dat_sim$key)
     
-    checkboxGroupInput('select_peril',
-                       label = 'Perils to view on output page',
-                       choices = peril_choices,
-                       selected = peril_choices,
-                       inline = TRUE)
+    fluidRow(
+      checkboxGroupInput('select_peril',
+                         label = 'Perils to view on output page',
+                         choices = peril_choices,
+                         selected = peril_choices,
+                         inline = TRUE),
+      bsPopover(id = "select_peril", title = '',
+                content = 'Select all perils which you would like to view',
+                placement = "top", 
+                trigger = "hover", 
+                options = list(container ='body'))
+    )
   })
   
   gather_perils <- reactive({
@@ -1823,7 +1944,12 @@ server <- function(input, output, session) {
     if(is_table){
       DT::dataTableOutput('annual_loss_tably')
     } else {
-      plotOutput('annual_loss_plotly')
+      fluidRow(
+        plotOutput('annual_loss_plotly'),
+        bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1',
+                  content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happend every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expectedto happen every 10 years (ie 10% probability.",
+                  placement = "top", trigger = "hover", options = list(container ='body'))
+      )
     }
   })
   
@@ -1840,7 +1966,11 @@ server <- function(input, output, session) {
     if(is_table){
       DT::dataTableOutput('annual_loss_gap_tably')
     } else {
-      plotOutput('annual_loss_gap_plotly')
+      fluidRow(
+        plotOutput('annual_loss_gap_plotly'),
+        bsPopover(id = 'annual_loss_gap_plotly', title = 'Exhibit 3', content = "The funding gap is the difference between the available federal budget and the estimated annual loss at the return period. A loss value below the red budget line represents an estimated surplus (if above, it would be a deficit)",
+                  placement = "top", trigger = "hover", options = list(container ='body'))
+      )
     }
   })
   
