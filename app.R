@@ -279,10 +279,22 @@ body <- dashboardBody(
                         column(3,
                                div(class = 'well',
                                    numericInput('budget', 'Budget', value = 0),
-                                   uiOutput('ci_ui'))),
+                                   checkboxInput('ci', 
+                                                 'Show confidence intervals (only in advanced mode)',
+                                                 value = FALSE))),
                         column(3,
                                div(class = 'well',
-                                   numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0)))
+                                   numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0))),
+                        column(3,
+                               div(class = 'well',
+                                   numericInput('severe', 
+                                                'Define the probability (%) for a severe event',
+                                                value = 10))),
+                        column(3,
+                               div(class = 'well',
+                                   numericInput('extreme', 
+                                                'Define the probability (%) for an extreme event',
+                                                value = 1))),
                       ),
                       # 
                       bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1', 
@@ -692,7 +704,7 @@ server <- function(input, output, session) {
       NULL
     } else {
       country_name <- input$country
-      best_data <- best_data_source()
+      best_data <- input$data_source
       freq_data <- frequency_data[frequency_data$country == country_name,]
       return(freq_data)
     }
@@ -722,7 +734,7 @@ server <- function(input, output, session) {
   })
   
   
-  best_data_source <- reactive({
+  output$data_source_ui <- renderUI({
     if(is.null(input$damage_type) | is.null(selected_country())){
       NULL
     } else {
@@ -735,21 +747,19 @@ server <- function(input, output, session) {
         damage_type <- input$damage_type
         if(damage_type == 'Total damage'){
           source_name <- best_source %>% filter(damage_type == 'damage') %>% .$best_source
+          selectInput('data_source', 
+                      'Choose data source (default is best)', 
+                      choices = source_name,
+                      selected = source_name)
         } else {
           source_name <- best_source %>% filter(damage_type == 'affected') %>% .$best_source
+          selectInput('data_source', 
+                      'Choose data source (default is best)', 
+                      choices = source_name,
+                      selected = source_name)
         }
-        source_name
+        
       }
-    }
-  })
-  
-  output$data_source_ui <- renderUI({
-    sn <- best_data_source()
-    if(is.null(sn)){
-      NULL
-    } else {
-      h4(paste0('The best data source for the chosen parameters is: ',
-                sn))
     }
   })
   
@@ -757,11 +767,10 @@ server <- function(input, output, session) {
   
   
   prepare_loss_data <- reactive({
-    data_source <- best_data_source()
-    if(is.null(data_source) | is.null(country_frequency())){
+    if(is.null(input$data_source) | is.null(country_frequency())){
       NULL
     } else {
-      best_source <- best_data_source()
+      best_source <- input$data_source
       country_data <- selected_country()
       country_frequency <- country_frequency()
       
@@ -892,15 +901,14 @@ server <- function(input, output, session) {
   # country_frequency <- country_frequency[country_frequency$country == country_name,]
   
   prepare_cost_data <- reactive({
-    best_source <- best_data_source()
+    best_source <- input$data_source
     rate <- input$rate
     code <- input$code
     cost <- input$cost_per_person
     country_data <- selected_country()
     cf <- country_frequency()
     ok <- TRUE
-    data_source <- best_data_source()
-    if(is.null(data_source) | is.null(cf) | is.null(input$damage_type) |
+    if(is.null(input$data_source) | is.null(cf) | is.null(input$damage_type) |
        is.null(best_source) | is.null(rate) | is.null(code) | is.null(cost) | is.null(country_data)){
       ok <- FALSE
     }
@@ -943,11 +951,10 @@ server <- function(input, output, session) {
   # archetype_frequency <- archetype_frequency[archetype_frequency$archetype == archetype_name,]
   
   prepare_archetype_data <- reactive({
-    data_source <- best_data_source()
-    if(is.null(data_source) | is.null(archetype_frequency()) | is.null(input$damage_type)){
+    if(is.null(input$data_source) | is.null(archetype_frequency()) | is.null(input$damage_type)){
       NULL
     } else {
-      best_source <- best_data_source()
+      best_source <- input$data_source
       # rate <- input$rate
       # code <- input$code
       # cost <- input$cost_per_person
@@ -1084,6 +1091,7 @@ server <- function(input, output, session) {
       out <- dat
       out <- transform_core_data(out)
     }
+    # save(out, file = 'out.RData')
     out
   })
   output$raw_data_table <- DT::renderDataTable({
@@ -1464,16 +1472,6 @@ server <- function(input, output, session) {
   output$peril_ui <- renderUI({
     is_advanced <- input$advanced == 'Advanced'
     fd <- filtered_distribution()
-    fdx <- fitted_distribution()
-    # Filter to keep only those non na values
-    fdx_ok <- FALSE
-    if(!is.null(fdx)){
-      if(nrow(fdx) > 0){
-        fdx_ok <- TRUE
-        fdx <- fdx %>%
-          filter(!is.na(aic))
-      }
-    }
     if(is.null(fd)){
       return(NULL)
     } else {
@@ -1488,15 +1486,7 @@ server <- function(input, output, session) {
         drought_choices <- chosen_drought
         storm_choices <- chosen_storm
       } else {
-        if(fdx_ok){
-          flood_choices <- fdx %>% filter(peril == 'Flood') %>% .$distribution
-          earthquake_choices <- fdx %>% filter(peril == 'Earthquake') %>% .$distribution
-          drought_choices <- fdx %>% filter(peril == 'Drought') %>% .$distribution
-          storm_choices <- fdx %>% filter(peril == 'Storm') %>% .$distribution
-        } else {
-          flood_choices <- earthquake_choices <- drought_choices <- storm_choices <- advanced_parametric
-        }
-        
+        flood_choices <- earthquake_choices <- drought_choices <- storm_choices <- advanced_parametric
       }
       message('flood choices is ', flood_choices)
       message('chosen flood ', chosen_flood)
@@ -1628,23 +1618,12 @@ server <- function(input, output, session) {
   ################
   # Output tab
   ################
-  output$ci_ui <- renderUI({
-    is_advanced <- input$advanced == 'Advanced'
-    if(!is_advanced){
-      NULL
-    } else {
-      checkboxInput('ci', 
-                    'Show confidence intervals',
-                    value = FALSE)
-    }
-   
-  })
-  
   output$select_peril_ui <- renderUI({
     dat_sim <- ran_simulations()
     if(is.null(dat_sim)){
       return(NULL)
     }
+    # save(dat_sim, file = 'peril_ui.RData')
     dat_sim <- dat_sim %>% filter(!is.na(value))
     peril_choices <- unique(dat_sim$key)
     
@@ -1687,6 +1666,7 @@ server <- function(input, output, session) {
       dat <- get_right_data()
       dat <- dat[[1]]
     
+      save(dat, file = 'new_dat.RData')
       # filter selected_perils
       filtered_dat <- dat %>% 
         filter(peril %in% selected_perils) %>% 
@@ -1775,14 +1755,15 @@ server <- function(input, output, session) {
     budget <- input$budget
     gp <- gather_perils()
     gd <- gather_data()
-    ci <- input$ci
-    if(is.na(budget) | is.null(gp) | is.null(gd) | is.null(ci)){
+    if(is.na(budget) | is.null(gp) | is.null(gd)){
       return(NULL)
     } else {
       
       dat <- gather_data()
       dat_sim <- gather_perils()
       dat_sim <- dat_sim %>% filter(!is.na(value))
+      # save(dat, file = 'new_dat.RData')
+      # save(dat_sim, file = 'dat_sim.RData')
       # remove obsevations with 0, if any
       dat <- dat[dat$value > 0,]
       dat <- dat[order(dat$year, decreasing = FALSE),]
@@ -1796,6 +1777,11 @@ server <- function(input, output, session) {
       } else {
         plot_title <- input$country
       }
+      # save(dat_sim, file = 'dat_sim.RData')
+      # save(dat, file = 'dat.RData')
+      # save(dat_sim, file = 'data_simulation.RData')
+      
+        
       output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
       annual_avg = round(mean(dat$value), 2)
       
@@ -1865,9 +1851,8 @@ server <- function(input, output, session) {
     
     prob_exceed <- probability_of_exceeding()
     budget <- input$budget
-    ci <- input$ci
     
-    if(is.null(prob_exceed) | is.na(budget) | is.null(gather_data()) | is.null(ci)){
+    if(is.null(prob_exceed) | is.na(budget) | is.null(gather_data())){
       NULL
     } else {
       
@@ -1959,9 +1944,10 @@ server <- function(input, output, session) {
   
   output$annual_loss_gap_plotly <- renderPlot({
     
+    severe <- input$severe
+    extreme <- input$extreme
     budget <- input$budget
-    ci <- input$ci
-    if(is.na(budget) |  is.null(gather_perils()) | is.null(gather_data()) | is.null(ci)){
+    if(is.na(budget) |  is.null(gather_perils()) | is.null(gather_data())){
       NULL
     } else {
       dat <- gather_data()
@@ -1979,14 +1965,18 @@ server <- function(input, output, session) {
       } else {
         plot_title <- input$country
       }
-      
-      
-        output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
+        severe <- severe/100
+        severe <- 1-severe
+        extreme <- extreme/100
+        extreme <- 1-extreme
+        
+        save(dat_sim, file = 'dat_sim.RData')
+        output <- quantile(dat_sim$value,c(severe, extreme))
         annual_avg <- mean(dat$value)
         # create data frame dat to store output with chart labels
         sub_plot_dat <- data_frame(`Average` = annual_avg,
-                                   `Severe` = output[2],
-                                   `Extreme` = output[5])
+                                   `Severe` = output[1],
+                                   `Extreme` = output[2])
         
         # melt the data frame to get value and variable
         sub_plot_dat <- melt(sub_plot_dat)
@@ -2049,9 +2039,8 @@ server <- function(input, output, session) {
     prob_exceed_suprplus_deficit <- probability_of_exceeding_suplus_deficit()
     budget <- input$budget
     data_type <- input$data_type
-    ci <- input$ci
     
-    if(is.null(prob_exceed_suprplus_deficit) | is.na(budget) | is.null(data_type) | is.null(gather_data()) | is.null(ci)){
+    if(is.null(prob_exceed_suprplus_deficit) | is.na(budget) | is.null(data_type) | is.null(gather_data())){
       NULL
     } else {
       
