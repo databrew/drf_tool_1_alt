@@ -1624,24 +1624,40 @@ server <- function(input, output, session) {
   })
   
   gather_perils <- reactive({
-    selected_perils <- input$select_perils
+    selected_perils <- input$select_peril
+    print(input$select_perils)
     if(is.null(selected_perils)){
       NULL
     } else {
       dat_sim <- ran_simulations()
       dat_sim <- dat_sim %>% filter(!is.na(outcome))
       
+      # filter selected_perils
+      filtered_sims <- dat_sim %>% 
+        filter(key %in% selected_perils) %>% 
+        mutate(dummy = 1) %>%
+        group_by(key) %>%
+        mutate(cs = cumsum(dummy)) %>%
+        ungroup() %>%
+        dplyr::select(-dummy) %>%
+        mutate(key = 'all_perils') %>%
+        group_by(key, cs) %>%
+        summarise(value = sum(outcome, na.rm = TRUE)) %>%
+        dplyr::select(-cs)
+      save(filtered_sims, file = 'filtered_sims.RData')
+      
+      return(filtered_sims)
     }
   })
   # # make reactive object to store probability of exceeding budget
   probability_of_exceeding <- reactive({
     
     budget <- input$budget
-    if(is.null(budget)){
+    if(is.null(budget) | is.null(gather_perils())){
       NULL
     } else {
       
-      dat_sim <- ran_simulations()
+      dat_sim <- gather_perils()
       dat_sim <- dat_sim %>% filter(!is.na(value))
       # get budget
       output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
@@ -1672,11 +1688,11 @@ server <- function(input, output, session) {
   probability_of_exceeding_suplus_deficit <- reactive({
     
     budget <- input$budget
-    if(is.null(budget)){
+    if(is.null(budget) |  is.null(gather_perils())){
       NULL
     } else {
       
-      dat_sim <- ran_simulations()
+      dat_sim <- gather_perils()
       dat_sim <- dat_sim %>% filter(!is.na(value))
       # get budget
       exceed_budget <- input$exceed_budget
@@ -1710,13 +1726,13 @@ server <- function(input, output, session) {
   output$annual_loss_plotly <- renderPlot({
     
     budget <- input$budget
-    if(is.na(budget)){
+    if(is.na(budget) | is.null(gather_perils())){
       NULL
     } else {
       
       dat <- get_right_data()
       dat <- dat[[1]]
-      dat_sim <- ran_simulations()
+      dat_sim <- gather_perils()
       dat_sim <- dat_sim %>% filter(!is.na(value))
       # save(dat_sim, file = 'dat_sim.RData')
       # remove obsevations with 0, if any
@@ -1830,7 +1846,7 @@ server <- function(input, output, session) {
       dat <- get_right_data()
       dat <- dat[[1]]
       
-      dat_sim <- ran_simulations()
+      dat_sim <- gather_perils()
       country_name <- unique(dat$country)
       
       dat <- dat[order(dat$year, decreasing = FALSE),]
@@ -1920,13 +1936,13 @@ server <- function(input, output, session) {
   output$annual_loss_gap_plotly <- renderPlot({
     
     budget <- input$budget
-    if(is.na(budget)){
+    if(is.na(budget) |  is.null(gather_perils())){
       NULL
     } else {
       dat <- get_right_data()
       dat <- dat[[1]]
       
-      dat_sim <- ran_simulations()
+      dat_sim <- gather_perils()
       dat_sim <- dat_sim %>% filter(!is.na(value))
       # remove obsevations with 0, if any
       dat <- dat[dat$value > 0,]
@@ -2021,7 +2037,7 @@ server <- function(input, output, session) {
       dat <- get_right_data()
       dat <- dat[[1]]
       
-      dat_sim <- ran_simulations()
+      dat_sim <- gather_perils()
       
       dat_sim <- dat_sim %>% filter(!is.na(value))
       dat <- dat[order(dat$year, decreasing = FALSE),]
