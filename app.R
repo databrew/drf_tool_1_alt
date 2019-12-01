@@ -104,9 +104,10 @@ body <- dashboardBody(
                                   placement = "top", trigger = "hover", options = list(container ='body'))
                       ),
                       uiOutput('damage_type_ui'),
+                      
+                      bsPopover(id = "damage_type", title = '', content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, you will later be prompted for some currency information.",
+                                placement = "top", trigger = "hover", options = list(container ='body')),
                       fluidRow(
-                        bsPopover(id = "damage_type", title = '', content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, you will later be prompted for some currency information.",
-                                  placement = "top", trigger = "hover", options = list(container ='body')),
                         column(3,
                                uiOutput('cost_per_person_ui')
                         ),
@@ -193,8 +194,11 @@ body <- dashboardBody(
                     fluidPage(
                       fluidRow(column(12,
                                       uiOutput('select_peril_ui'))),
-                      fluidRow(column(12,
-                                      uiOutput('peril_ui'))),
+                      fluidRow(
+                        # column(12,
+                                      uiOutput('peril_ui')
+                                      # )
+                      ),
                       uiOutput('trend_test_ui'),
                       
                       
@@ -1640,12 +1644,11 @@ server <- function(input, output, session) {
         flood_go <- br()
       } else {
         flood_go <- fluidRow(
-          fluidRow(
             radioButtons('dist_flood_input',
                          'Distribution for flood',
                          choices = flood_choices,
                          selected = chosen_flood,
-                         inline = TRUE)),
+                         inline = TRUE),
           bsPopover(id = "dist_flood_input", title = '',
                     content = 'The selected distribution is the "best" distribution for the observed flood damage. In advanced mode, however, you can select other distributions as well.',
                     placement = "top", 
