@@ -343,7 +343,7 @@ get_aic_mle <- function(dat){
   for(i in 1:length(present_perils)){
     peril_name <- present_perils[i]
     sub_dat <- dat[dat$peril == peril_name,]
-    sub_dat$value <- sub_dat$value/1000000
+    sub_dat$value <- sub_dat$value
     
     log_normal <- try(fitdistr(sub_dat$value, "lognormal"),silent = TRUE)
     if(class(log_normal) == 'try-error'){

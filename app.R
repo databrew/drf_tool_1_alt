@@ -1833,6 +1833,7 @@ server <- function(input, output, session) {
     } else {
       dat <- get_right_data()
       dat <- dat[[1]]
+      # save(dat, file = 'dat.RData')
       
       # filter selected_perils
       filtered_dat <- dat %>%
@@ -1934,7 +1935,7 @@ server <- function(input, output, session) {
       dat <- dat[order(dat$year, decreasing = FALSE),]
       # get budget
       
-      
+      # save(dat_sim, file = 'dat_sim.RData')
       output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
       annual_avg = round(mean(dat$value), 2)
       
