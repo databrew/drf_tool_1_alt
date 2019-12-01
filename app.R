@@ -299,9 +299,15 @@ body <- dashboardBody(
                       
                       fluidRow(
                         box(title = "Estimated Average Annual Loss by Time Period",
-                            plotOutput('annual_loss_plotly')),
+                            checkboxInput(inputId = 'is_table_1',
+                                          label = 'Show table instead of chart',
+                                          value = FALSE),
+                            uiOutput('output1')),
                         box(title = "Estimated Average Annual Loss by Severity",
-                            plotOutput('annual_loss_gap_plotly'))),
+                            checkboxInput(inputId = 'is_table_3',
+                                          label = 'Show table instead of chart',
+                                          value = FALSE),
+                            uiOutput('output3'))),
                       fluidRow(
                         box(title = "Loss Exceedance Curve",
                             plotOutput('loss_exceedance_plotly')),
@@ -1760,7 +1766,7 @@ server <- function(input, output, session) {
   # # OUTPUT 1
   # 
   
-  output$annual_loss_plotly <- renderPlot({
+  annual_loss_data <- reactive({
     
     budget <- input$budget
     gp <- gather_perils()
@@ -1777,19 +1783,12 @@ server <- function(input, output, session) {
       dat <- dat[order(dat$year, decreasing = FALSE),]
       # get budget
       
-     
-      is_archetype <- input$data_type == 'Archetype'
-      # get country input for plot title
-      if(is_archetype){
-        plot_title <- 'Archetype'
-      } else {
-        plot_title <- input$country
-      }
+      
       output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
       annual_avg = round(mean(dat$value), 2)
       
       # create sub_data frame sub_dat to store output with chart labels
-       sub_dat <- data_frame(`Annual average` = annual_avg,
+      sub_dat <- data_frame(`Annual average` = annual_avg,
                             `1 in 5 Years` = output[1],
                             `1 in 10 Years` = output[2],
                             `1 in 25 Years` = output[3],
@@ -1804,10 +1803,62 @@ server <- function(input, output, session) {
       sub_dat$variable <- factor(sub_dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
                                                               'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
       sub_dat$value <- round(sub_dat$value, 2)
-      
-      # 
-      plot_dat <- sub_dat
-      
+      return(sub_dat)
+    }
+  })
+  
+  output$output1 <- renderUI({
+    is_table <- input$is_table_1
+    if(is_table){
+      DT::dataTableOutput('annual_loss_tably')
+    } else {
+      plotOutput('annual_loss_plotly')
+    }
+  })
+  
+  output$annual_loss_gap_tably <- DT::renderDataTable({
+    x <- annual_loss_data()
+    if(!is.null(x)){
+      names(x) <- Hmisc::capitalize(names(x))
+      DT::datatable(x) 
+    }
+  })
+  
+  output$output3 <- renderUI({
+    is_table <- input$is_table_3
+    if(is_table){
+      DT::dataTableOutput('annual_loss_gap_tably')
+    } else {
+      plotOutput('annual_loss_gap_plotly')
+    }
+  })
+  
+  
+  output$annual_loss_tably <- DT::renderDataTable({
+    x <- annual_loss_data()
+    if(!is.null(x)){
+      names(x) <- Hmisc::capitalize(names(x))
+      DT::datatable(x)
+    }
+  })
+  
+  output$annual_loss_plotly <- renderPlot({
+    budget <- input$budget
+    plot_dat <- annual_loss_data()
+    
+    
+    if(is.null(plot_dat)){
+      return(NULL)
+    } 
+    
+    is_archetype <- input$data_type == 'Archetype'
+    # get country input for plot title
+    if(is_archetype){
+      plot_title <- 'Archetype'
+    } else {
+      plot_title <- input$country
+    }
+    
       if(input$ci){
         y_min <- plot_dat$value - mean(plot_dat$value)
         y_min <- ifelse(y_min < 0, 0, y_min)
@@ -1847,7 +1898,6 @@ server <- function(input, output, session) {
           ggtitle(plot_title)
       }
       return(g)
-    }
   })
 
   output$loss_exceedance_plotly <- renderPlot({
@@ -1945,44 +1995,47 @@ server <- function(input, output, session) {
   # ############ OUTPUT 3
   #
   
-  output$annual_loss_gap_plotly <- renderPlot({
-    
+  annual_loss_gap_data <- reactive({
     budget <- input$budget
     if(is.na(budget) |  is.null(gather_perils()) | is.null(gather_data())){
       NULL
     } else {
       dat <- gather_data()
-      
-      
       dat_sim <- gather_perils()
       dat_sim <- dat_sim %>% filter(!is.na(value))
       # remove obsevations with 0, if any
       dat <- dat[dat$value > 0,]
       dat <- dat[order(dat$year, decreasing = FALSE),]
       is_archetype <- input$data_type == 'Archetype'
-      # get country input for plot title
-      if(is_archetype){
-        plot_title <- 'Archetype'
-      } else {
-        plot_title <- input$country
-      }
+      output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
+      annual_avg <- mean(dat$value)
+      # create data frame dat to store output with chart labels
+      sub_plot_dat <- data_frame(`Average` = annual_avg,
+                                 `Severe` = output[2],
+                                 `Extreme` = output[5])
       
-      
-        output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
-        annual_avg <- mean(dat$value)
-        # create data frame dat to store output with chart labels
-        sub_plot_dat <- data_frame(`Average` = annual_avg,
-                                   `Severe` = output[2],
-                                   `Extreme` = output[5])
-        
-        # melt the data frame to get value and variable
-        sub_plot_dat <- melt(sub_plot_dat)
-        
-      
-      plot_dat <- sub_plot_dat
-      
-      
-      
+      # melt the data frame to get value and variable
+      sub_plot_dat <- melt(sub_plot_dat)
+      return(sub_plot_dat)
+    }
+  })
+  
+  output$annual_loss_gap_plotly <- renderPlot({
+    
+    plot_dat <- annual_loss_gap_data()
+    if(is.null(plot_dat)){
+      return(NULL)
+    }
+    
+    budget <- input$budget
+    is_archetype <- input$data_type == 'Archetype'
+    # get country input for plot title
+    if(is_archetype){
+      plot_title <- 'Archetype'
+    } else {
+      plot_title <- input$country
+    }
+    
       if(input$ci){
         y_min <- plot_dat$value - mean(plot_dat$value)
         y_min <- ifelse(y_min < 0, 0, y_min)
@@ -2024,10 +2077,7 @@ server <- function(input, output, session) {
           ggtitle(plot_title)
         
       }
-      
       return(g)
-      
-    }
     
   })
   
