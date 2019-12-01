@@ -1753,38 +1753,33 @@ server <- function(input, output, session) {
       } else {
         plot_title <- input$country
       }
-      
+      # save(dat_sim, file = 'dat_sim.RData')
+      # save(dat, file = 'dat.RData')
       # save(dat_sim, file = 'data_simulation.RData')
-      data_list <- list()
-      for(i in 1:length(unique(dat_sim$key))){
-        peril_name <- unique(dat_sim$key)[i]
-        sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
-        sub_dat <- dat %>% filter(peril == peril_name)
-        output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
-        annual_avg = round(mean(sub_dat$value), 2)
-        
-        # create sub_data frame sub_dat to store output with chart labels
-        sub_dat <- data_frame(`Annual average` = annual_avg,
-                              `1 in 5 Years` = output[1],
-                              `1 in 10 Years` = output[2],
-                              `1 in 25 Years` = output[3],
-                              `1 in 50 Years` = output[4],
-                              `1 in 100 Years` = output[5],
-                              `Highest historical annual loss` = max(sub_dat$value),
-                              `Most recent annual loss` = sub_dat$value[nrow(sub_dat)])
-        
-        # melt the sub_data frame to get value and variable
-        sub_dat <- melt(sub_dat)
-        
-        sub_dat$variable <- factor(sub_dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
-                                                                'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
-        sub_dat$value <- round(sub_dat$value, 2)
-        
-        # melt the data frame to get value and variable
-        data_list[[i]] <- sub_dat
-      }
       
-      plot_dat <- do.call('rbind', data_list)
+        
+      output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
+      annual_avg = round(mean(dat$value), 2)
+      
+      # create sub_data frame sub_dat to store output with chart labels
+       sub_dat <- data_frame(`Annual average` = annual_avg,
+                            `1 in 5 Years` = output[1],
+                            `1 in 10 Years` = output[2],
+                            `1 in 25 Years` = output[3],
+                            `1 in 50 Years` = output[4],
+                            `1 in 100 Years` = output[5],
+                            `Highest historical annual loss` = max(dat$value),
+                            `Most recent annual loss` = dat$value[nrow(dat)])
+      
+      # melt the sub_data frame to get value and variable
+      sub_dat <- melt(sub_dat)
+      
+      sub_dat$variable <- factor(sub_dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
+                                                              'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
+      sub_dat$value <- round(sub_dat$value, 2)
+      
+      # 
+      plot_dat <- sub_dat
       
       if(input$ci){
         y_min <- plot_dat$value - mean(plot_dat$value)
@@ -1863,10 +1858,8 @@ server <- function(input, output, session) {
       exceed_budget <- paste0('Probability of exceeding budget = ', prob_exceed)
       plot_title <- paste0(plot_title, ' : ', exceed_budget)
       
-      data_list <- list()
-      for(i in 1:length(unique(dat_sim$key))){
-        peril_type <- unique(dat_sim$key)[i]
-        sub_dat <- dat_sim %>% filter(key == peril_type)
+      
+        
         
         # budget <- input$budget
         output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
@@ -1882,11 +1875,9 @@ server <- function(input, output, session) {
         names(output)[2] <- 'Probability'
         output$Probability <- 1 - output$Probability
         
-        data_list[[i]] <- output
-        
-      }
+       
       
-      plot_dat <- do.call('rbind', data_list)
+      plot_dat <- output
       # get budget
       if(input$ci){
         plot_dat$y_min <- plot_dat$`Total Loss`- mean(plot_dat$`Total Loss`)
@@ -1958,13 +1949,9 @@ server <- function(input, output, session) {
         plot_title <- input$country
       }
       
-      data_list <- list()
-      for(i in 1:length(unique(dat_sim$key))){
-        peril_name <- unique(dat_sim$key)[i]
-        sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
-        sub_dat <- dat %>% filter(peril == peril_name)
+      
         output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
-        annual_avg <- mean(sub_dat$value)
+        annual_avg <- mean(dat$value)
         # create data frame dat to store output with chart labels
         sub_plot_dat <- data_frame(`Average` = annual_avg,
                                    `Severe` = output[2],
@@ -1972,10 +1959,9 @@ server <- function(input, output, session) {
         
         # melt the data frame to get value and variable
         sub_plot_dat <- melt(sub_plot_dat)
-        data_list[[i]] <- sub_plot_dat
-      }
+        
       
-      plot_dat <- do.call('rbind', data_list)
+      plot_dat <- sub_plot_dat
       
       
       
@@ -2066,11 +2052,7 @@ server <- function(input, output, session) {
         
       }
       
-      data_list <- list()
-      for(i in 1:length(unique(dat_sim$key))){
-        peril_name <- unique(dat_sim$key)[i]
-        sub_peril <- dat_sim %>% filter(dat_sim$key ==peril_name)
-        sub_dat <- dat %>% filter(peril == peril_name)
+      
         # get best distirbution
         funding_gap_curve <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002)))
         funding_gap_curve$x <- rownames(funding_gap_curve)
@@ -2089,10 +2071,9 @@ server <- function(input, output, session) {
         names(funding_gap_curve)[1] <- 'Funding gap'
         funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
         funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
-        data_list[[i]] <- funding_gap_curve
-      }
       
-      plot_dat <- do.call('rbind', data_list)
+      
+      plot_dat <- funding_gap_curve
       
       if(input$ci){
         dat <- plot_dat
