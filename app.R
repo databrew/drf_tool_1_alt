@@ -98,17 +98,6 @@ body <- dashboardBody(
                                      choices = c('Country', 'Archetype'), selected = 'Country', inline = TRUE)
                       ),
                       fluidRow(uiOutput('damage_type_ui')),
-                      fluidRow(
-                        column(3,
-                               uiOutput('cost_per_person_ui')
-                        ),
-                        column(3,
-                               uiOutput('rate_ui')),
-                        column(3,
-                               uiOutput('currency_ui')),
-                        column(3,
-                               uiOutput('code_ui'))
-                      ),
                       fluidRow(uiOutput('country_ui')),
                       fluidRow(uiOutput('data_source_ui')),
                       
@@ -194,6 +183,17 @@ body <- dashboardBody(
                     
                     #  start new row that encompasses inputs for country, download buttons, damage type, and currency
                     fluidPage(
+                      fluidRow(
+                        column(3,
+                               uiOutput('cost_per_person_ui')
+                        ),
+                        column(3,
+                               uiOutput('rate_ui')),
+                        column(3,
+                               uiOutput('currency_ui')),
+                        column(3,
+                               uiOutput('code_ui'))
+                      ),
                       fluidRow(column(12,
                                       uiOutput('select_peril_ui'))),
                       fluidRow(column(12,
@@ -1612,6 +1612,9 @@ server <- function(input, output, session) {
   ################
   output$select_peril_ui <- renderUI({
     dat_sim <- ran_simulations()
+    if(is.null(dat_sim)){
+      return(NULL)
+    }
     # save(dat_sim, file = 'peril_ui.RData')
     dat_sim <- dat_sim %>% filter(!is.na(value))
     peril_choices <- unique(dat_sim$key)
