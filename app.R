@@ -422,38 +422,43 @@ server <- function(input, output, session) {
   histdata <- rnorm(1)
   observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, { 
     
-    # UNCOMMENT TO SHOW MODAL
-    # # event will be called when histdata changes, which only happens once, when it is initially calculated
-    # showModal(modalDialog(
-    #   title = "", easyClose = FALSE, footer = NULL,
-    #   
-    #   fluidPage(
-    #     fluidRow(
-    #       column(12, align = 'center',
-    #              h2('Welcome to World Bank Group!'))
-    #     ),
-    #     fluidRow(
-    #       column(12, align = 'center',
-    #              p('Please tell us your name, email and create a password so we can get started.'))
-    #     ),
-    #     fluidRow(
-    #       column(6,
-    #              textInput('first_name', '',
-    #                        placeholder = 'First name')),
-    #       column(6,
-    #              textInput('last_name', '',
-    #                        placeholder = 'Last name'))
-    #     ),
-    #     fluidRow(column(12, textInput('email', '', placeholder = 'Email'))),
-    #     fluidRow(column(12, textInput('password', '', placeholder = 'Password'))),
-    #     fluidRow(column(12, textInput('confirm_password', '', placeholder = 'Confirm password'))),
-    #     fluidRow(
-    #       column(12, align = 'center',
-    #              actionButton('get_started', 'Get started'))
-    #     )
-    #   )
-    # )
-    # )
+    # event will be called when histdata changes, which only happens once, when it is initially calculated
+    showModal(modalDialog(
+      title = "", easyClose = FALSE, footer = NULL,
+
+      fluidPage(
+        fluidRow(
+          column(6, align = 'center',
+                 img(src='logo1.png', align = "left", height = '50px')),
+          column(6, align = 'center',
+                 img(src='logo2.jpg', align = "right", height = '50px'))
+        ),
+        fluidRow(
+          column(12, align = 'center',
+                 h2('Welcome to World Bank Group!'))
+        ),
+        fluidRow(
+          column(12, align = 'center',
+                 p('Please tell us your name, email and create a password so we can get started.'))
+        ),
+        fluidRow(
+          column(6,
+                 textInput('first_name', '',
+                           placeholder = 'First name')),
+          column(6,
+                 textInput('last_name', '',
+                           placeholder = 'Last name'))
+        ),
+        fluidRow(column(12, textInput('email', '', placeholder = 'Email'))),
+        fluidRow(column(12, textInput('password', '', placeholder = 'Password'))),
+        fluidRow(column(12, textInput('confirm_password', '', placeholder = 'Confirm password'))),
+        fluidRow(
+          column(12, align = 'center',
+                 actionButton('get_started', 'Get started'))
+        )
+      )
+    )
+    )
   })
   
   # Observe the "Get started" button on the log-in page and remove the modal
