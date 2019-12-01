@@ -60,6 +60,19 @@ body <- dashboardBody(
     tabItem(
       tabName="main",
       fluidPage(theme = 'custom.css',
+                fluidRow(
+                  column(12, align = 'center',
+                         actionButton("prevBtn", "Previous", icon = icon("arrow-left")),
+                         actionButton("nextBtn", "Continue",
+                                      style = "color: white; 
+                     background-color: #009FDA; 
+                     font-weight: bold;
+                     position: relative; 
+                     text-align:center;
+                     border-radius: 6px;
+                     border-width: 2px",
+                                      icon = icon("arrow-right")))
+                ),
                 tabsetPanel(
                   id = 'tabs',
                   tabPanel(
@@ -69,6 +82,9 @@ body <- dashboardBody(
                     value = 'TOOL SETTINGS',
                     
                     fluidPage(
+                      bsPopover(id = "tabs", title = '', 
+                                content = "Use the CONTINUE button at the top of the page to navigate.", 
+                                placement = "middle", trigger = "hover", options = list(container ='body')),
                       h3('Please select your preferred settings'),
                       fluidRow(
                         radioButtons("advanced", "Select a type of setting. If you are an advanced user, please select the advanced settings option below for more statistical flexibility.",
@@ -141,8 +157,6 @@ body <- dashboardBody(
                            ),
                            
                            fluidRow(
-                             # The bsPopover function takes the input name (advanced, referring to the veriable name of the advanced settings input)
-                             # and creates popup boxes with any content specified in 'content' argument
                              bsPopover(id = "advanced", title = '', 
                                        content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
                                        placement = "middle", trigger = "hover", options = list(container ='body')),
@@ -295,15 +309,7 @@ body <- dashboardBody(
                             plotOutput('loss_exceedance_gap_plotly'))))
                   )),
                 br(),
-                actionButton("prevBtn", "< Previous"),
-                actionButton("nextBtn", "Continue",
-                             style = "color: white; 
-                     background-color: #009FDA; 
-                     font-weight: bold;
-                     position: relative; 
-                     text-align:center;
-                     border-radius: 6px;
-                     border-width: 2px")
+                
       )),
     tabItem(
       tabName = 'about',
@@ -324,6 +330,29 @@ ui <- dashboardPage(header, sidebar, body, skin="blue")
 server <- function(input, output, session) {
   
   shinyjs::disable(selector = '.nav-tabs a')
+  
+  # observeEvent(input$tabs,{
+  #   # shinyjs::enable(selector = '.nav-tabs a')
+  #   # Get the tab info
+  #   tab_number <- rv$page
+  #   td <- tab_data$data
+  #   tab_name <- td %>% filter(number == tab_number) %>% .$name
+  #   message('tab_number: ', tab_number)
+  #   message('tab_name: ', tab_name)
+  #   message('td is ')
+  #   print(td)
+  #   keep <- tab_number + c(-1, 1)
+  #   keep <- keep[keep > 0 & keep < 5] # this needs to be adjusted
+  #   keep_td <- td[keep,]
+  #   for(i in 1:nrow(keep_td)){
+  #     disable_id <- keep_td$name[i]
+  #     message('Trying to disable: ', disable_id)
+  #     shinyjs::disable(id = disable_id)
+  #   }
+  #   # shinyjs::toggleState(id = )
+  #   # shinyjs::disable(selector = '.nav-tabs a')
+  # })
+  
   
   # Reactive tab data
   tab_data <- reactiveValues(data = tab_dict)
@@ -431,7 +460,6 @@ server <- function(input, output, session) {
   # Upload menu
   observeEvent(input$upload_or_auto, {
     iu <- input$upload_or_auto
-    message('iu is ', iu)
     if(iu == 'User-supplied data'){
       showModal(modalDialog(
         title = "Upload your own data", easyClose = TRUE,
@@ -505,7 +533,6 @@ server <- function(input, output, session) {
   output$country_ui <- renderUI({
     country_picked <- input$data_type == 'Country'
     if(country_picked){
-      message('Joe: country, not archetype, selected.')
       the_input <- selectInput("country", 
                                  "Choose a country",
                                  choices = countries,
@@ -593,10 +620,8 @@ server <- function(input, output, session) {
   observeEvent(input$advanced,{
     
     cc <- counter()
-    message('current counter is ', cc)
     new_cc <- cc + 1
     counter(new_cc)
-    message('new counter is ', new_cc)
     # if the counter is even, hide tab (this is the default because the counter starts at zero)
     if(cc %% 2 == 0){
       hideTab(inputId = 'tabs', target = 'SIMULATIONS')
@@ -641,16 +666,9 @@ server <- function(input, output, session) {
           } else if(typey == 'Population'){
             the_index <- 3
           }
-          message('the_index is ')
-          print(the_index)
           
           # Overwrite the auto data with user-supplied data
           country_data[[the_index]] <- the_data
-          
-          message('selected_country() is ')
-          print(head(country_data[[1]]))
-          print(head(country_data[[2]]))
-          print(head(country_data[[3]]))
         }
       }
       
@@ -677,7 +695,6 @@ server <- function(input, output, session) {
   
   # create a reactive object for archetypes 
   selected_archetype <- reactive({
-    message('input$archetype is ', input$archetype)
     if(is.null(input$archetype)){
       NULL
     } else {
@@ -901,7 +918,6 @@ server <- function(input, output, session) {
       country_frequency$origin <- country_frequency$damage_type <-  NULL
       
       country_data$value <- country_data$value*cost
-      print(head(country_data))
       # store in list
       data <- list()
       data[[1]] <- country_data
@@ -964,10 +980,6 @@ server <- function(input, output, session) {
         
         use_inflation <- isTRUE(unique(data$inflation_ok))
         use_gdp <- isTRUE(unique(data$gdp_ok))
-        message('inflation')
-        print(use_inflation)
-        message('gdp')
-        print(use_gdp)
         if(use_inflation & use_gdp){
           scaled_choices <- c('Population', 'Inflation', 'GDP')
         } else if(!use_inflation & use_gdp){
@@ -1027,7 +1039,6 @@ server <- function(input, output, session) {
     }
     possible_tables <- c('cost', 'loss', 'arch')
     if(is.null(ad)){
-      message('here')
       possible_tables <- possible_tables[possible_tables != 'arch']
     }
     if(is.null(ld)){
@@ -1069,7 +1080,6 @@ server <- function(input, output, session) {
   output$raw_data_table <- DT::renderDataTable({
 
     usde <- use_core_data_edited()
-    message('in scale_data_reactive')
     if(usde){
       cored <- core_data_edited$data
     } else {
@@ -1098,8 +1108,7 @@ server <- function(input, output, session) {
       datatable(out, rownames = FALSE,
                 editable = editit)
     }
-  },options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
-  ))
+  })
   proxy <- dataTableProxy('raw_data_table')
 
   # Capture the edits to the raw_data_table
@@ -1109,7 +1118,6 @@ server <- function(input, output, session) {
     use_core_data_edited(TRUE)
     # Capture edits
     info = input$raw_data_table_cell_edit
-    print(info)
     i = info$row
     j = info$col
     v = info$value
@@ -1155,8 +1163,6 @@ server <- function(input, output, session) {
     if(is.null(ss)){
       return(NULL)
     }
-    # message('cored looks like this')
-    # print(cored)
     if(is.list(cored)){
       second_part <- cored[[2]]
       cored <- cored[[1]]
@@ -1214,10 +1220,6 @@ server <- function(input, output, session) {
         return(final_list)
       }
     } else { # not advanced user
-      message('cored is-----------------')
-      print(head(cored))
-      message('ss is-------------')
-      print(head(sd))
       if(is.null(cored) | is.null(sd)){
         out <- NULL
       } else {
@@ -1398,8 +1400,7 @@ server <- function(input, output, session) {
       datatable(out, rownames = FALSE)
     }
     
-  }, options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
-  ))
+  })
   
   # reactive object to create right data 
   get_right_data <- reactive({
@@ -1451,8 +1452,6 @@ server <- function(input, output, session) {
   
   filtered_distribution <- reactive({
     fd <- fitted_distribution()
-    message('the fitted_distribution() reactive is:')
-    print(head(fd))
     filter_distribution(fd)
   })
   
@@ -1547,14 +1546,10 @@ server <- function(input, output, session) {
   
   prepared_simulations <- reactive({
     fd <- fitted_distribution()
-    message('fd here is :')
-    print(head(fd))
     x <- prepare_simulations(fd, dist_flood = input$dist_flood_input, 
                         dist_drought = input$dist_drought_input,
                         dist_storm = input$dist_storm_input,
                         dist_earthquake = input$dist_earthquake_input)
-    message('x is')
-    print(head(x))
     x
   })
   
@@ -1604,8 +1599,7 @@ server <- function(input, output, session) {
     } else{
       return(NULL)
     }
-  },options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
-  ))
+  })
 
   ################
   # Output tab
