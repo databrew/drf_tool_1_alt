@@ -694,7 +694,7 @@ server <- function(input, output, session) {
       NULL
     } else {
       country_name <- input$country
-      best_data <- input$data_source
+      best_data <- best_data_source()
       freq_data <- frequency_data[frequency_data$country == country_name,]
       return(freq_data)
     }
@@ -724,7 +724,7 @@ server <- function(input, output, session) {
   })
   
   
-  output$data_source_ui <- renderUI({
+  best_data_source <- reactive({
     if(is.null(input$damage_type) | is.null(selected_country())){
       NULL
     } else {
@@ -737,19 +737,21 @@ server <- function(input, output, session) {
         damage_type <- input$damage_type
         if(damage_type == 'Total damage'){
           source_name <- best_source %>% filter(damage_type == 'damage') %>% .$best_source
-          selectInput('data_source', 
-                      'Choose data source (default is best)', 
-                      choices = source_name,
-                      selected = source_name)
         } else {
           source_name <- best_source %>% filter(damage_type == 'affected') %>% .$best_source
-          selectInput('data_source', 
-                      'Choose data source (default is best)', 
-                      choices = source_name,
-                      selected = source_name)
         }
-        
+        source_name
       }
+    }
+  })
+  
+  output$data_source_ui <- renderUI({
+    sn <- best_data_source()
+    if(is.null(sn)){
+      NULL
+    } else {
+      h4(paste0('The best data source for the chosen parameters is: ',
+                sn))
     }
   })
   
@@ -757,10 +759,11 @@ server <- function(input, output, session) {
   
   
   prepare_loss_data <- reactive({
-    if(is.null(input$data_source) | is.null(country_frequency())){
+    data_source <- best_data_source()
+    if(is.null(data_source) | is.null(country_frequency())){
       NULL
     } else {
-      best_source <- input$data_source
+      best_source <- best_data_source()
       country_data <- selected_country()
       country_frequency <- country_frequency()
       
@@ -891,14 +894,15 @@ server <- function(input, output, session) {
   # country_frequency <- country_frequency[country_frequency$country == country_name,]
   
   prepare_cost_data <- reactive({
-    best_source <- input$data_source
+    best_source <- best_data_source()
     rate <- input$rate
     code <- input$code
     cost <- input$cost_per_person
     country_data <- selected_country()
     cf <- country_frequency()
     ok <- TRUE
-    if(is.null(input$data_source) | is.null(cf) | is.null(input$damage_type) |
+    data_source <- best_data_source()
+    if(is.null(data_source) | is.null(cf) | is.null(input$damage_type) |
        is.null(best_source) | is.null(rate) | is.null(code) | is.null(cost) | is.null(country_data)){
       ok <- FALSE
     }
@@ -941,10 +945,11 @@ server <- function(input, output, session) {
   # archetype_frequency <- archetype_frequency[archetype_frequency$archetype == archetype_name,]
   
   prepare_archetype_data <- reactive({
-    if(is.null(input$data_source) | is.null(archetype_frequency()) | is.null(input$damage_type)){
+    data_source <- best_data_source()
+    if(is.null(data_source) | is.null(archetype_frequency()) | is.null(input$damage_type)){
       NULL
     } else {
-      best_source <- input$data_source
+      best_source <- best_data_source()
       # rate <- input$rate
       # code <- input$code
       # cost <- input$cost_per_person
