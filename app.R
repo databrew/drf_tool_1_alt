@@ -1944,8 +1944,7 @@ server <- function(input, output, session) {
   
   output$annual_loss_gap_plotly <- renderPlot({
     
-    severe <- input$severe
-    extreme <- input$extreme
+    
     budget <- input$budget
     if(is.na(budget) |  is.null(gather_perils()) | is.null(gather_data())){
       NULL
@@ -1965,12 +1964,13 @@ server <- function(input, output, session) {
       } else {
         plot_title <- input$country
       }
+      severe <- input$severe
+      extreme <- input$extreme
         severe <- severe/100
         severe <- 1-severe
         extreme <- extreme/100
         extreme <- 1-extreme
         
-        save(dat_sim, file = 'dat_sim.RData')
         output <- quantile(dat_sim$value,c(severe, extreme))
         annual_avg <- mean(dat$value)
         # create data frame dat to store output with chart labels
