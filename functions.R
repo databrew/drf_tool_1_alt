@@ -842,7 +842,6 @@ run_simulations <- function(prepared_simulation_data = NULL, prepared_frequency_
     if(nrow(prepared_simulation_data) != 4){
       message('Prepared simulation data should have more than 4 rows')
     }
-    message('RUN_SIMULATIONS IS USING FAKE METHODOLOGY')
     perils <- sort(unique(prepared_simulation_data$peril))
     names(prepared_frequency_data) <- c('peril', 'freq')
     # The following is fake data code

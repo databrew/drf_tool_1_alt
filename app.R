@@ -1950,7 +1950,7 @@ server <- function(input, output, session) {
       fluidRow(
         plotOutput('annual_loss_plotly'),
         bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1',
-                  content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happend every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expectedto happen every 10 years (ie 10% probability.",
+                  content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happen every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expected to happen every 10 years (ie 10% probability).",
                   placement = "top", trigger = "hover", options = list(container ='body'))
       )
     }
@@ -1971,7 +1971,7 @@ server <- function(input, output, session) {
     } else {
       fluidRow(
         plotOutput('annual_loss_gap_plotly'),
-        bsPopover(id = 'annual_loss_gap_plotly', title = 'Exhibit 3', content = "The funding gap is the difference between the available federal budget and the estimated annual loss at the return period. A loss value below the red budget line represents an estimated surplus (if above, it would be a deficit)",
+        bsPopover(id = 'annual_loss_gap_plotly', title = 'Exhibit 3', content = "The funding gap is the difference between the available federal budget and the estimated annual loss at the return period. A loss value below the red budget line represents an estimated surplus (if above, it would be a deficit).",
                   placement = "top", trigger = "hover", options = list(container ='body'))
       )
     }
