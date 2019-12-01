@@ -6,7 +6,6 @@ library(shinyjs)
 # Source the data set-up
 source('functions.R')
 source('global.R')
-source('helpers.R')
 
 # # Create a dictionary of tab names / numbers
 tab_dict <- data_frame(number = 1:5,
@@ -41,7 +40,8 @@ sidebar <- dashboardSidebar(
 )
 
 body <- dashboardBody(
-  tags$head(tags$style(HTML(".small-box {height: 50px}"))),
+  tags$head(tags$style(HTML(".small-box {height: 40px}"))),
+  tags$head(tags$style(HTML('.nav-tabs a {cursor: default}'))),
   valueBoxOutput(outputId = "vb"),
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
@@ -323,6 +323,8 @@ ui <- dashboardPage(header, sidebar, body, skin="blue")
 # Server
 server <- function(input, output, session) {
   
+  shinyjs::disable(selector = '.nav-tabs a')
+  
   # Reactive tab data
   tab_data <- reactiveValues(data = tab_dict)
   
@@ -444,8 +446,7 @@ server <- function(input, output, session) {
   # Define a reactive value which is the currently selected tab number
   rv <- reactiveValues(page = 1)
   
-  # Make tab dict reactive
-  
+  # Disble the forward, back buttons depending on posiiton
   observe({
     toggleState(id = "prevBtn", condition = rv$page > 1)
     toggleState(id = "nextBtn", condition = rv$page < n_tabs)
@@ -463,27 +464,10 @@ server <- function(input, output, session) {
   
   # Observe the forward/back clicks, and update rv$page accordingly
   observeEvent(input$prevBtn, {
-    # # Do the time calculations
-    # tt <- tab_time()
-    # ok <- not_too_fast(old_time = tt,
-    #                    new_time = Sys.time())
-    # if(ok){
-    # Update rv$page
     navPage(-1)
-    # tab_time(Sys.time())
-    # }
-    
   })
   observeEvent(input$nextBtn, {
-    # Do the time calculations
-    # tt <- tab_time()
-    # ok <- not_too_fast(old_time = tt,
-    #                    new_time = Sys.time())
-    # if(ok){
-    # Update rv$page
     navPage(1)
-    # tab_time(Sys.time())
-    # }
   })
   
   # Observe any changes to rv$page, and update the selected tab accordingly
@@ -601,6 +585,10 @@ server <- function(input, output, session) {
     }
     
   })
+  
+  # observeEvent(input$tabs,{
+  #   disable('simulations_ui')
+  # })
   
   observeEvent(input$advanced,{
     
