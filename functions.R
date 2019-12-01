@@ -112,7 +112,6 @@ fill_na <- function(data){
     sub_dat$damage_type[is.na(sub_dat$damage_type)] <- unique(sub_dat$damage_type)[!is.na(unique(sub_dat$damage_type))]
     sub_dat$value[is.na(sub_dat$value)] <- 0
     data_list[[i]] <- sub_dat
-    print(i)
   }
   out <- do.call('rbind', data_list)
   out$value <- ifelse(out$value > 0, 1, 0)
