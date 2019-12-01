@@ -87,7 +87,7 @@ body <- dashboardBody(
                                 placement = "middle", trigger = "hover", options = list(container ='body')),
                       h3('Please select your preferred settings'),
                       fluidRow(
-                        radioButtons("advanced", "Select a type of setting. If you are an advanced user, please select the advanced settings option below for more statistical flexibility.",
+                        radioButtons("advanced", "Select a type of setting. If you are an advanced user, select 'Advanced' for more statistical flexibility.",
                                      choices = c('Basic', 'Advanced'),
                                      selected = 'Basic',
                                      inline = TRUE)
