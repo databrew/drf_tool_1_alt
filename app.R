@@ -546,7 +546,6 @@ server <- function(input, output, session) {
                                choices = countries,
                                selected = countries[1])
     } else {
-      message('Joe: archetype, not country, selected.')
       the_input <- selectInput('archetype', 'Choose an archetype',
                                choices = archetypes)
     }
@@ -1425,10 +1424,6 @@ server <- function(input, output, session) {
     # }
     if(input$data_type == 'Archetype'){
       out <- cored
-      out1 <- out[[1]]
-      out2 <- out[[2]]
-      names(out1) <- c('archetype', 'year', 'peril', 'value')
-      out <- list(out1, out2)
     } else {
       # capture whether there are significant trends
       if(is.null(is_trend)){
@@ -1557,15 +1552,15 @@ server <- function(input, output, session) {
                              dist_drought = input$dist_drought_input,
                              dist_storm = input$dist_storm_input,
                              dist_earthquake = input$dist_earthquake_input)
+    message('x is')
+    print(head(x))
     x
   })
   
   ran_simulations <- reactive({
     bs <- simulate_bernoulli()
     ps <- prepared_simulations()
-    # save(bs, file = 'bs.RData')
     x <- run_simulations(ps, bs)
-    # save(ps, file = 'ps.RData')
     return(x)
   })
   
@@ -1579,10 +1574,12 @@ server <- function(input, output, session) {
   output$simulation_plot <- renderPlot({
     rs <- ran_simulations()
     rd <- get_right_data()
+    ips <- input$peril_simulation
+    ioc <- input$overlap_choices
     plot_simulations(rs = rs,
                      right_data = rd,
-                     peril = input$peril_simulation,
-                     overlap = input$overlap_choices)
+                     peril = ips,
+                     overlap = ioc)
   })
   
   output$simulation_table <- DT::renderDataTable({
@@ -1621,7 +1618,7 @@ server <- function(input, output, session) {
     peril_choices <- unique(dat_sim$key)
     
     checkboxGroupInput('select_peril', 
-                       label = 'Select perils to view on output page',
+                       label = 'Perils to view on output page',
                        choices = peril_choices,
                        selected = peril_choices,
                        inline = TRUE)
@@ -1629,7 +1626,6 @@ server <- function(input, output, session) {
   
   gather_perils <- reactive({
     selected_perils <- input$select_peril
-    print(input$select_perils)
     if(is.null(selected_perils)){
       NULL
     } else {
@@ -1648,7 +1644,6 @@ server <- function(input, output, session) {
         group_by(key, cs) %>%
         summarise(value = sum(outcome, na.rm = TRUE)) %>%
         dplyr::select(-cs)
-
       return(filtered_sims)
     }
   })
@@ -1748,8 +1743,10 @@ server <- function(input, output, session) {
   output$annual_loss_plotly <- renderPlot({
     
     budget <- input$budget
-    if(is.na(budget) | is.null(gather_perils()) | is.null(gather_data())){
-      NULL
+    gp <- gather_perils()
+    gd <- gather_data()
+    if(is.na(budget) | is.null(gp) | is.null(gd)){
+      return(NULL)
     } else {
       
       dat <- gather_data()
@@ -2043,7 +2040,6 @@ server <- function(input, output, session) {
       exceed_budget <- input$exceed_budget
       
       # get country input for plot title
-      message('here is budget')
       if(budget == 0){
         is_archetype <- input$data_type == 'Archetype'
         # get country input for plot title

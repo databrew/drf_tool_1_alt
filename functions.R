@@ -112,7 +112,6 @@ fill_na <- function(data){
     sub_dat$damage_type[is.na(sub_dat$damage_type)] <- unique(sub_dat$damage_type)[!is.na(unique(sub_dat$damage_type))]
     sub_dat$value[is.na(sub_dat$value)] <- 0
     data_list[[i]] <- sub_dat
-    print(i)
   }
   out <- do.call('rbind', data_list)
   out$value <- ifelse(out$value > 0, 1, 0)
@@ -607,6 +606,7 @@ plot_line <- function(temp_dat,
 
 # create plot to visualize simulationdata data
 plot_sim <- function(temp_dat){
+
   p <- ggplot(temp_dat, aes(SimulatedNNDISLoss)) +
     geom_histogram(alpha = 0.6) +
     labs(x="Simulated Loss", 
@@ -882,6 +882,8 @@ plot_simulations <- function(rs = NULL,
     theme_bw()
   ok <- FALSE
   rd <- right_data
+  # Just keep the first part (since it's showing the values only)
+  rd <- rd[[1]]
   if(!is.null(rs)){
     if(nrow(rs) > 0){
       if(!is.null(rd)){
