@@ -1539,6 +1539,8 @@ server <- function(input, output, session) {
         out$population_factor <- out$gdp_factor <- out$gdp_ok <- out$inflation_factor <- out$inflation_ok <- NULL
         names(out) <- c('Country', 'Year', 'Population', 'Inflation',
                         'GDP')
+        out <- out %>% dplyr::select(Year, Country, Population,
+                                     Inflation, GDP)
         # datatable(data, options = list(dom='t',ordering=F))
       }
       datatable(out, rownames = FALSE)
