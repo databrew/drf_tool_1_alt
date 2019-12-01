@@ -1825,7 +1825,7 @@ server <- function(input, output, session) {
   })
   
   output$annual_loss_gap_tably <- DT::renderDataTable({
-    x <- annual_loss_data()
+    x <- annual_loss_gap_data()
     if(!is.null(x)){
       names(x) <- Hmisc::capitalize(names(x))
       DT::datatable(x)
