@@ -966,11 +966,9 @@ server <- function(input, output, session) {
   # archetype_frequency <- archetype_frequency[archetype_frequency$archetype == archetype_name,]
   
   prepare_archetype_data <- reactive({
-    data_source <- best_data_source()
-    if(is.null(data_source) | is.null(archetype_frequency()) | is.null(input$damage_type)){
-      NULL
+    if(is.null(archetype_frequency()) | is.null(input$damage_type)){
+      return(NULL)
     } else {
-      best_source <- best_data_source()
       # rate <- input$rate
       # code <- input$code
       # cost <- input$cost_per_person
@@ -989,8 +987,6 @@ server <- function(input, output, session) {
       data <- list()
       data[[1]] <- archetype_data
       data[[2]] <- archetype_frequency
-      
-      
       return(data)
     }
     
@@ -1066,7 +1062,7 @@ server <- function(input, output, session) {
     dmt <- input$damage_type  
     ok <- TRUE
     min_obs <- 3
-    
+
     if(is.null(dt)){
       ok <- FALSE
     }
@@ -1117,7 +1113,7 @@ server <- function(input, output, session) {
     } else {
       cored <- core_data()
     }
-    
+
     view_data <- input$view_data
     editit <- FALSE
     if(view_data != 'Frequency'){
@@ -1832,7 +1828,7 @@ server <- function(input, output, session) {
   })
   
   output$annual_loss_gap_tably <- DT::renderDataTable({
-    x <- annual_loss_data()
+    x <- annual_loss_gap_data()
     if(!is.null(x)){
       names(x) <- Hmisc::capitalize(names(x))
       DT::datatable(x)
