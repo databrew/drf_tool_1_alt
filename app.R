@@ -64,10 +64,10 @@ body <- dashboardBody(
                   column(12, align = 'center',
                          actionButton("prevBtn", "Previous", icon = icon("arrow-left")),
                          actionButton("nextBtn", "Continue",
-                                      style = "color: white; 
-                     background-color: #009FDA; 
+                                      style = "color: white;
+                     background-color: #009FDA;
                      font-weight: bold;
-                     position: relative; 
+                     position: relative;
                      text-align:center;
                      border-radius: 6px;
                      border-width: 2px",
@@ -78,12 +78,12 @@ body <- dashboardBody(
                   tabPanel(
                     
                     title = uiOutput('tool_settings_ui'),
-                    #icon("calendar"), 
+                    #icon("calendar"),
                     value = 'TOOL SETTINGS',
                     
                     fluidPage(
-                      bsPopover(id = "tabs", title = '', 
-                                content = "Use the CONTINUE button at the top of the page to navigate.", 
+                      bsPopover(id = "tabs", title = '',
+                                content = "Use the CONTINUE button at the top of the page to navigate.",
                                 placement = "middle", trigger = "hover", options = list(container ='body')),
                       h3('Please select your preferred settings'),
                       fluidRow(
@@ -146,33 +146,33 @@ body <- dashboardBody(
                            ),
                            
                            fluidRow(
-                             bsPopover(id = "advanced", title = '', 
-                                       content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'", 
+                             bsPopover(id = "advanced", title = '',
+                                       content = "For more statistical options and view the 'Simulations' tab, select the 'Use Advanced Settings Button'",
                                        placement = "middle", trigger = "hover", options = list(container ='body')),
-                             bsPopover(id = "upload_data", title = '', 
-                                       content = "To use your own dataset, push the 'Upload Peril Data' button", 
-                                       placement = "middle", trigger = "hover", options = list(container ='body')),
-                             
-                             bsPopover(id = "download_data", title = '', 
-                                       content = "Download the peril data for the country selected", 
+                             bsPopover(id = "upload_data", title = '',
+                                       content = "To use your own dataset, push the 'Upload Peril Data' button",
                                        placement = "middle", trigger = "hover", options = list(container ='body')),
                              
-                             bsPopover(id = "country", title = '', 
-                                       content = "If you wish to upload your own data, please select the upload peril button", 
+                             bsPopover(id = "download_data", title = '',
+                                       content = "Download the peril data for the country selected",
+                                       placement = "middle", trigger = "hover", options = list(container ='body')),
+                             
+                             bsPopover(id = "country", title = '',
+                                       content = "If you wish to upload your own data, please select the upload peril button",
                                        placement = "middle", trigger = "hover", options = list(container ='body')),
                              
                              
                            ),
                            
                            # popups for the inputs damage_type, currency.Need to add one on the server side for prob_dis
-                           bsPopover(id = "run_tool", title = '', 
-                                     content ="After selecting all inputs, click this button to run the tool. It will generate simulation based on the best fitted distribution.", 
+                           bsPopover(id = "run_tool", title = '',
+                                     content ="After selecting all inputs, click this button to run the tool. It will generate simulation based on the best fitted distribution.",
                                      placement = "right", trigger = "hover", options = list(container ='body')),
-                           bsPopover(id = "damage_type", title = '', 
-                                     content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD", 
+                           bsPopover(id = "damage_type", title = '',
+                                     content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, please enter the cost. In this mode you must use USD",
                                      placement = "middle", trigger = "hover", options = list(container ='body')),
-                           bsPopover(id = "currency", title = '', 
-                                     content = "If other is chosen, please select a currency code and exchange rate.", 
+                           bsPopover(id = "currency", title = '',
+                                     content = "If other is chosen, please select a currency code and exchange rate.",
                                      placement = "middle", trigger = "hover", options = list(container ='body'))
                            
                   ),
@@ -247,16 +247,16 @@ body <- dashboardBody(
                                plotOutput('rag_ratings'))
                         
                       ),
-                      bsPopover(id = "hist_plot", title = '', 
-                                content = "This chart shows the historic distribution of 'Loss' from perils.", 
+                      bsPopover(id = "hist_plot", title = '',
+                                content = "This chart shows the historic distribution of 'Loss' from perils.",
                                 placement = "middle", trigger = "hover", options = list(container ='body')),
                       
-                      bsPopover(id = "sim_plot", title = '', 
-                                content = "This chart shows the simulated distribution of 'Loss' using the best fit distribution, or if in advanced settings, the distribution chosen on the previous page. 15k simulations, with 1k representing one full year", 
+                      bsPopover(id = "sim_plot", title = '',
+                                content = "This chart shows the simulated distribution of 'Loss' using the best fit distribution, or if in advanced settings, the distribution chosen on the previous page. 15k simulations, with 1k representing one full year",
                                 placement = "bottom", trigger = "hover", options = list(container ='body')),
                       
-                      bsPopover(id = "aic_table", title = '', 
-                                content = "This table shows the AIC scores for each parametric distribution. NAs are a result of the non convergence in the optimization algorithm. The table also shows the Maximum Likelihood Estimators for each distribution.", 
+                      bsPopover(id = "aic_table", title = '',
+                                content = "This table shows the AIC scores for each parametric distribution. NAs are a result of the non convergence in the optimization algorithm. The table also shows the Maximum Likelihood Estimators for each distribution.",
                                 placement = "bottom", trigger = "hover", options = list(container ='body')),
                       fluidRow(
                         column(6,
@@ -279,26 +279,16 @@ body <- dashboardBody(
                         column(3,
                                div(class = 'well',
                                    numericInput('budget', 'Budget', value = 0),
-                                   checkboxInput('ci', 
-                                                 'Show confidence intervals (only in advanced mode)',
+                                   checkboxInput('ci',
+                                                 'Show confidence intervals',
                                                  value = FALSE))),
                         column(3,
                                div(class = 'well',
-                                   numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0))),
-                        column(3,
-                               div(class = 'well',
-                                   numericInput('severe', 
-                                                'Define the probability (%) for a severe event',
-                                                value = 10))),
-                        column(3,
-                               div(class = 'well',
-                                   numericInput('extreme', 
-                                                'Define the probability (%) for an extreme event',
-                                                value = 1))),
+                                   numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0)))
                       ),
-                      # 
-                      bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1', 
-                                content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happend every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expectedto happen every 10 years (ie 10% probability.", 
+                      #
+                      bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1',
+                                content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happend every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expectedto happen every 10 years (ie 10% probability.",
                                 placement = "middle", trigger = "hover", options = list(container ='body')),
                       bsPopover(id = "loss_exceedance_plotly", title = 'Exhibit 2', content = "This graph shows the probability of a year taking place that exceeds the aggregate annual loss amount on the y-axis. The probability of exceeding the available budget is represented by the probability where the available budget line and the loss exceedance curve cross.",
                                 placement = "left", trigger = "hover", options = list(container ='body')),
@@ -390,7 +380,7 @@ server <- function(input, output, session) {
       message('Going to try to read user-supplied data!')
       inFile <- input$upload_csv
       if (is.null(inFile)){
-        NULL 
+        NULL
       } else {
         out <- read.csv(inFile$datapath)
         if(is.null(out)){
@@ -430,41 +420,49 @@ server <- function(input, output, session) {
   # creates a pop up page that the user must accept to acces the app
   set.seed(122)
   histdata <- rnorm(1)
-  observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, { 
-    
-    # UNCOMMENT TO SHOW MODAL
-    # # event will be called when histdata changes, which only happens once, when it is initially calculated
-    # showModal(modalDialog(
-    #   title = "", easyClose = FALSE, footer = NULL,
-    #   
-    #   fluidPage(
-    #     fluidRow(
-    #       column(12, align = 'center',
-    #              h2('Welcome to World Bank Group!'))
-    #     ),
-    #     fluidRow(
-    #       column(12, align = 'center',
-    #              p('Please tell us your name, email and create a password so we can get started.'))
-    #     ),
-    #     fluidRow(
-    #       column(6,
-    #              textInput('first_name', '',
-    #                        placeholder = 'First name')),
-    #       column(6,
-    #              textInput('last_name', '',
-    #                        placeholder = 'Last name'))
-    #     ),
-    #     fluidRow(column(12, textInput('email', '', placeholder = 'Email'))),
-    #     fluidRow(column(12, textInput('password', '', placeholder = 'Password'))),
-    #     fluidRow(column(12, textInput('confirm_password', '', placeholder = 'Confirm password'))),
-    #     fluidRow(
-    #       column(12, align = 'center',
-    #              actionButton('get_started', 'Get started'))
-    #     )
-    #   )
-    # )
-    # )
-  })
+  # #   ## Uncomment before deploy
+  #
+  # observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, {
+  #  
+  #  
+  #   # event will be called when histdata changes, which only happens once, when it is initially calculated
+  #   showModal(modalDialog(
+  #     title = "", easyClose = FALSE, footer = NULL,
+  #
+  #     fluidPage(
+  #       fluidRow(
+  #         column(6, align = 'center',
+  #                img(src='logo1.png', align = "left", height = '50px')),
+  #         column(6, align = 'center',
+  #                img(src='logo2.jpg', align = "right", height = '50px'))
+  #       ),
+  #       fluidRow(
+  #         column(12, align = 'center',
+  #                h2('Welcome to World Bank Group!'))
+  #       ),
+  #       fluidRow(
+  #         column(12, align = 'center',
+  #                p('Please tell us your name, email and create a password so we can get started.'))
+  #       ),
+  #       fluidRow(
+  #         column(6,
+  #                textInput('first_name', '',
+  #                          placeholder = 'First name')),
+  #         column(6,
+  #                textInput('last_name', '',
+  #                          placeholder = 'Last name'))
+  #       ),
+  #       fluidRow(column(12, textInput('email', '', placeholder = 'Email'))),
+  #       fluidRow(column(12, textInput('password', '', placeholder = 'Password'))),
+  #       fluidRow(column(12, textInput('confirm_password', '', placeholder = 'Confirm password'))),
+  #       fluidRow(
+  #         column(12, align = 'center',
+  #                actionButton('get_started', 'Get started'))
+  #       )
+  #     )
+  #   )
+  #   )
+  # })
   
   # Observe the "Get started" button on the log-in page and remove the modal
   observeEvent(input$get_started, {
@@ -491,7 +489,7 @@ server <- function(input, output, session) {
                   uiOutput('ui_upload_type_text'),
                   uiOutput('ui_upload_data'))
       ))
-    } 
+    }
     
   })
   
@@ -508,7 +506,7 @@ server <- function(input, output, session) {
   # Keep a counter of time since of the last tab change
   tab_time <- reactiveVal(value = Sys.time())
   
-  # Define function for changing the tab number in one direction or the 
+  # Define function for changing the tab number in one direction or the
   # other as a function of forward/back clicks
   navPage <- function(direction) {
     rv$page <- rv$page + direction
@@ -557,7 +555,7 @@ server <- function(input, output, session) {
   output$country_ui <- renderUI({
     country_picked <- input$data_type == 'Country'
     if(country_picked){
-      the_input <- selectInput("country", 
+      the_input <- selectInput("country",
                                "Choose a country",
                                choices = countries,
                                selected = countries[1])
@@ -659,7 +657,7 @@ server <- function(input, output, session) {
   })
   
   ################
-  # User input tab 
+  # User input tab
   ################
   
   # get a reactive object that selects country data (list) based on imput
@@ -710,13 +708,13 @@ server <- function(input, output, session) {
       NULL
     } else {
       country_name <- input$country
-      best_data <- input$data_source
+      best_data <- best_data_source()
       freq_data <- frequency_data[frequency_data$country == country_name,]
       return(freq_data)
     }
   })
   
-  # create a reactive object for archetypes 
+  # create a reactive object for archetypes
   selected_archetype <- reactive({
     if(is.null(input$archetype)){
       NULL
@@ -740,7 +738,7 @@ server <- function(input, output, session) {
   })
   
   
-  output$data_source_ui <- renderUI({
+  best_data_source <- reactive({
     if(is.null(input$damage_type) | is.null(selected_country())){
       NULL
     } else {
@@ -753,19 +751,21 @@ server <- function(input, output, session) {
         damage_type <- input$damage_type
         if(damage_type == 'Total damage'){
           source_name <- best_source %>% filter(damage_type == 'damage') %>% .$best_source
-          selectInput('data_source', 
-                      'Choose data source (default is best)', 
-                      choices = source_name,
-                      selected = source_name)
         } else {
           source_name <- best_source %>% filter(damage_type == 'affected') %>% .$best_source
-          selectInput('data_source', 
-                      'Choose data source (default is best)', 
-                      choices = source_name,
-                      selected = source_name)
         }
-        
+        source_name
       }
+    }
+  })
+  
+  output$data_source_ui <- renderUI({
+    sn <- best_data_source()
+    if(is.null(sn)){
+      NULL
+    } else {
+      h4(paste0('The best data source for the chosen parameters is: ',
+                sn))
     }
   })
   
@@ -773,10 +773,11 @@ server <- function(input, output, session) {
   
   
   prepare_loss_data <- reactive({
-    if(is.null(input$data_source) | is.null(country_frequency())){
+    data_source <- best_data_source()
+    if(is.null(data_source) | is.null(country_frequency())){
       NULL
     } else {
-      best_source <- input$data_source
+      best_source <- best_data_source()
       country_data <- selected_country()
       country_frequency <- country_frequency()
       
@@ -785,7 +786,7 @@ server <- function(input, output, session) {
       country_data <- country_data[country_data$origin == best_source & country_data$damage_type == 'damage',]
       country_frequency <- country_frequency[country_frequency$origin == best_source & country_frequency$damage_type == 'damage',]
       
-      # remove emdat and 
+      # remove emdat and
       country_data$origin <- country_data$damage_type <- country_data$best_data <- NULL
       country_frequency$origin <- country_frequency$damage_type <-  NULL
       
@@ -841,7 +842,7 @@ server <- function(input, output, session) {
         NULL
       } else {
         numericInput('cost_per_person',
-                     'Enter cost per person USD', 
+                     'Enter cost per person USD',
                      min = 1,
                      max = 1000,
                      step = 10,
@@ -858,13 +859,13 @@ server <- function(input, output, session) {
     } else {
       if(input$currency == 'USD' | input$damage_type == 'Total damage'){
         selectInput('code',
-                    'Choose a currency code', 
-                    choices = 'USD', 
+                    'Choose a currency code',
+                    choices = 'USD',
                     selected = 'USD')
       } else {
         selectInput('code',
-                    'Choose a currency code', 
-                    choices = other_currencies, 
+                    'Choose a currency code',
+                    choices = other_currencies,
                     selected = other_currencies[1])
         
       }
@@ -900,21 +901,22 @@ server <- function(input, output, session) {
     
     
   })
-  # 
+  #
   # country_name <- 'Sri Lanka'
   # country_data <- country_data[country_data$country == country_name,]
   # country_frequency <- freq_data
   # country_frequency <- country_frequency[country_frequency$country == country_name,]
   
   prepare_cost_data <- reactive({
-    best_source <- input$data_source
+    best_source <- best_data_source()
     rate <- input$rate
     code <- input$code
     cost <- input$cost_per_person
     country_data <- selected_country()
     cf <- country_frequency()
     ok <- TRUE
-    if(is.null(input$data_source) | is.null(cf) | is.null(input$damage_type) |
+    data_source <- best_data_source()
+    if(is.null(data_source) | is.null(cf) | is.null(input$damage_type) |
        is.null(best_source) | is.null(rate) | is.null(code) | is.null(cost) | is.null(country_data)){
       ok <- FALSE
     }
@@ -936,7 +938,7 @@ server <- function(input, output, session) {
       country_data <- country_data[country_data$origin == best_source & country_data$damage_type == 'affected',]
       country_frequency <- country_frequency[country_frequency$origin == best_source & country_frequency$damage_type == 'affected',]
       
-      # remove emdat and 
+      # remove emdat and
       country_data$origin <- country_data$damage_type <- country_data$best_data <- NULL
       country_frequency$origin <- country_frequency$damage_type <-  NULL
       
@@ -957,10 +959,11 @@ server <- function(input, output, session) {
   # archetype_frequency <- archetype_frequency[archetype_frequency$archetype == archetype_name,]
   
   prepare_archetype_data <- reactive({
-    if(is.null(input$data_source) | is.null(archetype_frequency()) | is.null(input$damage_type)){
+    data_source <- best_data_source()
+    if(is.null(data_source) | is.null(archetype_frequency()) | is.null(input$damage_type)){
       NULL
     } else {
-      best_source <- input$data_source
+      best_source <- best_data_source()
       # rate <- input$rate
       # code <- input$code
       # cost <- input$cost_per_person
@@ -994,7 +997,7 @@ server <- function(input, output, session) {
       NULL
     } else {
       if(input$advanced == 'Basic'){
-        selectInput('select_scale', 
+        selectInput('select_scale',
                     'Scale data by:',
                     choices = 'POPULATION',
                     selected = 'POPULATION')
@@ -1011,10 +1014,10 @@ server <- function(input, output, session) {
           scaled_choices <- c('Population', 'Inflation')
         } else if(!use_inflation & !use_gdp){
           scaled_choices <- c('Population')
-        } 
+        }
         
         scaled_choices <- toupper(c(scaled_choices, ' No scaling'))
-        selectInput('select_scale', 
+        selectInput('select_scale',
                     'Choose from preloaded scaling data',
                     choices = scaled_choices,
                     selected = scaled_choices[1])
@@ -1034,13 +1037,13 @@ server <- function(input, output, session) {
   #     temp <- data
   #     # get the peril names for choices in peril input
   #     peril_names <- as.character(unique(temp$Peril))
-  #     checkboxGroupInput('peril_type', 
+  #     checkboxGroupInput('peril_type',
   #                        'Choose a peril',
   #                        choices = peril_names,
   #                        selected = peril_names,
   #                        inline = TRUE)
   #   }
-  #   
+  #  
   # })
   
   
@@ -1097,7 +1100,6 @@ server <- function(input, output, session) {
       out <- dat
       out <- transform_core_data(out)
     }
-    # save(out, file = 'out.RData')
     out
   })
   output$raw_data_table <- DT::renderDataTable({
@@ -1300,7 +1302,7 @@ server <- function(input, output, session) {
           )
           
         } else {
-          significant_trends(TRUE) 
+          significant_trends(TRUE)
           peril_names <- paste(peril_names, collapse = ',')
           fluidPage(
             selectInput('trend_test', paste0('Trends were found in ', paste0(peril_names, collapse = ', '), '. Correct linear trends?'), choices = c('Yes', 'No')))
@@ -1394,7 +1396,7 @@ server <- function(input, output, session) {
   ################
   # Data tab
   ################
-  # the problem here is that there are some reactives we are not nullifying out and need to spread data for frequency 
+  # the problem here is that there are some reactives we are not nullifying out and need to spread data for frequency
   # create a data table  
   
   
@@ -1423,7 +1425,7 @@ server <- function(input, output, session) {
     
   })
   
-  # reactive object to create right data 
+  # reactive object to create right data
   get_right_data <- reactive({
     usde <- use_core_data_edited()
     if(usde){
@@ -1478,6 +1480,16 @@ server <- function(input, output, session) {
   output$peril_ui <- renderUI({
     is_advanced <- input$advanced == 'Advanced'
     fd <- filtered_distribution()
+    fdx <- fitted_distribution()
+    # Filter to keep only those non na values
+    fdx_ok <- FALSE
+    if(!is.null(fdx)){
+      if(nrow(fdx) > 0){
+        fdx_ok <- TRUE
+        fdx <- fdx %>%
+          filter(!is.na(aic))
+      }
+    }
     if(is.null(fd)){
       return(NULL)
     } else {
@@ -1492,7 +1504,15 @@ server <- function(input, output, session) {
         drought_choices <- chosen_drought
         storm_choices <- chosen_storm
       } else {
-        flood_choices <- earthquake_choices <- drought_choices <- storm_choices <- advanced_parametric
+        if(fdx_ok){
+          flood_choices <- fdx %>% filter(peril == 'Flood') %>% .$distribution
+          earthquake_choices <- fdx %>% filter(peril == 'Earthquake') %>% .$distribution
+          drought_choices <- fdx %>% filter(peril == 'Drought') %>% .$distribution
+          storm_choices <- fdx %>% filter(peril == 'Storm') %>% .$distribution
+        } else {
+          flood_choices <- earthquake_choices <- drought_choices <- storm_choices <- advanced_parametric
+        }
+        
       }
       message('flood choices is ', flood_choices)
       message('chosen flood ', chosen_flood)
@@ -1503,8 +1523,8 @@ server <- function(input, output, session) {
         flood_go <- br()
       } else {
         flood_go <- fluidRow(
-          radioButtons('dist_flood_input', 
-                       'Distribution for flood', 
+          radioButtons('dist_flood_input',
+                       'Distribution for flood',
                        choices = flood_choices,
                        selected = chosen_flood,
                        inline = TRUE))
@@ -1514,8 +1534,8 @@ server <- function(input, output, session) {
         earthquake_go <- br()
       } else {
         earthquake_go <- fluidRow(
-          radioButtons('dist_earthquake_input', 
-                       'Distribution for earthquake', 
+          radioButtons('dist_earthquake_input',
+                       'Distribution for earthquake',
                        choices = earthquake_choices,
                        selected = chosen_earthquake,
                        inline = TRUE)
@@ -1526,8 +1546,8 @@ server <- function(input, output, session) {
         drought_go <- br()
       } else {
         drought_go <- fluidRow(
-          radioButtons('dist_drought_input', 
-                       'Distribution for drought', 
+          radioButtons('dist_drought_input',
+                       'Distribution for drought',
                        choices = drought_choices,
                        selected = chosen_drought,
                        inline = TRUE)
@@ -1538,8 +1558,8 @@ server <- function(input, output, session) {
         storm_go <- br()
       } else {
         storm_go <- fluidRow(
-          radioButtons('dist_storm_input', 
-                       'Distribution for storm', 
+          radioButtons('dist_storm_input',
+                       'Distribution for storm',
                        choices = storm_choices,
                        selected = chosen_storm,
                        inline = TRUE)
@@ -1564,7 +1584,7 @@ server <- function(input, output, session) {
   
   prepared_simulations <- reactive({
     fd <- fitted_distribution()
-    x <- prepare_simulations(fd, dist_flood = input$dist_flood_input, 
+    x <- prepare_simulations(fd, dist_flood = input$dist_flood_input,
                              dist_drought = input$dist_drought_input,
                              dist_storm = input$dist_storm_input,
                              dist_earthquake = input$dist_earthquake_input)
@@ -1599,7 +1619,7 @@ server <- function(input, output, session) {
   })
   
   output$simulation_table <- DT::renderDataTable({
-    fd <- fitted_distribution() 
+    fd <- fitted_distribution()
     ok <- FALSE
     if(!is.null(fd)){
       if(nrow(fd) > 0){
@@ -1629,11 +1649,10 @@ server <- function(input, output, session) {
     if(is.null(dat_sim)){
       return(NULL)
     }
-    # save(dat_sim, file = 'peril_ui.RData')
     dat_sim <- dat_sim %>% filter(!is.na(value))
     peril_choices <- unique(dat_sim$key)
     
-    checkboxGroupInput('select_peril', 
+    checkboxGroupInput('select_peril',
                        label = 'Perils to view on output page',
                        choices = peril_choices,
                        selected = peril_choices,
@@ -1649,8 +1668,8 @@ server <- function(input, output, session) {
       dat_sim <- dat_sim %>% filter(!is.na(outcome))
       
       # filter selected_perils
-      filtered_sims <- dat_sim %>% 
-        filter(key %in% selected_perils) %>% 
+      filtered_sims <- dat_sim %>%
+        filter(key %in% selected_perils) %>%
         mutate(dummy = 1) %>%
         group_by(key) %>%
         mutate(cs = cumsum(dummy)) %>%
@@ -1671,14 +1690,13 @@ server <- function(input, output, session) {
     } else {
       dat <- get_right_data()
       dat <- dat[[1]]
-    
-      save(dat, file = 'new_dat.RData')
+      
       # filter selected_perils
-      filtered_dat <- dat %>% 
-        filter(peril %in% selected_perils) %>% 
+      filtered_dat <- dat %>%
+        filter(peril %in% selected_perils) %>%
         group_by(year) %>%
         summarise(value = sum(value))
-
+      
       return(filtered_dat)
     }
   })
@@ -1716,7 +1734,7 @@ server <- function(input, output, session) {
     
     
   })
-  # 
+  #
   # create a reactive object that takes new input
   probability_of_exceeding_suplus_deficit <- reactive({
     
@@ -1750,11 +1768,11 @@ server <- function(input, output, session) {
     }
     
   })
-  # 
-  # 
-  # 
+  #
+  #
+  #
   # # OUTPUT 1
-  # 
+  #
   
   annual_loss_data <- reactive({
     
@@ -1768,30 +1786,12 @@ server <- function(input, output, session) {
       dat <- gather_data()
       dat_sim <- gather_perils()
       dat_sim <- dat_sim %>% filter(!is.na(value))
-      # save(dat, file = 'new_dat.RData')
-      # save(dat_sim, file = 'dat_sim.RData')
       # remove obsevations with 0, if any
       dat <- dat[dat$value > 0,]
       dat <- dat[order(dat$year, decreasing = FALSE),]
       # get budget
       
-<<<<<<< HEAD
-     
-      is_archetype <- input$data_type == 'Archetype'
-      # get country input for plot title
-      if(is_archetype){
-        plot_title <- 'Archetype'
-      } else {
-        plot_title <- input$country
-      }
-      # save(dat_sim, file = 'dat_sim.RData')
-      # save(dat, file = 'dat.RData')
-      # save(dat_sim, file = 'data_simulation.RData')
       
-        
-=======
-      
->>>>>>> 65973ed57b8e3320501050bc978f445f73f3f5be
       output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
       annual_avg = round(mean(dat$value), 2)
       
@@ -1828,7 +1828,7 @@ server <- function(input, output, session) {
     x <- annual_loss_data()
     if(!is.null(x)){
       names(x) <- Hmisc::capitalize(names(x))
-      DT::datatable(x) 
+      DT::datatable(x)
     }
   })
   
@@ -1857,7 +1857,7 @@ server <- function(input, output, session) {
     
     if(is.null(plot_dat)){
       return(NULL)
-    } 
+    }
     
     is_archetype <- input$data_type == 'Archetype'
     # get country input for plot title
@@ -1867,47 +1867,47 @@ server <- function(input, output, session) {
       plot_title <- input$country
     }
     
-      if(input$ci){
-        y_min <- plot_dat$value - mean(plot_dat$value)
-        y_min <- ifelse(y_min < 0, 0, y_min)
-        
-        y_max <-  plot_dat$value + mean(plot_dat$value)
-        # Plot
-        g <- ggplot(plot_dat, aes(x=variable,
-                                  y=value,
-                                  text = value)) +
-          geom_bar(stat = 'identity',
-                   fill = '#5B84B1FF',
-                   col = '#FC766AFF',
-                   alpha = 0.6) +
-          geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
-          geom_hline(yintercept = budget) +
-          theme_bw(base_size = 14,
-                   base_family = 'Ubuntu')  +
-          theme(axis.text.x = element_text(angle = 45,
-                                           hjust = 1)) +
-          xlab('') + ylab('') +
-          ggtitle(plot_title)
-      } else {
-        # Plot
-        g <- ggplot(plot_dat, aes(x=variable,
-                                  y=value,
-                                  text = value)) +
-          geom_bar(stat = 'identity',
-                   fill = '#5B84B1FF',
-                   col = '#FC766AFF',
-                   alpha = 0.6) +
-          geom_hline(yintercept = budget) +
-          theme_bw(base_size = 14,
-                   base_family = 'Ubuntu')  +
-          theme(axis.text.x = element_text(angle = 45,
-                                           hjust = 1)) +
-          xlab('') + ylab('') +
-          ggtitle(plot_title)
-      }
-      return(g)
+    if(input$ci){
+      y_min <- plot_dat$value - mean(plot_dat$value)
+      y_min <- ifelse(y_min < 0, 0, y_min)
+      
+      y_max <-  plot_dat$value + mean(plot_dat$value)
+      # Plot
+      g <- ggplot(plot_dat, aes(x=variable,
+                                y=value,
+                                text = value)) +
+        geom_bar(stat = 'identity',
+                 fill = '#5B84B1FF',
+                 col = '#FC766AFF',
+                 alpha = 0.6) +
+        geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
+        geom_hline(yintercept = budget) +
+        theme_bw(base_size = 14,
+                 base_family = 'Ubuntu')  +
+        theme(axis.text.x = element_text(angle = 45,
+                                         hjust = 1)) +
+        xlab('') + ylab('') +
+        ggtitle(plot_title)
+    } else {
+      # Plot
+      g <- ggplot(plot_dat, aes(x=variable,
+                                y=value,
+                                text = value)) +
+        geom_bar(stat = 'identity',
+                 fill = '#5B84B1FF',
+                 col = '#FC766AFF',
+                 alpha = 0.6) +
+        geom_hline(yintercept = budget) +
+        theme_bw(base_size = 14,
+                 base_family = 'Ubuntu')  +
+        theme(axis.text.x = element_text(angle = 45,
+                                         hjust = 1)) +
+        xlab('') + ylab('') +
+        ggtitle(plot_title)
+    }
+    return(g)
   })
-
+  
   output$loss_exceedance_plotly <- renderPlot({
     
     prob_exceed <- probability_of_exceeding()
@@ -1919,7 +1919,7 @@ server <- function(input, output, session) {
       
       dat <- gather_data()
       
-
+      
       dat_sim <- gather_perils()
       country_name <- unique(dat$country)
       
@@ -1935,23 +1935,23 @@ server <- function(input, output, session) {
       plot_title <- paste0(plot_title, ' : ', exceed_budget)
       
       
-        
-        
-        # budget <- input$budget
-        output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
-        output$x <- rownames(output)
-        rownames(output) <- NULL
-        names(output)[1] <- 'y'
-        
-        # remove percent and turn numeric
-        output$x <- gsub('%', '', output$x)
-        output$x <- as.numeric(output$x)
-        output$x <- output$x/100
-        names(output)[1] <- 'Total Loss'
-        names(output)[2] <- 'Probability'
-        output$Probability <- 1 - output$Probability
-        
-       
+      
+      
+      # budget <- input$budget
+      output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
+      output$x <- rownames(output)
+      rownames(output) <- NULL
+      names(output)[1] <- 'y'
+      
+      # remove percent and turn numeric
+      output$x <- gsub('%', '', output$x)
+      output$x <- as.numeric(output$x)
+      output$x <- output$x/100
+      names(output)[1] <- 'Total Loss'
+      names(output)[2] <- 'Probability'
+      output$Probability <- 1 - output$Probability
+      
+      
       
       plot_dat <- output
       # get budget
@@ -1998,19 +1998,12 @@ server <- function(input, output, session) {
     
     
   })
-  #   # # # 
-  #   # # # 
+  #   # # #
+  #   # # #
   # ############ OUTPUT 3
   #
   
-<<<<<<< HEAD
-  output$annual_loss_gap_plotly <- renderPlot({
-    
-    severe <- input$severe
-    extreme <- input$extreme
-=======
   annual_loss_gap_data <- reactive({
->>>>>>> 65973ed57b8e3320501050bc978f445f73f3f5be
     budget <- input$budget
     if(is.na(budget) |  is.null(gather_perils()) | is.null(gather_data())){
       NULL
@@ -2022,41 +2015,12 @@ server <- function(input, output, session) {
       dat <- dat[dat$value > 0,]
       dat <- dat[order(dat$year, decreasing = FALSE),]
       is_archetype <- input$data_type == 'Archetype'
-<<<<<<< HEAD
-      # get country input for plot title
-      if(is_archetype){
-        plot_title <- 'Archetype'
-      } else {
-        plot_title <- input$country
-      }
-        severe <- severe/100
-        severe <- 1-severe
-        extreme <- extreme/100
-        extreme <- 1-extreme
-        
-        save(dat_sim, file = 'dat_sim.RData')
-        output <- quantile(dat_sim$value,c(severe, extreme))
-        annual_avg <- mean(dat$value)
-        # create data frame dat to store output with chart labels
-        sub_plot_dat <- data_frame(`Average` = annual_avg,
-                                   `Severe` = output[1],
-                                   `Extreme` = output[2])
-        
-        # melt the data frame to get value and variable
-        sub_plot_dat <- melt(sub_plot_dat)
-        
-      
-      plot_dat <- sub_plot_dat
-      
-      
-=======
       output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
       annual_avg <- mean(dat$value)
       # create data frame dat to store output with chart labels
       sub_plot_dat <- data_frame(`Average` = annual_avg,
                                  `Severe` = output[2],
                                  `Extreme` = output[5])
->>>>>>> 65973ed57b8e3320501050bc978f445f73f3f5be
       
       # melt the data frame to get value and variable
       sub_plot_dat <- melt(sub_plot_dat)
@@ -2080,48 +2044,48 @@ server <- function(input, output, session) {
       plot_title <- input$country
     }
     
-      if(input$ci){
-        y_min <- plot_dat$value - mean(plot_dat$value)
-        y_min <- ifelse(y_min < 0, 0, y_min)
+    if(input$ci){
+      y_min <- plot_dat$value - mean(plot_dat$value)
+      y_min <- ifelse(y_min < 0, 0, y_min)
+      
+      y_max <-  plot_dat$value + mean(plot_dat$value)
+      # plot
+      g <- ggplot(plot_dat, aes(x=variable,
+                                y=value,
+                                text = value)) +
+        geom_bar(stat = 'identity',
+                 fill = '#5B84B1FF',
+                 col = '#FC766AFF',
+                 alpha = 0.6) +
+        geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
         
-        y_max <-  plot_dat$value + mean(plot_dat$value)
-        # plot
-        g <- ggplot(plot_dat, aes(x=variable,
-                                  y=value,
-                                  text = value)) +
-          geom_bar(stat = 'identity',
-                   fill = '#5B84B1FF',
-                   col = '#FC766AFF',
-                   alpha = 0.6) +
-          geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
-          
-          theme_bw(base_size = 14,
-                   base_family = 'Ubuntu')  +
-          theme(axis.text.x = element_text(angle = 45,
-                                           hjust = 1)) +
-          xlab('') + ylab('') +
-          
-          ggtitle(plot_title)
+        theme_bw(base_size = 14,
+                 base_family = 'Ubuntu')  +
+        theme(axis.text.x = element_text(angle = 45,
+                                         hjust = 1)) +
+        xlab('') + ylab('') +
         
-      }else {
-        # plot
-        g <- ggplot(plot_dat, aes(x=variable,
-                                  y=value,
-                                  text = value)) +
-          geom_bar(stat = 'identity',
-                   fill = '#5B84B1FF',
-                   col = '#FC766AFF',
-                   alpha = 0.6) +
-          theme_bw(base_size = 14,
-                   base_family = 'Ubuntu')  +
-          theme(axis.text.x = element_text(angle = 45,
-                                           hjust = 1)) +
-          xlab('') + ylab('') +
-          
-          ggtitle(plot_title)
+        ggtitle(plot_title)
+      
+    }else {
+      # plot
+      g <- ggplot(plot_dat, aes(x=variable,
+                                y=value,
+                                text = value)) +
+        geom_bar(stat = 'identity',
+                 fill = '#5B84B1FF',
+                 col = '#FC766AFF',
+                 alpha = 0.6) +
+        theme_bw(base_size = 14,
+                 base_family = 'Ubuntu')  +
+        theme(axis.text.x = element_text(angle = 45,
+                                         hjust = 1)) +
+        xlab('') + ylab('') +
         
-      }
-      return(g)
+        ggtitle(plot_title)
+      
+    }
+    return(g)
     
   })
   
@@ -2136,7 +2100,6 @@ server <- function(input, output, session) {
     } else {
       
       dat <- gather_data()
-      
       
       
       dat_sim <- gather_perils()
@@ -2165,24 +2128,24 @@ server <- function(input, output, session) {
       }
       
       
-        # get best distirbution
-        funding_gap_curve <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002)))
-        funding_gap_curve$x <- rownames(funding_gap_curve)
-        rownames(funding_gap_curve) <- NULL
-        names(funding_gap_curve)[1] <- 'y'
-        
-        # remove percent and turn numeric
-        funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
-        funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
-        
-        # divide y by 100k, so get data in millions
-        funding_gap_curve$x <- (1 - funding_gap_curve$x)
-        # funding_gap_curve$y <- funding_gap_curve$y/scale_by
-        
-        names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
-        names(funding_gap_curve)[1] <- 'Funding gap'
-        funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
-        funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
+      # get best distirbution
+      funding_gap_curve <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002)))
+      funding_gap_curve$x <- rownames(funding_gap_curve)
+      rownames(funding_gap_curve) <- NULL
+      names(funding_gap_curve)[1] <- 'y'
+      
+      # remove percent and turn numeric
+      funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
+      funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
+      
+      # divide y by 100k, so get data in millions
+      funding_gap_curve$x <- (1 - funding_gap_curve$x)
+      # funding_gap_curve$y <- funding_gap_curve$y/scale_by
+      
+      names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
+      names(funding_gap_curve)[1] <- 'Funding gap'
+      funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
+      funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
       
       
       plot_dat <- funding_gap_curve
@@ -2218,8 +2181,8 @@ server <- function(input, output, session) {
     }
     
   })
-  #   # # 
-  # 
+  #   # #
+  #
   
   # UIs for panel headers
   output$tool_settings_ui <- renderUI({
