@@ -951,31 +951,47 @@ server <- function(input, output, session) {
   # archetype_frequency <- archetype_frequency[archetype_frequency$archetype == archetype_name,]
   
   prepare_archetype_data <- reactive({
-    if(is.null(input$data_source) | is.null(archetype_frequency()) | is.null(input$damage_type)){
-      NULL
-    } else {
-      best_source <- input$data_source
-      # rate <- input$rate
-      # code <- input$code
-      # cost <- input$cost_per_person
-      archetype_data <- selected_archetype()
-      archetype_frequency <- archetype_frequency()
-      cost = 50
+    best_source <- input$data_source
+    rate <- input$rate
+    code <- input$code
+    cost <- input$cost_per_person
+    archetype_data <- selected_archetype()
+    cf <- archetype_frequency()
+    ok <- TRUE
+    if(is.null(input$data_source) | is.null(cf) | is.null(input$damage_type) |
+       is.null(best_source) | is.null(rate) | is.null(code) | is.null(cost) | is.null(archetype_data)){
+      ok <- FALSE
+    }
+    
+    if(!is.null(input$damage_type)){
+      if( input$damage_type == 'Total damage'){
+        ok <- FALSE
+      }
+    }
+    if(ok){
       
-      # remove emdat and
-      archetype_frequency$data_type <- archetype_data$data_type <-  NULL
+      archetype_frequency <- archetype_frequency()
+      # message('Here is what our stuff looks like:')
+      # message('---best_source is ', best_source)
+      # message('---rate is ', rate)
+      # message('---code is ', code)
+      # message('---cost is ', cost)
+      # subset data by best source
+      archetype_data <- archetype_data[archetype_data$origin == best_source & archetype_data$damage_type == 'affected',]
+      archetype_frequency <- archetype_frequency[archetype_frequency$origin == best_source & archetype_frequency$damage_type == 'affected',]
+      
+      # remove emdat and 
+      archetype_data$origin <- archetype_data$damage_type <- archetype_data$best_data <- NULL
+      archetype_frequency$origin <- archetype_frequency$damage_type <-  NULL
       
       archetype_data$value <- archetype_data$value*cost
-      
-      message(head(archetype_data), 'this is good')
-      
       # store in list
       data <- list()
       data[[1]] <- archetype_data
       data[[2]] <- archetype_frequency
-      
-      
       return(data)
+    } else {
+      NULL
     }
     
   })
