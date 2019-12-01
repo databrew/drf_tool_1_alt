@@ -1579,10 +1579,12 @@ server <- function(input, output, session) {
   output$simulation_plot <- renderPlot({
     rs <- ran_simulations()
     rd <- get_right_data()
+    ips <- input$peril_simulation
+    ioc <- input$overlap_choices
     plot_simulations(rs = rs,
                      right_data = rd,
-                     peril = input$peril_simulation,
-                     overlap = input$overlap_choices)
+                     peril = ips,
+                     overlap = ioc)
   })
   
   output$simulation_table <- DT::renderDataTable({
