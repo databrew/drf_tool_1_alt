@@ -343,7 +343,7 @@ get_aic_mle <- function(dat){
   for(i in 1:length(present_perils)){
     peril_name <- present_perils[i]
     sub_dat <- dat[dat$peril == peril_name,]
-    
+
     log_normal <- try(fitdistr(sub_dat$value, "lognormal"),silent = TRUE)
     if(class(log_normal) == 'try-error'){
       log_normal <- NULL
@@ -410,7 +410,7 @@ get_aic_mle <- function(dat){
     
     # fit gamma
     # gamma <- fitdistr(sub_dat$value, 'gamma')
-    gamma <- try(fitdistrplus::fitdist(sub_dat$value, "gamma", start=list(shape=0.5, scale=1), method="mle"), silent = TRUE)
+    gamma <- try(fitdistrplus::fitdist(sub_dat$value, "gamma", start=list(shape=0.5, scale=1), method="mme"), silent = TRUE)
     
     if(class(gamma) == 'try-error'){
       gamma <- NULL
@@ -509,7 +509,7 @@ get_aic_mle <- function(dat){
     
     
     # fit pareto
-    pareto <-try(ParetoPosStable::pareto.fit(sub_dat$value, estim.method = 'MLE'), silent = TRUE)
+    pareto <-try(ParetoPosStable::pareto.fit(sub_dat$country, estim.method = 'MLE'), silent = TRUE)
     if(class(pareto) == 'try-error'){
       pareto <- NULL
       pareto_aic <- NA

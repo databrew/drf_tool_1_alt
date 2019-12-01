@@ -307,7 +307,7 @@ body <- dashboardBody(
                                              options = list(container ='body')))),
                         column(3,
                                div(class = 'well',
-                                   numericInput('severe', 'Define the probability for a severe event' , value = 10),
+                                   numericInput('severe', 'Define the probability (%) for a severe event' , value = 25),
                                    bsPopover(id = "severe", title = '',
                                              content = 'This should be the estimated percentage likelihood of a severe event taking place',
                                              placement = "top", 
@@ -315,7 +315,7 @@ body <- dashboardBody(
                                              options = list(container ='body')))),
                         column(3,
                                div(class = 'well',
-                                   numericInput('extreme', 'Define the probability for an extreme event' , value = 1),
+                                   numericInput('extreme', 'Define the probability (%) for an extreme event' , value = 10),
                                    bsPopover(id = "extreme", title = '',
                                              content = 'This should be the percentage likelihood of an extreme event taking place',
                                              placement = "top", 
@@ -629,7 +629,7 @@ server <- function(input, output, session) {
       the_input <- selectInput("country",
                                "Choose a country",
                                choices = countries,
-                               selected = countries[1])
+                               selected = 'Bangladesh')
       the_input <- fluidRow(
         the_input,
         bsPopover(id = "country", title = '',
@@ -1929,7 +1929,7 @@ server <- function(input, output, session) {
       dat <- dat[dat$value > 0,]
       dat <- dat[order(dat$year, decreasing = FALSE),]
       # get budget
-      
+      # save(dat, file = 'dat.RData')
       
       output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
       annual_avg = round(mean(dat$value), 2)
