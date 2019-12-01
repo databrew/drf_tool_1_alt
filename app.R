@@ -103,7 +103,7 @@ body <- dashboardBody(
                                   content = 'If you pick "Country", you will be able to use real data at the national level. With "Archetype", you will instead use data which is representative of many countries.',
                                   placement = "top", trigger = "hover", options = list(container ='body'))
                       ),
-                      fluidRow(uiOutput('damage_type_ui')),
+                      uiOutput('damage_type_ui'),
                       fluidRow(
                         bsPopover(id = "damage_type", title = '', content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, you will later be prompted for some currency information.",
                                   placement = "top", trigger = "hover", options = list(container ='body')),
@@ -117,7 +117,7 @@ body <- dashboardBody(
                         column(3,
                                uiOutput('code_ui'))
                       ),
-                      fluidRow(uiOutput('country_ui')),
+                      uiOutput('country_ui'),
                       fluidRow(uiOutput('data_source_ui')),
                       
                     )),
@@ -950,6 +950,9 @@ server <- function(input, output, session) {
     if(is.null(input$damage_type) | is.null(input$currency)){
       NULL
     } else {
+      if(input$damage_type != 'Cost per person'){
+        return(NULL)
+      }
       if(input$currency == 'USD' | input$damage_type == 'Total damage'){
         selectInput('code',
                     'Choose a currency code',
@@ -972,6 +975,9 @@ server <- function(input, output, session) {
     if(is.null(input$damage_type) | is.null(input$currency) | is.null(input$damage_type == 'Total damage')) {
       NULL
     } else {
+      if(input$damage_type != 'Cost per person'){
+        return(NULL)
+      }
       if(input$currency == 'USD'){
         numericInput('rate',
                      'Enter conversion rate',
