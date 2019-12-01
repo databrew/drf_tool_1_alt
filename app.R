@@ -279,9 +279,7 @@ body <- dashboardBody(
                         column(3,
                                div(class = 'well',
                                    numericInput('budget', 'Budget', value = 0),
-                                   checkboxInput('ci', 
-                                                 'Show confidence intervals',
-                                                 value = FALSE))),
+                                   uiOutput('ci_ui'))),
                         column(3,
                                div(class = 'well',
                                    numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0)))
@@ -1608,6 +1606,18 @@ server <- function(input, output, session) {
   ################
   # Output tab
   ################
+  output$ci_ui <- renderUI({
+    is_advanced <- input$advanced == 'Advanced'
+    if(!is_advanced){
+      NULL
+    } else {
+      checkboxInput('ci', 
+                    'Show confidence intervals',
+                    value = FALSE)
+    }
+   
+  })
+  
   output$select_peril_ui <- renderUI({
     dat_sim <- ran_simulations()
     if(is.null(dat_sim)){
@@ -1745,7 +1755,8 @@ server <- function(input, output, session) {
     budget <- input$budget
     gp <- gather_perils()
     gd <- gather_data()
-    if(is.na(budget) | is.null(gp) | is.null(gd)){
+    ci <- input$ci
+    if(is.na(budget) | is.null(gp) | is.null(gd) | is.null(ci)){
       return(NULL)
     } else {
       
@@ -1841,8 +1852,9 @@ server <- function(input, output, session) {
     
     prob_exceed <- probability_of_exceeding()
     budget <- input$budget
+    ci <- input$ci
     
-    if(is.null(prob_exceed) | is.na(budget) | is.null(gather_data())){
+    if(is.null(prob_exceed) | is.na(budget) | is.null(gather_data()) | is.null(ci)){
       NULL
     } else {
       
@@ -1935,7 +1947,8 @@ server <- function(input, output, session) {
   output$annual_loss_gap_plotly <- renderPlot({
     
     budget <- input$budget
-    if(is.na(budget) |  is.null(gather_perils()) | is.null(gather_data())){
+    ci <- input$ci
+    if(is.na(budget) |  is.null(gather_perils()) | is.null(gather_data()) | is.null(ci)){
       NULL
     } else {
       dat <- gather_data()
@@ -2023,8 +2036,9 @@ server <- function(input, output, session) {
     prob_exceed_suprplus_deficit <- probability_of_exceeding_suplus_deficit()
     budget <- input$budget
     data_type <- input$data_type
+    ci <- input$ci
     
-    if(is.null(prob_exceed_suprplus_deficit) | is.na(budget) | is.null(data_type) | is.null(gather_data())){
+    if(is.null(prob_exceed_suprplus_deficit) | is.na(budget) | is.null(data_type) | is.null(gather_data()) | is.null(ci)){
       NULL
     } else {
       
