@@ -842,7 +842,6 @@ run_simulations <- function(prepared_simulation_data = NULL, prepared_frequency_
     if(nrow(prepared_simulation_data) != 4){
       message('Prepared simulation data should have more than 4 rows')
     }
-    message('RUN_SIMULATIONS IS USING FAKE METHODOLOGY')
     perils <- sort(unique(prepared_simulation_data$peril))
     names(prepared_frequency_data) <- c('peril', 'freq')
     # The following is fake data code
@@ -1035,3 +1034,101 @@ not_too_fast <- function(old_time, new_time){
     FALSE
   }
 }
+
+quant_that <- function(dat_sim,
+                       dat = NULL){
+  if(is.null(dat)){
+    dat <- dat_sim
+  }
+  output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
+  annual_avg = round(mean(dat$value), 2)
+  
+  # create sub_data frame sub_dat to store output with chart labels
+  sub_dat <- data_frame(`Annual average` = annual_avg,
+                        `1 in 5 Years` = output[1],
+                        `1 in 10 Years` = output[2],
+                        `1 in 25 Years` = output[3],
+                        `1 in 50 Years` = output[4],
+                        `1 in 100 Years` = output[5],
+                        `Highest historical annual loss` = max(dat$value),
+                        `Most recent annual loss` = dat$value[nrow(dat)])
+  
+  # melt the sub_data frame to get value and variable
+  sub_dat <- melt(sub_dat)
+  return(sub_dat)
+}
+
+bootstrap_cis <- function(grd){
+  
+  if(is.null(grd)){
+    message('grd is null in the bootstrap functionality. returning null')
+    return(NULL)
+  }
+  if(nrow(grd[[1]]) == 0){
+    message('grd has no rows in the bootstrap functionality. returning null')
+    return(NULL)
+  }
+  
+  loss_data <- grd[[1]]
+  freq_data <- grd[[2]]
+  # # Collapse, combine accross all perils
+  # loss_data <- loss_data %>% group_by(year, country) %>% summarise(value = sum(value))
+  loss_list <- freq_list <- list()
+  perils <- sort(unique(loss_data$peril))
+  counter <- 0
+  for(j in 1:length(perils)){
+    for(i in 1:1000){
+      counter <- counter + 1
+      this_peril <- perils[j]
+      # Loss data
+      this_loss_data <- loss_data %>% filter(peril == this_peril)
+      loss_indices <- sample(1:nrow(this_loss_data), size = nrow(this_loss_data), replace = T)
+      new_loss_data <- this_loss_data[loss_indices,]
+      loss_list[[counter]] <- new_loss_data %>% mutate(county = i)
+      
+      # Freq data
+      this_freq_data <- freq_data %>% filter(peril == this_peril)
+      freq_indices <- sample(1:nrow(this_freq_data), size = nrow(this_freq_data), replace = T)
+      new_freq_data <- this_freq_data[freq_indices,]
+      freq_list[[counter]] <- new_freq_data %>% mutate(county = i)
+    }
+  }
+  
+  # Multiply the freq and the loss data
+  combined_list <- list()
+  for(i in 1:length(loss_list)){
+    this_loss_data <- loss_list[[i]]
+    this_freq_data <- freq_list[[i]]
+    out <- this_loss_data %>%
+      dplyr::select(-year) %>%
+      mutate(value = value * this_freq_data$value)
+    combined_list[[i]] <- out
+  }
+  # Collapse the combined_list dataframes so that they combine all perils together
+  # WORKING IN HERE, NOT DONE
+  collapsed <- bind_rows(combined_list)
+  collapsed
+    mutate(dummy = 1) %>%
+    group_by(county) %>%
+    mutate(cs = cumsum(dummy)) %>% ungroup
+  collapsed <- collapsed %>% group_by(country, cs) %>%
+    summarise(value = sum(value))
+  
+  quant_list <- list()
+  for(i in 1:length(combined_list)){
+    x <- quant_that(combined_list[[i]])
+    quant_list[[i]] <- x
+  }
+  quant <- bind_rows(quant_list)
+  done <- quant %>%
+    group_by(variable) %>%
+    summarise(lwr = quantile(value, 0.025),
+              upr = quantile(value, 0.975))
+  
+  quant_that(dat_sim = combined_list[[2]])
+  combined <- bind_rows(combined_list) %>%
+    group_by(peril) %>%
+    arrange(value)
+
+}
+
