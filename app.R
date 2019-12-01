@@ -1424,10 +1424,11 @@ server <- function(input, output, session) {
     #   NULL
     # }
     if(input$data_type == 'Archetype'){
-      out <- core_dat
-      out <- out[[1]]
-      names(out) <- c('archetype', 'year', 'peril', 'value')
-      message('archetype selected, so core_dat!!!')
+      out <- cored
+      out1 <- out[[1]]
+      out2 <- out[[2]]
+      names(out1) <- c('archetype', 'year', 'peril', 'value')
+      out <- list(out1, out2)
     } else {
       # capture whether there are significant trends
       if(is.null(is_trend)){
@@ -1819,19 +1820,10 @@ server <- function(input, output, session) {
           xlab('') + ylab('') +
           ggtitle(plot_title)
       }
-      
-      
       return(g)
-      
     }
-    
-    
   })
-  # # 
-  # # 
-  ########### OUTPUT 2
-  
-  
+
   output$loss_exceedance_plotly <- renderPlot({
     
     prob_exceed <- probability_of_exceeding()

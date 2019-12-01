@@ -63,6 +63,7 @@ expand_data <- function(data){
 }
 
 sim_bern <- function(the_right_data = NULL){
+  # save(the_right_data, file = 'the_right_data.RData')
   require(tidyverse)
   # the right data should be either scaled, detrended or core data, depending on inputs
   data_list <- list()
@@ -94,6 +95,8 @@ sim_bern <- function(the_right_data = NULL){
       }
     }
    out <- do.call('rbind', data_list)
+  } else {
+    out <- NULL
   }
   return(out)
 }
@@ -768,6 +771,8 @@ filter_distribution <- function(fitted_distribution = NULL){
       ungroup %>%
       filter(aic == min_aic) %>%
       dplyr::distinct(peril, .keep_all = TRUE)
+  } else {
+    out <- NULL
   }
   return(out)
 }
