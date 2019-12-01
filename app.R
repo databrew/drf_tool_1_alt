@@ -106,7 +106,16 @@ body <- dashboardBody(
                       fluidRow(uiOutput('damage_type_ui')),
                       fluidRow(
                         bsPopover(id = "damage_type", title = '', content = "Select whether you would like to view the loss as cost per person or as total damage. If you choose cost per person, you will later be prompted for some currency information.",
-                                  placement = "top", trigger = "hover", options = list(container ='body'))
+                                  placement = "top", trigger = "hover", options = list(container ='body')),
+                        column(3,
+                               uiOutput('cost_per_person_ui')
+                        ),
+                        column(3,
+                               uiOutput('rate_ui')),
+                        column(3,
+                               uiOutput('currency_ui')),
+                        column(3,
+                               uiOutput('code_ui'))
                       ),
                       fluidRow(uiOutput('country_ui')),
                       fluidRow(uiOutput('data_source_ui')),
@@ -182,17 +191,6 @@ body <- dashboardBody(
                     
                     #  start new row that encompasses inputs for country, download buttons, damage type, and currency
                     fluidPage(
-                      fluidRow(
-                        column(3,
-                               uiOutput('cost_per_person_ui')
-                        ),
-                        column(3,
-                               uiOutput('rate_ui')),
-                        column(3,
-                               uiOutput('currency_ui')),
-                        column(3,
-                               uiOutput('code_ui'))
-                      ),
                       fluidRow(column(12,
                                       uiOutput('select_peril_ui'))),
                       fluidRow(column(12,
@@ -1052,30 +1050,47 @@ server <- function(input, output, session) {
   # archetype_frequency <- archetype_frequency[archetype_frequency$archetype == archetype_name,]
   
   prepare_archetype_data <- reactive({
-    if(is.null(archetype_frequency()) | is.null(input$damage_type)){
-      return(NULL)
-    } else {
-      # rate <- input$rate
-      # code <- input$code
-      # cost <- input$cost_per_person
-      archetype_data <- selected_archetype()
-      archetype_frequency <- archetype_frequency()
-      cost = 50
+    rate <- input$rate
+    code <- input$code
+    cost <- input$cost_per_person
+    archetype_data <- selected_archetype()
+    archetype_frequency <- archetype_frequency()
+    ok <- TRUE
+    if(is.null(archetype_frequency) | is.null(input$damage_type) | 
+       is.null(rate) | is.null(code) | is.null(cost) | is.null(archetype_data)){
+      ok <- FALSE
+    }
+    
+    if(!is.null(input$damage_type)){
+      if( input$damage_type == 'Total damage'){
+        ok <- FALSE
+      }
+    }
+    if(ok){
+
+      # message('Here is what our stuff looks like:')
+      # message('---best_source is ', best_source)
+      # message('---rate is ', rate)
+      # message('---code is ', code)
+      # message('---cost is ', cost)
+      # subset data by best source
+     
       
       # remove emdat and
-      archetype_frequency$data_type <- archetype_data$data_type <-  NULL
+      archetype_data$data_type <- archetype_data$damage_type <- archetype_data$best_data <- NULL
+      archetype_frequency$data_type <- archetype_frequency$damage_type <-  NULL
       
       archetype_data$value <- archetype_data$value*cost
-      
-      message(head(archetype_data), 'this is good')
-      
+      # save(archetype_data, file = 'archetype_data.RData')
+      # save(archetype_frequency, file = 'archetype_frequency.RData')
       # store in list
       data <- list()
       data[[1]] <- archetype_data
       data[[2]] <- archetype_frequency
       return(data)
+    } else {
+      NULL
     }
-    
   })
   
   
