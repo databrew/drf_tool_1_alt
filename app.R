@@ -2020,17 +2020,18 @@ server <- function(input, output, session) {
       ggtitle(plot_title)
     
     if(input$ci){
-      gd <- get_right_data()
-      message('Confidence selected: going to calculate bootstrapped cis')
-      message('gather_data() looks like: ')
-      print(head(gd))
-      # run the bootstrap
-      ci_data <- bootstrap_cis(grd = gd)
-    g <- g +
-      geom_errorbar(data = ci_data,
-                    aes(x = variable,
-                        ymin = lwr,
-                        ymax = upr))
+      message('For now, no CIs for this chart')
+      # gd <- get_right_data()
+      # message('Confidence selected: going to calculate bootstrapped cis')
+      # message('gather_data() looks like: ')
+      # print(head(gd))
+      # # run the bootstrap
+      # ci_data <- bootstrap_cis(grd = gd)
+    # g <- g +
+    #   geom_errorbar(data = ci_data,
+    #                 aes(x = variable,
+    #                     ymin = lwr,
+    #                     ymax = upr))
     }
     return(g)
   })
