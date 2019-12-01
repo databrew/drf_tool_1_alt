@@ -85,7 +85,7 @@ body <- dashboardBody(
                       bsPopover(id = "tabs", title = '',
                                 content = 'Use the "Continue" button at the top of the page to navigate.',
                                 placement = "top", trigger = "hover", options = list(container ='body')),
-
+                      
                       h3('Please select your preferred settings'),
                       fluidRow(
                         radioButtons("advanced", "Select a type of setting. If you are an advanced user, please select the advanced settings option below for more statistical flexibility.",
@@ -172,11 +172,11 @@ body <- dashboardBody(
                                       fluidRow(
                                         downloadButton("download_scaled_data",
                                                        "Download Scaled Data"),
-                                                       bsPopover(id = "download_scaled_data", title = '',
-                                                                 content = 'Download the scaled raw data so as to view or edit on your computer, outside of this application.',
-                                                                 placement = "top", 
-                                                                 trigger = "hover", 
-                                                                 options = list(container ='body'))))),
+                                        bsPopover(id = "download_scaled_data", title = '',
+                                                  content = 'Download the scaled raw data so as to view or edit on your computer, outside of this application.',
+                                                  placement = "top", 
+                                                  trigger = "hover", 
+                                                  options = list(container ='body'))))),
                              fluidRow(
                                column(12,
                                       DT::dataTableOutput('raw_scaled_data')
@@ -215,12 +215,12 @@ body <- dashboardBody(
                         column(6,
                                fluidRow(
                                  checkboxGroupInput('overlap_choices',
-                                                  'Show:',
-                                                  choices = c('Observed data',
-                                                              'Simulated data'),
-                                                  selected = c('Observed data',
-                                                               'Simulated data'),
-                                                  inline = TRUE),
+                                                    'Show:',
+                                                    choices = c('Observed data',
+                                                                'Simulated data'),
+                                                    selected = c('Observed data',
+                                                                 'Simulated data'),
+                                                    inline = TRUE),
                                  bsPopover(id = "overlap_choices", title = '',
                                            content = 'The chart below will show one or both of the simulated and observed data',
                                            placement = "top", 
@@ -280,6 +280,8 @@ body <- dashboardBody(
                   tabPanel(
                     title = uiOutput('output_ui'),
                     value = 'OUTPUT',
+                    # uiOutput('delete'),
+                    
                     
                     uiOutput('output_top_ui'),
                     fluidPage(
@@ -337,8 +339,8 @@ body <- dashboardBody(
                       fluidRow(
                         box(title = "Loss Exceedance Curve",
                             fluidRow(plotOutput('loss_exceedance_plotly'),
-                            bsPopover(id = "loss_exceedance_plotly", title = 'Exhibit 2', content = "This graph shows the probability of a year taking place that exceeds the aggregate annual loss amount on the y-axis. The probability of exceeding the available budget is represented by the probability where the available budget line and the loss exceedance curve cross.",
-                                      placement = "top", trigger = "hover", options = list(container ='body')))),
+                                     bsPopover(id = "loss_exceedance_plotly", title = 'Exhibit 2', content = "This graph shows the probability of a year taking place that exceeds the aggregate annual loss amount on the y-axis. The probability of exceeding the available budget is represented by the probability where the available budget line and the loss exceedance curve cross.",
+                                               placement = "top", trigger = "hover", options = list(container ='body')))),
                         box(title = "Funding Gap",
                             fluidRow(
                               plotOutput('loss_exceedance_gap_plotly'),
@@ -431,7 +433,7 @@ server <- function(input, output, session) {
       paste("perild_data-", Sys.Date(), ".csv", sep="")
     },
     content = function(file) {
-
+      
       usde <- use_core_data_edited()
       if(usde){
         cored <- core_data_edited$data
@@ -480,7 +482,7 @@ server <- function(input, output, session) {
         }
       }
       write.csv(the_data, file)
-    
+      
     }
   )
   
@@ -653,16 +655,16 @@ server <- function(input, output, session) {
     
     if(input$data_type == 'Archetype'){
       out <- radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
-                   'Select how you want to view the loss',
-                   choices = c('Cost per person'),
-                   selected = 'Cost per person',
-                   inline = TRUE)
+                          'Select how you want to view the loss',
+                          choices = c('Cost per person'),
+                          selected = 'Cost per person',
+                          inline = TRUE)
     } else {
       out <- radioButtons('damage_type', # If cost per person, must specify the amount. Otherwise it's monetary loss data
-                   'Select how you want to view the loss',
-                   choices = c('Total damage', 'Cost per person'),
-                   selected = 'Total damage',
-                   inline = TRUE)
+                          'Select how you want to view the loss',
+                          choices = c('Total damage', 'Cost per person'),
+                          selected = 'Total damage',
+                          inline = TRUE)
     }
     out <- fluidRow(
       out,
@@ -1067,14 +1069,14 @@ server <- function(input, output, session) {
       }
     }
     if(ok){
-
+      
       # message('Here is what our stuff looks like:')
       # message('---best_source is ', best_source)
       # message('---rate is ', rate)
       # message('---code is ', code)
       # message('---cost is ', cost)
       # subset data by best source
-     
+      
       
       # remove emdat and
       archetype_data$data_type <- archetype_data$damage_type <- archetype_data$best_data <- NULL
@@ -1102,9 +1104,9 @@ server <- function(input, output, session) {
     } else {
       if(input$advanced == 'Basic'){
         out <- selectInput('select_scale',
-                    'Scale data by:',
-                    choices = 'POPULATION',
-                    selected = 'POPULATION')
+                           'Scale data by:',
+                           choices = 'POPULATION',
+                           selected = 'POPULATION')
       } else {
         data <- prepare_scale_data()
         
@@ -1122,16 +1124,16 @@ server <- function(input, output, session) {
         
         scaled_choices <- toupper(c(scaled_choices, ' No scaling'))
         out <- selectInput('select_scale',
-                    'Choose from preloaded scaling data',
-                    choices = scaled_choices,
-                    selected = scaled_choices[1])
+                           'Choose from preloaded scaling data',
+                           choices = scaled_choices,
+                           selected = scaled_choices[1])
       }
-     fluidRow(
-       out,
-       bsPopover(id = "select_scale", title = '',
-                 content = 'Choose how you would like to see your data "scaled".',
-                 placement = "top", trigger = "hover", options = list(container ='body'))
-     ) 
+      fluidRow(
+        out,
+        bsPopover(id = "select_scale", title = '',
+                  content = 'Choose how you would like to see your data "scaled".',
+                  placement = "top", trigger = "hover", options = list(container ='body'))
+      ) 
     }
   })
   
@@ -1168,7 +1170,7 @@ server <- function(input, output, session) {
     dmt <- input$damage_type  
     ok <- TRUE
     min_obs <- 3
-
+    
     if(is.null(dt)){
       ok <- FALSE
     }
@@ -1219,7 +1221,7 @@ server <- function(input, output, session) {
     } else {
       cored <- core_data()
     }
-
+    
     view_data <- input$view_data
     editit <- FALSE
     if(view_data != 'Frequency'){
@@ -1643,7 +1645,7 @@ server <- function(input, output, session) {
                     placement = "top", 
                     trigger = "hover", 
                     options = list(container ='body'))
-          )
+        )
       }
       if(length(chosen_earthquake) == 0){
         no_go <- c(no_go, 'Earthquake')
@@ -1930,22 +1932,8 @@ server <- function(input, output, session) {
       dat <- dat[order(dat$year, decreasing = FALSE),]
       # get budget
       
-      
-      output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
-      annual_avg = round(mean(dat$value), 2)
-      
-      # create sub_data frame sub_dat to store output with chart labels
-      sub_dat <- data_frame(`Annual average` = annual_avg,
-                            `1 in 5 Years` = output[1],
-                            `1 in 10 Years` = output[2],
-                            `1 in 25 Years` = output[3],
-                            `1 in 50 Years` = output[4],
-                            `1 in 100 Years` = output[5],
-                            `Highest historical annual loss` = max(dat$value),
-                            `Most recent annual loss` = dat$value[nrow(dat)])
-      
-      # melt the sub_data frame to get value and variable
-      sub_dat <- melt(sub_dat)
+      sub_dat <- quant_that(dat_sim = dat_sim,
+                            dat = dat)
       
       sub_dat$variable <- factor(sub_dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
                                                               'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
@@ -2015,43 +2003,34 @@ server <- function(input, output, session) {
       plot_title <- input$country
     }
     
+    # Plot
+    g <- ggplot(plot_dat, aes(x=variable,
+                              y=value,
+                              text = value)) +
+      geom_bar(stat = 'identity',
+               fill = '#5B84B1FF',
+               col = '#FC766AFF',
+               alpha = 0.6) +
+      geom_hline(yintercept = budget) +
+      theme_bw(base_size = 14,
+               base_family = 'Ubuntu')  +
+      theme(axis.text.x = element_text(angle = 45,
+                                       hjust = 1)) +
+      xlab('') + ylab('') +
+      ggtitle(plot_title)
+    
     if(input$ci){
-      y_min <- plot_dat$value - mean(plot_dat$value)
-      y_min <- ifelse(y_min < 0, 0, y_min)
-      
-      y_max <-  plot_dat$value + mean(plot_dat$value)
-      # Plot
-      g <- ggplot(plot_dat, aes(x=variable,
-                                y=value,
-                                text = value)) +
-        geom_bar(stat = 'identity',
-                 fill = '#5B84B1FF',
-                 col = '#FC766AFF',
-                 alpha = 0.6) +
-        geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
-        geom_hline(yintercept = budget) +
-        theme_bw(base_size = 14,
-                 base_family = 'Ubuntu')  +
-        theme(axis.text.x = element_text(angle = 45,
-                                         hjust = 1)) +
-        xlab('') + ylab('') +
-        ggtitle(plot_title)
-    } else {
-      # Plot
-      g <- ggplot(plot_dat, aes(x=variable,
-                                y=value,
-                                text = value)) +
-        geom_bar(stat = 'identity',
-                 fill = '#5B84B1FF',
-                 col = '#FC766AFF',
-                 alpha = 0.6) +
-        geom_hline(yintercept = budget) +
-        theme_bw(base_size = 14,
-                 base_family = 'Ubuntu')  +
-        theme(axis.text.x = element_text(angle = 45,
-                                         hjust = 1)) +
-        xlab('') + ylab('') +
-        ggtitle(plot_title)
+      gd <- get_right_data()
+      message('Confidence selected: going to calculate bootstrapped cis')
+      message('gather_data() looks like: ')
+      print(head(gd))
+      # run the bootstrap
+      ci_data <- bootstrap_cis(grd = gd)
+    g <- g +
+      geom_errorbar(data = ci_data,
+                    aes(x = variable,
+                        ymin = lwr,
+                        ymax = upr))
     }
     return(g)
   })
@@ -2367,7 +2346,7 @@ server <- function(input, output, session) {
               input = input,
               tab_data = tab_data)
   })
-
+  
   output$output_top_ui <- renderUI({
     is_archetype <- input$data_type == 'Archetype'
     
@@ -2463,6 +2442,14 @@ server <- function(input, output, session) {
   observeEvent(input$check_another,{
     updateTabsetPanel(session, inputId="tabs", selected='TOOL SETTINGS')
   })
+  
+  # output$delete <- renderUI({
+  #   grd <- get_right_data()
+  #   message('grd is')
+  #   print(head(grd))
+  #   h3('Test')
+  #   save(grd, file = 'grd.RData')
+  # })
 }
 
 shinyApp(ui, server)
