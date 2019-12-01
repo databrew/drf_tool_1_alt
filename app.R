@@ -284,7 +284,14 @@ body <- dashboardBody(
                                                  value = FALSE))),
                         column(3,
                                div(class = 'well',
-                                   numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0)))
+                                   numericInput('exceed_budget', 'Exceed funding gap/surplus by', value = 0))),
+                        column(3,
+                               div(class = 'well',
+                                   numericInput('severe', 'Define the probability for a severe event' , value = 10))),
+                        column(3,
+                               div(class = 'well',
+                                   numericInput('extreme', 'Define the probability for an extreme event' , value = 1)))
+                        
                       ),
                       #
                       bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1',
@@ -2015,12 +2022,20 @@ server <- function(input, output, session) {
       dat <- dat[dat$value > 0,]
       dat <- dat[order(dat$year, decreasing = FALSE),]
       is_archetype <- input$data_type == 'Archetype'
-      output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
+      severe <- input$severe
+      extreme <- input$extreme
+      severe <- severe/100
+      severe <- 1-severe
+      extreme <- extreme/100
+      extreme <- 1-extreme
+      
+      output <- quantile(dat_sim$value,c(severe, extreme))
       annual_avg <- mean(dat$value)
       # create data frame dat to store output with chart labels
       sub_plot_dat <- data_frame(`Average` = annual_avg,
-                                 `Severe` = output[2],
-                                 `Extreme` = output[5])
+                                 `Severe` = output[1],
+                                 `Extreme` = output[2])
+      
       
       # melt the data frame to get value and variable
       sub_plot_dat <- melt(sub_plot_dat)
