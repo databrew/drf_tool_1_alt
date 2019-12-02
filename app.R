@@ -301,7 +301,7 @@ body <- dashboardBody(
                                              trigger = "hover", 
                                              options = list(container ='body')),
                                    checkboxInput('ci',
-                                                 'Show confidence intervals',
+                                                 'CI under construction (will return no plots)',
                                                  value = FALSE))),
                         column(3,
                                div(class = 'well',
@@ -1896,7 +1896,7 @@ server <- function(input, output, session) {
   })
   #
   # create a reactive object that takes new input
-  probability_of_exceeding_suplus_deficit <- reactive({
+  probability_of_exceeding_surplus_deficit <- reactive({
     
     budget <- input$budget
     if(is.null(budget) |  is.null(gather_perils())){
@@ -2021,23 +2021,6 @@ server <- function(input, output, session) {
     } else {
       plot_title <- input$country
     }
-    
-    # Plot
-    g <- ggplot(plot_dat, aes(x=variable,
-                              y=value/scale_size,
-                              text = value)) +
-      geom_bar(stat = 'identity',
-               fill = '#5B84B1FF',
-               col = '#FC766AFF',
-               alpha = 0.6) +
-      geom_hline(yintercept = budget) +
-      theme_bw(base_size = 14,
-               base_family = 'Ubuntu')  +
-      theme(axis.text.x = element_text(angle = 45,
-                                       hjust = 1)) +
-      xlab('') + ylab('') +
-      ggtitle(plot_title)
-    
     if(input$ci){
       message('For now, no CIs for this chart')
       # gd <- get_right_data()
@@ -2046,18 +2029,39 @@ server <- function(input, output, session) {
       # print(head(gd))
       # # run the bootstrap
       # ci_data <- bootstrap_cis(grd = gd)
-    # g <- g +
-    #   geom_errorbar(data = ci_data,
-    #                 aes(x = variable,
-    #                     ymin = lwr,
-    #                     ymax = upr))
+      # g <- g +
+      #   geom_errorbar(data = ci_data,
+      #                 aes(x = variable,
+      #                     ymin = lwr,
+      #                     ymax = upr))
+    } else {
+      # Plot
+      g <- ggplot(plot_dat, aes(x=variable,
+                                y=value/scale_size,
+                                text = value)) +
+        geom_bar(stat = 'identity',
+                 fill = '#5B84B1FF',
+                 col = '#FC766AFF',
+                 alpha = 0.6) +
+        geom_hline(yintercept = budget) +
+        theme_bw(base_size = 14,
+                 base_family = 'Ubuntu')  +
+        theme(axis.text.x = element_text(angle = 45,
+                                         hjust = 1)) +
+        xlab('') + ylab('') +
+        ggtitle(plot_title)
+      return(g)
+      
     }
-    return(g)
+    
+  
+   
+   
   })
   
   output$loss_exceedance_plotly <- renderPlot({
     
-    prob_exceed <- probability_of_exceeding()
+    prob_exceed <- probability_of_exceeding_surplus_deficit()
     budget <- input$budget
     
     if(is.null(prob_exceed) | is.na(budget) | is.null(gather_data())){
@@ -2073,6 +2077,7 @@ server <- function(input, output, session) {
       dat <- dat[order(dat$year, decreasing = FALSE),]
       largest_loss_num <- round(max(dat$value), 2)
       largest_loss_year <- dat$year[dat$value == max(dat$value)]
+      largest_loss_num <- largest_loss_num/scale_size
       
       # find where budget equals curve
       
@@ -2095,28 +2100,29 @@ server <- function(input, output, session) {
       names(output)[2] <- 'Probability'
       output$Probability <- 1 - output$Probability
       
-      
-      
       plot_dat <- output
+      # save(plot_dat, file = 'plot_dat.RData')
       # get budget
       if(input$ci){
-        plot_dat$y_min <- plot_dat$`Total Loss`- mean(plot_dat$`Total Loss`)
-        plot_dat$y_min <- ifelse(plot_dat$y_min < 0, 0, plot_dat$y_min)
+        # plot_dat$y_min <- plot_dat$`Total Loss`- mean(plot_dat$`Total Loss`)
+        # plot_dat$y_min <- ifelse(plot_dat$y_min < 0, 0, plot_dat$y_min)
+        # 
+        # plot_dat$y_max <-  plot_dat$`Total Loss` + mean(plot_dat$`Total Loss`)
+        # g <- ggplot(plot_dat, aes(Probability, `Total Loss`/scale_size)) +
+        #   geom_line(col = 'blue', size = 1, alpha = 0.7) +
+        #   geom_line(aes(Probability, y_min), linetype = 'dotted') +
+        #   geom_line(aes(Probability, y_max), linetype = 'dotted') +
+        #   scale_x_reverse() +
+        #   ggtitle(plot_title) +
+        #   geom_hline(yintercept = largest_loss_num) +
+        #   geom_hline(yintercept = budget) +
+        #   geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
+        #   annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
+        #   annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
+        #   theme_bw(base_size = 14,
+        #            base_family = 'Ubuntu')
+        message('For now, no CIs for this chart')
         
-        plot_dat$y_max <-  plot_dat$`Total Loss` + mean(plot_dat$`Total Loss`)
-        g <- ggplot(plot_dat, aes(Probability, `Total Loss`/scale_size)) +
-          geom_line(col = 'blue', size = 1, alpha = 0.7) +
-          geom_line(aes(Probability, y_min), linetype = 'dotted') +
-          geom_line(aes(Probability, y_max), linetype = 'dotted') +
-          scale_x_reverse() +
-          ggtitle(plot_title) +
-          geom_hline(yintercept = largest_loss_num) +
-          geom_hline(yintercept = budget) +
-          geom_vline(xintercept = prob_exceed, linetype = 'dotted') +
-          annotate('text', label = 'Budget', x = 0.45, y = budget, vjust = -1) +
-          annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
-          theme_bw(base_size = 14,
-                   base_family = 'Ubuntu')
         
       } else {
         g <- ggplot(plot_dat, aes(Probability, `Total Loss`/scale_size)) +
@@ -2130,11 +2136,12 @@ server <- function(input, output, session) {
           annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
           theme_bw(base_size = 14,
                    base_family = 'Ubuntu')
+        return(g)
         
       }
       
       
-      return(g)
+    
       
     }
     
@@ -2197,27 +2204,29 @@ server <- function(input, output, session) {
     }
     
     if(input$ci){
-      y_min <- plot_dat$value - mean(plot_dat$value)
-      y_min <- ifelse(y_min < 0, 0, y_min)
+      # y_min <- plot_dat$value - mean(plot_dat$value)
+      # y_min <- ifelse(y_min < 0, 0, y_min)
+      # 
+      # y_max <-  plot_dat$value + mean(plot_dat$value)
+      # # plot
+      # g <- ggplot(plot_dat, aes(x=variable,
+      #                           y=value/scale_size,
+      #                           text = value)) +
+      #   geom_bar(stat = 'identity',
+      #            fill = '#5B84B1FF',
+      #            col = '#FC766AFF',
+      #            alpha = 0.6) +
+      #   geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
+      #   
+      #   theme_bw(base_size = 14,
+      #            base_family = 'Ubuntu')  +
+      #   theme(axis.text.x = element_text(angle = 45,
+      #                                    hjust = 1)) +
+      #   xlab('') + ylab('') +
+      #   
+      #   ggtitle(plot_title)
+      message('For now, no CIs for this chart')
       
-      y_max <-  plot_dat$value + mean(plot_dat$value)
-      # plot
-      g <- ggplot(plot_dat, aes(x=variable,
-                                y=value/scale_size,
-                                text = value)) +
-        geom_bar(stat = 'identity',
-                 fill = '#5B84B1FF',
-                 col = '#FC766AFF',
-                 alpha = 0.6) +
-        geom_errorbar(aes(x=variable, ymin=y_min, ymax=y_max), color="black", width=0.5) +
-        
-        theme_bw(base_size = 14,
-                 base_family = 'Ubuntu')  +
-        theme(axis.text.x = element_text(angle = 45,
-                                         hjust = 1)) +
-        xlab('') + ylab('') +
-        
-        ggtitle(plot_title)
       
     }else {
       # plot
@@ -2235,15 +2244,15 @@ server <- function(input, output, session) {
         xlab('') + ylab('') +
         
         ggtitle(plot_title)
-      
+      return(g)
     }
-    return(g)
+    
     
   })
   
   output$loss_exceedance_gap_plotly <- renderPlot({
     
-    prob_exceed_suprplus_deficit <- probability_of_exceeding_suplus_deficit()
+    prob_exceed_suprplus_deficit <- probability_of_exceeding()
     budget <- input$budget
     data_type <- input$data_type
     
@@ -2301,26 +2310,28 @@ server <- function(input, output, session) {
       
       
       plot_dat <- funding_gap_curve
+      # save(plot_dat, file = 'plot_dat.RData')
       
       if(input$ci){
-        dat <- plot_dat
-        dat$y_min <- dat$`Funding gap`- mean(dat$`Funding gap`)
-        dat$y_min <- dat$y_min
-        # dat$y_min <- ifelse(y_min > 0, 0, y_min)
-        dat$y_max <-  dat$`Funding gap` + mean(dat$`Funding gap`)
-        g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`/scale_size)) +
-          geom_line(col = 'blue', size = 1, alpha = 0.7) +
-          geom_line(aes(`Probability of exceeding loss`, y_min), linetype = 'dotted') +
-          geom_line(aes(`Probability of exceeding loss`, y_max), linetype = 'dotted') +
-          scale_x_reverse(position = 'top') +
-          geom_hline(yintercept = 0, size = 2) +
-          ggtitle(plot_title) +
-          theme_bw(base_size = 14,
-                   base_family = 'Ubuntu')
-        g
+        # dat <- plot_dat
+        # dat$y_min <- dat$`Funding gap`- mean(dat$`Funding gap`)
+        # dat$y_min <- dat$y_min
+        # # dat$y_min <- ifelse(y_min > 0, 0, y_min)
+        # dat$y_max <-  dat$`Funding gap` + mean(dat$`Funding gap`)
+        # g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`/scale_size)) +
+        #   geom_line(col = 'blue', size = 1, alpha = 0.7) +
+        #   geom_line(aes(`Probability of exceeding loss`, y_min), linetype = 'dotted') +
+        #   geom_line(aes(`Probability of exceeding loss`, y_max), linetype = 'dotted') +
+        #   scale_x_reverse(position = 'top') +
+        #   geom_hline(yintercept = 0, size = 2) +
+        #   ggtitle(plot_title) +
+        #   theme_bw(base_size = 14,
+        #            base_family = 'Ubuntu')
+        # g
+        message('For now, no CIs for this chart')
+        
       } else {
         dat <- plot_dat
-        
         g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`/scale_size)) +
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
           scale_x_reverse(position = 'top') +
@@ -2328,8 +2339,9 @@ server <- function(input, output, session) {
           ggtitle(plot_title) +
           theme_bw(base_size = 14,
                    base_family = 'Ubuntu')
+        return(g)
       }
-      g
+      
     }
     
   })
