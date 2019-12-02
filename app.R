@@ -1253,7 +1253,11 @@ server <- function(input, output, session) {
         editit <- list(target = 'cell', disable = list(columns = 0:1))
       }
       datatable(out, rownames = FALSE,
-                editable = editit)
+                editable = editit) %>%
+        formatCurrency(c("Drought",
+                         "Earthquake",
+                         "Flood",
+                         "Storm"),currency = "", interval = 3, mark = ",")
     }
   })
   proxy <- dataTableProxy('raw_data_table')
@@ -1544,7 +1548,10 @@ server <- function(input, output, session) {
                                      Inflation, GDP)
         # datatable(data, options = list(dom='t',ordering=F))
       }
-      datatable(out, rownames = FALSE)
+      datatable(out, rownames = FALSE) %>%
+        formatCurrency(c("Population", 
+                         "Inflation",
+                         "GDP"),currency = "", interval = 3, mark = ",")
     }
     
   })
