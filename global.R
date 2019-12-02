@@ -210,6 +210,10 @@ for(i in 1:length(country_names)){
 }
 scale_data <- do.call('rbind', scale_data_list)
 
+# scale by 1000000
+scale_size = 1
+
+
 # 
 # population_data <- read.csv('data/Scale/population_data.csv')
 # gdp_data <- read.csv('data/Scale/gdp.csv')

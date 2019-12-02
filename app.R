@@ -884,6 +884,7 @@ server <- function(input, output, session) {
       country_data$origin <- country_data$damage_type <- country_data$best_data <- NULL
       country_frequency$origin <- country_frequency$damage_type <-  NULL
       
+      country_data$value <- country_data$value/scale_size
       # store in list
       data <- list()
       data[[1]] <- country_data
@@ -1780,7 +1781,7 @@ server <- function(input, output, session) {
                      'AIC',
                      'MLE 1',
                      'MLE 2')
-      return(datatable(fd, rownames = FALSE))
+        return(datatable(fd, rownames = FALSE))
     } else{
       return(NULL)
     }

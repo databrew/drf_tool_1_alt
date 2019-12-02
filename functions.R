@@ -436,6 +436,7 @@ get_aic_mle <- function(dat){
                              aic = gamma_aic,
                              mle_1 = gamma$estimate[1],
                              mle_2 = gamma$estimate[2])
+
     # upper_mle_1 = log_normal_upper_mle_1,
     # lower_mle_1 = log_normal_lower_mle_1,
     # upper_mle_2 = log_normal_upper_mle_2,
@@ -547,8 +548,8 @@ get_aic_mle <- function(dat){
     aic_mle_dat$distribution <- Hmisc::capitalize(aic_mle_dat$distribution)
     aic_mle_dat$distribution <- gsub('_', ' ', aic_mle_dat$distribution)
     aic_mle_dat$aic <- round(aic_mle_dat$aic, 2)
-    aic_mle_dat$mle1<- round(aic_mle_dat$mle1, 2)
-    aic_mle_dat$mle2 <- round(aic_mle_dat$mle2, 2)
+    aic_mle_dat$mle1<- aic_mle_dat$mle1
+    aic_mle_dat$mle2 <- aic_mle_dat$mle2
     
     aic_mle_dat$peril <- peril_name
     
