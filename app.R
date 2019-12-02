@@ -884,7 +884,7 @@ server <- function(input, output, session) {
       country_data$origin <- country_data$damage_type <- country_data$best_data <- NULL
       country_frequency$origin <- country_frequency$damage_type <-  NULL
       
-      country_data$value <- country_data$value/scale_size
+      country_data$value <- country_data$value
       # store in list
       data <- list()
       data[[1]] <- country_data
