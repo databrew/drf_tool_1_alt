@@ -2017,7 +2017,7 @@ server <- function(input, output, session) {
     
     # Plot
     g <- ggplot(plot_dat, aes(x=variable,
-                              y=value,
+                              y=value/scale_size,
                               text = value)) +
       geom_bar(stat = 'identity',
                fill = '#5B84B1FF',
@@ -2074,9 +2074,6 @@ server <- function(input, output, session) {
       exceed_budget <- paste0('Probability of exceeding budget = ', prob_exceed)
       plot_title <- paste0(plot_title, ' : ', exceed_budget)
       
-      
-      
-      
       # budget <- input$budget
       output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
       output$x <- rownames(output)
@@ -2100,7 +2097,7 @@ server <- function(input, output, session) {
         plot_dat$y_min <- ifelse(plot_dat$y_min < 0, 0, plot_dat$y_min)
         
         plot_dat$y_max <-  plot_dat$`Total Loss` + mean(plot_dat$`Total Loss`)
-        g <- ggplot(plot_dat, aes(Probability, `Total Loss`)) +
+        g <- ggplot(plot_dat, aes(Probability, `Total Loss`/scale_size)) +
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
           geom_line(aes(Probability, y_min), linetype = 'dotted') +
           geom_line(aes(Probability, y_max), linetype = 'dotted') +
@@ -2115,7 +2112,7 @@ server <- function(input, output, session) {
                    base_family = 'Ubuntu')
         
       } else {
-        g <- ggplot(plot_dat, aes(Probability, `Total Loss`)) +
+        g <- ggplot(plot_dat, aes(Probability, `Total Loss`/scale_size)) +
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
           scale_x_reverse() +
           ggtitle(plot_title) +
@@ -2199,7 +2196,7 @@ server <- function(input, output, session) {
       y_max <-  plot_dat$value + mean(plot_dat$value)
       # plot
       g <- ggplot(plot_dat, aes(x=variable,
-                                y=value,
+                                y=value/scale_size,
                                 text = value)) +
         geom_bar(stat = 'identity',
                  fill = '#5B84B1FF',
@@ -2218,7 +2215,7 @@ server <- function(input, output, session) {
     }else {
       # plot
       g <- ggplot(plot_dat, aes(x=variable,
-                                y=value,
+                                y=value/scale_size,
                                 text = value)) +
         geom_bar(stat = 'identity',
                  fill = '#5B84B1FF',
@@ -2304,7 +2301,7 @@ server <- function(input, output, session) {
         dat$y_min <- dat$y_min
         # dat$y_min <- ifelse(y_min > 0, 0, y_min)
         dat$y_max <-  dat$`Funding gap` + mean(dat$`Funding gap`)
-        g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`)) +
+        g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`/scale_size)) +
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
           geom_line(aes(`Probability of exceeding loss`, y_min), linetype = 'dotted') +
           geom_line(aes(`Probability of exceeding loss`, y_max), linetype = 'dotted') +
@@ -2317,7 +2314,7 @@ server <- function(input, output, session) {
       } else {
         dat <- plot_dat
         
-        g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`)) +
+        g <-  ggplot(dat, aes(`Probability of exceeding loss`, `Funding gap`/scale_size)) +
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
           scale_x_reverse(position = 'top') +
           geom_hline(yintercept = 0, size = 2) +
