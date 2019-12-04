@@ -497,59 +497,61 @@ server <- function(input, output, session) {
   # creates a pop up page that the user must accept to acces the app
   set.seed(122)
   histdata <- rnorm(1)
-  # #   ## Uncomment before deploy
-  #
-  # observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, {
-  #  
-  #  
-  #   # event will be called when histdata changes, which only happens once, when it is initially calculated
-  #   showModal(modalDialog(
-  #     title = "", easyClose = FALSE, footer = NULL,
-  #
-  #     fluidPage(
-  #       fluidRow(
-  #         column(6, align = 'center',
-  #                img(src='logo1.png', align = "left", height = '50px')),
-  #         column(6, align = 'center',
-  #                img(src='logo2.jpg', align = "right", height = '50px'))
-  #       ),
-  #       fluidRow(
-  #         column(12, align = 'center',
-  #                h2('Welcome to World Bank Group!'))
-  #       ),
-  #       fluidRow(
-  #         column(12, align = 'center',
-  #                p('Please tell us your name, email and create a password so we can get started.'))
-  #       ),
-  #       fluidRow(
-  #         column(6,
-  #                textInput('first_name', '',
-  #                          placeholder = 'First name')),
-  #         column(6,
-  #                textInput('last_name', '',
-  #                          placeholder = 'Last name'))
-  #       ),
-  #       fluidRow(column(12, textInput('email', '', placeholder = 'Email'))),
-  #       fluidRow(column(12, textInput('password', '', placeholder = 'Password'))),
-  #       fluidRow(column(12, textInput('confirm_password', '', placeholder = 'Confirm password'))),
-  #       fluidRow(
-  #         column(12, align = 'center',
-  #                actionButton('get_started', 'Get started'))
-  #       )
-  #     )
-  #   )
-  #   )
-  # })
-  
+  #   ## Uncomment before deploy
+
+  observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = histdata, {
+
+
+    # event will be called when histdata changes, which only happens once, when it is initially calculated
+    showModal(modalDialog(
+      title = "", easyClose = FALSE, footer = NULL,
+
+      fluidPage(
+        fluidRow(
+          column(4, align = 'center',
+                 img(src='drf.png', align = "left", height = '50px')),
+          column(4, align = 'center',
+                 img(src='gfdrr.png', align = "middle", height = '50px')),
+          column(4, align = 'right',
+                 img(src='EU_Flag.png', align = "right", height = '50px')),
+        ),
+        fluidRow(
+          column(12, align = 'center',
+                 h2('Welcome to World Bank Group!'))
+        ),
+        fluidRow(
+          column(12, align = 'center',
+                 p('Please tell us your name, email and create a password so we can get started.'))
+        ),
+        fluidRow(
+          column(6,
+                 textInput('first_name', '',
+                           placeholder = 'First name')),
+          column(6,
+                 textInput('last_name', '',
+                           placeholder = 'Last name'))
+        ),
+        fluidRow(column(12, textInput('email', '', placeholder = 'Email'))),
+        fluidRow(column(12, textInput('password', '', placeholder = 'Password'))),
+        fluidRow(column(12, textInput('confirm_password', '', placeholder = 'Confirm password'))),
+        fluidRow(
+          column(12, align = 'center',
+                 actionButton('get_started', 'Get started'))
+        )
+      )
+    )
+    )
+  })
+
   # Observe the "Get started" button on the log-in page and remove the modal
   observeEvent(input$get_started, {
     removeModal()
-    
-    # UNCOMMENT BEFORE DEPLOY    
-    # showModal(modalDialog(
-    #   title = "Disaster Risk Financing Tool 1", easyClose = FALSE, footer = NULL,
-    #   welcome_modal
-    # ))
+
+    # UNCOMMENT BEFORE DEPLOY
+    showModal(modalDialog(
+      title = "Disaster Risk Financing Tool 1", easyClose = FALSE, footer = NULL,
+      welcome_modal
+    ))
   })
   observeEvent(input$accept,{
     removeModal()
