@@ -1041,8 +1041,9 @@ quant_that <- function(dat_sim,
   if(is.null(dat)){
     dat <- dat_sim
   }
+  num_years = 16
   output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
-  annual_avg = round(mean(dat$value), 2)
+  annual_avg = round(sum(dat$value)/num_years, 2)
   
   # create sub_data frame sub_dat to store output with chart labels
   sub_dat <- data_frame(`Annual average` = annual_avg,

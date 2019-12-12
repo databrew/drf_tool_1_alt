@@ -164,10 +164,11 @@ population_list <- list()
 for(i in 1:length(country_names)){
   country_name <- country_names[i]
   sub_dat <- population_data %>% filter(Country == country_name) %>%
-    arrange(-Year) %>% mutate(scale_factor_population = Population[1]/Population)
+    arrange(-Year) %>% mutate(scale_factor_population = Population[2]/Population)
   population_list[[i]] <- sub_dat
 }
 population_data <- do.call('rbind', population_list)
+
 
 gdp_data <- read.csv('data/Scale/gdp.csv')
 
@@ -212,6 +213,7 @@ scale_data <- do.call('rbind', scale_data_list)
 
 # scale by 1000000
 scale_size = 1000000
+num_years = 16
 
 
 # 
