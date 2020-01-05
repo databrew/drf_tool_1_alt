@@ -7,19 +7,18 @@ library(shinyjs)
 source('functions.R')
 source('global.R')
 
-# # Create a dictionary of tab names / numbers
+  # # Create a dictionary of tab names / numbers
 tab_dict <- data_frame(number = 1:5,
                        name = toupper(c('Tool settings',
                                         'Data',
                                         'Risk profile fitting',
                                         'Simulations',
                                         'Output')))
+
 n_tabs <- nrow(tab_dict)
-
-
+# define the header with pictures
 header <- dashboardHeader(title = tags$a(tags$img(src='logos_together.png',height='60',width='200', alt = 'World Bank Group')))
-
-
+# set sidebar names 
 sidebar <- dashboardSidebar(
   sidebarMenu(
     id = 'side_tab',
@@ -37,7 +36,7 @@ sidebar <- dashboardSidebar(
       icon = icon("book-open"))
   )
 )
-
+# start the body
 body <- dashboardBody(
   tags$head(tags$style(HTML(".small-box {height: 40px}"))),
   tags$head(tags$style(HTML('.nav-tabs a {cursor: default}'))),
@@ -92,7 +91,7 @@ body <- dashboardBody(
                                      selected = 'Basic',
                                      inline = TRUE),
                         bsPopover(id = "advanced", title = '',
-                                  content = 'For more statistical options and to view the Simulations tab, "Advanced"', trigger = "hover", options = list(container ='body')),
+                                  content = 'For more statistical options and to view the Simulations tab, "Advanced"', trigger = "hover", options = list(container ='body'))
                       ),
                       
                       fluidRow(
@@ -118,7 +117,7 @@ body <- dashboardBody(
                                uiOutput('code_ui'))
                       ),
                       uiOutput('country_ui'),
-                      fluidRow(uiOutput('data_source_ui')),
+                      fluidRow(uiOutput('data_source_ui'))
                       
                     )),
                   tabPanel(uiOutput('data_ui'),
@@ -130,7 +129,7 @@ body <- dashboardBody(
                                h4('Review Data Samples')
                              ),
                              fluidRow(
-                               helpText('To edit the data, double click on a value in the table below'),
+                               helpText('To edit the data, double click on a value in the table below')
                                # radioButtons('upload_or_auto',
                                #              'Do you wish to replace pre-loaded data with user-supplied data?',
                                #              choiceValues = c('Pre-loaded data',
@@ -323,7 +322,7 @@ body <- dashboardBody(
                                     uiOutput('output3')
                                     )
                             
-                           ),
+                           )
                           
                              
                            
@@ -338,7 +337,7 @@ body <- dashboardBody(
                                                    content = 'The budget will be used for calculating the likelihood of exceeding funding, etc',
                                                    placement = "top", 
                                                    trigger = "hover", 
-                                                   options = list(container ='body'))),
+                                                   options = list(container ='body')))
                               
                               
                             ),
@@ -355,7 +354,7 @@ body <- dashboardBody(
                                                    trigger = "hover", 
                                                    options = list(container ='body'))),
                               column(12,
-                                     plotOutput('loss_exceedance_gap_plotly'),
+                                     plotOutput('loss_exceedance_gap_plotly')
                                      
                                      ),
                               
@@ -371,7 +370,7 @@ body <- dashboardBody(
                                             style='font-size:180%'))
                       ))
                   )),
-                br(),
+                br()
                 
       )),
     tabItem(
@@ -495,7 +494,6 @@ server <- function(input, output, session) {
         }
       }
       write.csv(the_data, file, row.names = FALSE)
-      
     }
   )
   
@@ -522,7 +520,7 @@ server <- function(input, output, session) {
           column(4, align = 'center',
                  img(src='gfdrr.png', align = "middle", height = '50px')),
           column(4, align = 'right',
-                 img(src='EU_Flag.png', align = "right", height = '50px')),
+                 img(src='EU_Flag.png', align = "right", height = '50px'))
         ),
         fluidRow(
           column(12, align = 'center',
