@@ -29,10 +29,6 @@ library(Kendall)
 library(tidyr)
 # library(ExtDist)
 
-
-
-# run the functions script when this script is called by app.R
-source('functions.R')
 # remove scientific notation in plots
 options(scipen = '999')
 
@@ -70,6 +66,18 @@ advanced_parametric <- c('Log normal', 'Beta', 'Gamma',
                          'Frechet', 'Gumbel', 'Weibull',
                          'Pareto')
 
+###########
+# create objects to store floating constants in for indexing and custom equations
+###########
+
+# for inflation and gdp scaling
+scaling_index = 2
+
+# for scaling outputs
+scale_size = 1000000
+
+# for number of years in each time horizon
+num_years = 16
 
 ###########
 # read in country data
@@ -118,58 +126,48 @@ best_data$em_dat <- best_data$ocha <- best_data$desinventar <- NULL
 
 best_data <- melt(best_data, id.vars = 'country')
 names(best_data)[2:3] <- c('damage_type', 'best_source')
-# 
-# best_data_cost <- best_data %>% filter(damage_type == 'affected')
-# best_data_damage <- best_data %>% filter(damage_type == 'damage')
-# rm(best_data)
-##########
-# determing best source based on years available
-##########
 
-# # split data into affected and total damage
+# split data into affected and total damage
 cost_data <- country_data[country_data$damage_type == 'affected',]
 damage_data <-  country_data[country_data$damage_type == 'damage',]
 rm(country_data)
-# 
-# cost_data <- left_join(cost_data, best_data_cost, c('country', 'damage_type'))
-# 
-# damage_data <- left_join(damage_data, best_data_cost, c('country', 'damage_type'))
-# rm(best_data_cost, best_data_damage)
-
-# # get best data
-# cost_data <- get_best_data(cost_data)
-# damage_data <- get_best_data(damage_data)
 
 # get frequency data
 cost_freq <- expand_data(cost_data)
 damage_freq <- expand_data(damage_data)
+
+# fill NA with zeroes
 cost_freq <- fill_na(cost_freq)
 damage_freq <- fill_na(damage_freq)
 
-# combine data
+# combine the cost per person and loss data 
 frequency_data <- rbind(cost_freq, damage_freq)
 country_data <- rbind(damage_data, cost_data)
 rm(cost_freq, damage_freq, cost_data, damage_data)
-
 
 ##########
 # read in scaling data
 ##########
 
+# population data
 population_data <- read.csv('data/Scale/population_data.csv')
 
-# get scaled_factor for each country for population
+# get scaled_factor for each country for population by looping through each country and applying the methodology 
+# that GAD provided.
 country_names <- unique(population_data$Country)
 population_list <- list()
 for(i in 1:length(country_names)){
   country_name <- country_names[i]
   sub_dat <- population_data %>% filter(Country == country_name) %>%
-    arrange(-Year) %>% mutate(scale_factor_population = Population[2]/Population)
+    arrange(-Year) %>% mutate(scale_factor_population = Population[1]/Population)
   population_list[[i]] <- sub_dat
 }
+
+# concatenate data that was stored in list
 population_data <- do.call('rbind', population_list)
 
 
+# gdp data
 gdp_data <- read.csv('data/Scale/gdp.csv')
 
 # get scaled_factor for each country for gdp
@@ -178,20 +176,22 @@ gdp_list <- list()
 for(i in 1:length(country_names)){
   country_name <- country_names[i]
   sub_dat <- gdp_data %>% filter(Country == country_name) %>%
-    arrange(-Year) %>% mutate(scale_factor_gdp = GDP[2]/GDP)
+    arrange(-Year) %>% mutate(scale_factor_gdp = GDP[scaling_index]/GDP)
   gdp_list[[i]] <- sub_dat
 }
 gdp_data <- do.call('rbind', gdp_list)
 
-# INFLATION
+# inflation
 inflation_data <- read.csv('data/Scale/inflation.csv')
+
 # get scaled_factor for each country for inflation
+
 country_names <- unique(inflation_data$Country)
 inflation_list <- list()
 for(i in 1:length(country_names)){
   country_name <- country_names[i]
   sub_dat <- inflation_data %>% filter(Country == country_name) %>%
-    arrange(-Year) %>% mutate(scale_factor_inflation = Inflation.Index[2]/Inflation.Index)
+    arrange(-Year) %>% mutate(scale_factor_inflation = Inflation.Index[scaling_index]/Inflation.Index)
   inflation_list[[i]] <- sub_dat
 }
 inflation_data <- do.call('rbind', inflation_list)
@@ -210,21 +210,6 @@ for(i in 1:length(country_names)){
   scale_data_list[[i]] <- sub_dat
 }
 scale_data <- do.call('rbind', scale_data_list)
-
-# scale by 1000000
-scale_size = 1000000
-num_years = 16
-
-
-# 
-# population_data <- read.csv('data/Scale/population_data.csv')
-# gdp_data <- read.csv('data/Scale/gdp.csv')
-# inflation_data <- read.csv('data/Scale/inflation.csv')
-# 
-# # join data
-# scale_data <- full_join(population_data, inflation_data)
-# scale_data <- full_join(scale_data, gdp_data)
-
 
 ##########
 # read in archetyp data

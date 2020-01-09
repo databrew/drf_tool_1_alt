@@ -84,6 +84,8 @@ sim_bern <- function(the_right_data = NULL){
       sub_dat <- freq_data %>% filter(peril == peril_name)
       if(sum(sub_dat$value) > 0){
         mle_bern <- nrow(sub_dat[sub_dat$value == 1,])/num_trials
+        # mle_bern_2=fitdist(sub_dat$value, dist="binom", fix.arg=list(size=16), start=list(prob=0.1))
+        
         uniform_dis <- runif(15000,0 ,1)
         uni_dat <- as.data.frame(cbind(simulation_num = 1:15000, uniform_dis = uniform_dis))
         uni_dat$value <- ifelse(uni_dat$uniform_dis < mle_bern, 1, 0)
@@ -286,32 +288,6 @@ read_in_archetype_freq_data <- function(archetype_data, archetype_names){
 }
 
 
-# dgumbel function
-dgumbel <- function(x,mu,s){ # PDF
-  exp((mu - x)/s - exp((mu - x)/s))/s
-}
-
-# pgumbel function
-pgumbel <- function(q,mu,s){ # CDF
-  exp(-exp(-((q - mu)/s)))
-}
-
-# qgumbel function
-qgumbel <- function(p, mu, s){ # quantile function
-  mu-s*log(-log(p))
-}
-
-
-# fit gumbel function
-fit_gumbel <- function(x){
-  
-  
-  
-  # fit gumble 
-  gumbel_fit <- fitdistrplus::fitdist(x, "gumbel", start=list(mu=1, s=1), method="mle")
-  
-  return(gumbel_fit)
-}
 
 # create a plot for a generalized bar graph.
 plot_bar <- function(temp_dat, bar_color, border_color, alpha, plot_title){
@@ -330,7 +306,7 @@ plot_bar <- function(temp_dat, bar_color, border_color, alpha, plot_title){
 
 
 
-get_aic_mle <- function(dat){
+get_aic_mle <- function(dat, is_advanced){
   # get aic mle  by looping through perils 
 
   dat <- dat[dat$value > 0,]
@@ -344,64 +320,80 @@ get_aic_mle <- function(dat){
     peril_name <- present_perils[i]
     sub_dat <- dat[dat$peril == peril_name,]
 
-    log_normal <- try(fitdistr(sub_dat$value, "lognormal"),silent = TRUE)
+    log_normal <- try(fitdistrplus::fitdist(sub_dat$value,distr =  "lnorm"),silent = TRUE)
     if(class(log_normal) == 'try-error'){
       log_normal <- NULL
       log_normal_aic <- NA
-      log_normal$estimate[1] <- NA
-      log_normal$estimate[2] <- NA
-      # log_norma$upper_mle_1 <- NA
-      # log_normal$lower_mle_1 <- NA
-      # log_norma$upper_mle_2 <- NA
-      # log_normal$lower_mle_2 <- NA
-      #
+      mle_1 <- NA
+      mle_2 <- NA
+      mle_1_lower <- NA
+      mle_2_lower <-NA
+      mle_1_upper <- NA
+      mle_2_upper <- NA
     } else {
-      # get aic
-      log_normal_aic <- round(AIC(log_normal), 4)
-      #
-      # # upper and lower bound for each estimate
-      # log_normal_upper_mle_1 <- log_normal$estimate[1] + log_normal$sd[1]
-      # log_normal_lower_mle_1 <- log_normal$estimate[1] - log_normal$sd[1]
-      #
-      # log_normal_upper_mle_2 <- log_normal$estimate[2] + log_normal$sd[2]
-      # log_normal_lower_mle_2 <- log_normal$estimate[2] - log_normal$sd[2]
+      log_normal_aic <- round(log_normal$aic)
       
-      # if there is an error, fill object with NA
-     
-      
-      # get MLE
-      log_normal_mle <- paste0(log_normal$estimate[1], ' ', log_normal$estimate[2])
-     
+      if(is_advanced){
+        # get bootstrap values
+        log_normal_boot <- fitdistrplus::bootdist(log_normal, niter = 1000)
+        mle_1 <- log_normal_boot[[6]]$estimate[1]
+        mle_2 <- log_normal_boot[[6]]$estimate[2]
+        mle_1_lower <- log_normal_boot[[5]][[3]]
+        mle_2_lower <- log_normal_boot[[5]][[4]]
+        mle_1_upper <- log_normal_boot[[5]][[5]]
+        mle_2_upper <- log_normal_boot[[5]][[6]]
+      } else {
+        # get aic
+        mle_1 <- log_normal$estimate[1] 
+        mle_2 <- log_normal$estimate[2]
+        mle_1_lower <- NA
+        mle_2_lower <-NA
+        mle_1_upper <- NA
+        mle_2_upper <- NA
+      }
+   
     }
     # create dat frame to store aic and MLEs
     log_normal_dat <- data_frame(name = 'log_normal',
                                   aic = log_normal_aic,
-                                  mle_1 = log_normal$estimate[1],
-                                  mle_2 = log_normal$estimate[2])
-    # upper_mle_1 = log_normal_upper_mle_1,
-    # lower_mle_1 = log_normal_lower_mle_1,
-    # upper_mle_2 = log_normal_upper_mle_2,
-    # lower_mle_2 = log_normal_lower_mle_2)
-    
+                                  mle_1 = mle_1,
+                                  mle_2 = mle_2,
+                                 mle_1_lower =mle_1_lower,
+                                 mle_2_lower = mle_2_lower,
+                                 mle_1_upper = mle_1_upper,
+                                 mle_2_upper = mle_2_upper)
+   
     beta <- try(eBeta_ab(sub_dat$value, method = "numerical.MLE"), silent = TRUE)
     if(class(beta) == 'try-error'){
       beta <- NULL
       beta_aic <- NA
-      beta$shape1 <- NA
-      beta$shape2 <- NA
-      beta_mle <- c(beta$shape1, beta$shape2)
+      mle_1 <- NA
+      mle_2 <- NA
+      mle_1_lower <- NA
+      mle_2_lower <-NA
+      mle_1_upper <- NA
+      mle_2_upper <- NA
     } else {
       beta_ll <- lBeta_ab(X = sub_dat$value, params = beta, logL = TRUE)
       beta_aic <- -(2*beta_ll + 2)
-      beta_mle <- c(beta$shape1, beta$shape2)
+      mle_1 <- beta$shape1
+      mle_2 <- beta$shape2
+      mle_1_lower <- NA
+      mle_2_lower <-NA
+      mle_1_upper <- NA
+      mle_2_upper <- NA
       
       # beta_aic <- round(beta$aic, 4)
      
     }
     beta_dat <- data_frame(name = 'beta',
                             aic = round(beta_aic, 4),
-                            mle_1 = beta_mle[1],
-                            mle_2 = beta_mle[2])
+                           mle_1 = mle_1,
+                           mle_2 = mle_2,
+                           mle_1_lower =mle_1_lower,
+                           mle_2_lower = mle_2_lower,
+                           mle_1_upper = mle_1_upper,
+                           mle_2_upper = mle_2_upper)
     
     
     
@@ -410,80 +402,160 @@ get_aic_mle <- function(dat){
     
     # fit gamma
     # gamma <- fitdistr(sub_dat$value, 'gamma')
-    gamma <- try(fitdistrplus::fitdist(sub_dat$value, "gamma", start=list(shape=0.5, scale=1), method="mme"), silent = TRUE)
+    gamma <- try(fitdistrplus::fitdist(sub_dat$value, "gamma", start=list(shape=0.1, scale=0.1), method="mle"), silent = TRUE)
     
     if(class(gamma) == 'try-error'){
       gamma <- NULL
       gamma_aic <- NA
-      gamma$estimate[1] <- NA
-      gamma$estimate[2] <- NA
+      mle_1 <- NA
+      mle_2 <- NA
+      mle_1_lower <- NA
+      mle_2_lower <-NA
+      mle_1_upper <- NA
+      mle_2_upper <- NA
       
     } else {
-      # get aic
-      gamma_aic <- round(gamma$aic, 4)
-
-      # upper and lower bound for each estimate
-      # gamma_upper_mle_1 <- gamma$estimate[1] + gamma$sd[1]
-      # gamm_lower_mle_1 <- gamma$estimate[1] - gamma$sd[1]
-      #
-      # gamma_upper_mle_2 <- gamma$estimate[2] + gamma$sd[2]
-      # gamma_lower_mle_2 <- gamma$estimate[2] - gamma$sd[2]
-      #
-      # get mle
-      gamma_mle <- paste0(gamma$estimate[1], ' ', gamma$estimate[2])
+      gamma_aic <- round(gamma$aic)
+      
+      if(is_advanced){
+        # get bootstrap values
+        gamma_boot <- fitdistrplus::bootdist(gamma, niter = 1000)
+        mle_1 <- gamma_boot[[6]]$estimate[1]
+        mle_2 <- gamma_boot[[6]]$estimate[2]
+        mle_1_lower <- gamma_boot[[5]][[3]]
+        mle_2_lower <- gamma_boot[[5]][[4]]
+        mle_1_upper <- gamma_boot[[5]][[5]]
+        mle_2_upper <- gamma_boot[[5]][[6]]
+      } else {
+        # get aic
+        mle_1 <- gamma$estimate[1] 
+        mle_2 <- gamma$estimate[2]
+        mle_1_lower <- NA
+        mle_2_lower <-NA
+        mle_1_upper <- NA
+        mle_2_upper <- NA
+      }
     }
+    # create dat frame to store aic and MLEs
     gamma_dat <- data_frame(name = 'gamma',
-                             aic = gamma_aic,
-                             mle_1 = gamma$estimate[1],
-                             mle_2 = gamma$estimate[2])
-
-    # upper_mle_1 = log_normal_upper_mle_1,
-    # lower_mle_1 = log_normal_lower_mle_1,
-    # upper_mle_2 = log_normal_upper_mle_2,
-    # lower_mle_2 = log_normal_lower_mle_2)
+                                 aic = gamma_aic,
+                                 mle_1 = mle_1,
+                                 mle_2 = mle_2,
+                                 mle_1_lower =mle_1_lower,
+                                 mle_2_lower = mle_2_lower,
+                                 mle_1_upper = mle_1_upper,
+                                 mle_2_upper = mle_2_upper)
+    
     
     
     
     # fit frechet
-    # dfrechet(sub_dat$value, lambda = 1, mu = 1, sigma = 1, log = TRUE)
-    frechet <- try(fitdistrplus::fitdist(sub_dat$value, "frechet", start=list(scale=0.1, shape=0.1), method="mle"),
+    # dfrechet(sub_dat$value, lambda = 1, mu = 1, sigma = 1, log = FALSE)
+    frechet <- try(fitdistrplus::fitdist(sub_dat$value, "frechet", start=list(lambda=0.1, mu=0.1, sigma = 0.1), method="mle"),
                    silent = TRUE)
     if(class(frechet) == 'try-error'){
       frechet <- NULL
       frechet_aic <- NA
-      frechet$estimate[1] <- NA
-      frechet$estimate[2] <- NA
+      mle_1 <- NA
+      mle_2 <- NA
+      mle_1_lower <- NA
+      mle_2_lower <-NA
+      mle_1_upper <- NA
+      mle_2_upper <- NA
       
     } else {
-      frechet_aic <- round(frechet$aic, 4)
-      # get mle
-      frechet_mle <- paste0(frechet$estimate[1], ' ', frechet$estimate[2])
+      frechet_aic <- round(frechet$aic)
+      
+      if(is_advanced){
+        # get bootstrap values
+        frechet_boot <- fitdistrplus::bootdist(frechet, niter = 1000)
+        mle_1 <- frechet_boot[[6]]$estimate[1]
+        mle_2 <- frechet_boot[[6]]$estimate[2]
+        mle_1_lower <- frechet_boot[[5]][[3]]
+        mle_2_lower <- frechet_boot[[5]][[4]]
+        mle_1_upper <- frechet_boot[[5]][[5]]
+        mle_2_upper <- frechet_boot[[5]][[6]]
+      } else {
+        # get aic
+        mle_1 <- frechet$estimate[1] 
+        mle_2 <- frechet$estimate[2]
+        mle_1_lower <- NA
+        mle_2_lower <-NA
+        mle_1_upper <- NA
+        mle_2_upper <- NA
+      }
     }
+    # create dat frame to store aic and MLEs
     frechet_dat <- data_frame(name = 'frechet',
-                               aic = frechet_aic,
-                               mle_1 = frechet$estimate[1],
-                               mle_2 = frechet$estimate[2])
+                                 aic = frechet_aic,
+                                 mle_1 = mle_1,
+                                 mle_2 = mle_2,
+                                 mle_1_lower =mle_1_lower,
+                                 mle_2_lower = mle_2_lower,
+                                 mle_1_upper = mle_1_upper,
+                                 mle_2_upper = mle_2_upper)
     
     
     
     # git gumbel
-    gumbel_fit <- try(fit_gumbel(sub_dat$value), silent = TRUE)
+    
+    # dgumbel function
+    dgumbel <- function(x,mu,s){ # PDF
+      exp((mu - x)/s - exp((mu - x)/s))/s
+    }
+    
+    # pgumbel function
+    pgumbel <- function(q,mu,s){ # CDF
+      exp(-exp(-((q - mu)/s)))
+    }
+    
+    # qgumbel function
+    qgumbel <- function(p, mu, s){ # quantile function
+      mu-s*log(-log(p))
+    }
+    
+    gumbel_fit <- try(fitdistrplus::fitdist(sub_dat$value, "gumbel", start=list(mu=0.1, s=0.1), method="mle"), silent = TRUE)
     if(class(gumbel_fit) == 'try-error'){
       gumbel_fit <- NULL
       gumbel_aic <- NA
-      gumbel_fit$estimate[1] <- NA
-      gumbel_fit$estimate[2] <- NA
+      mle_1 <- NA
+      mle_2 <- NA
+      mle_1_lower <- NA
+      mle_2_lower <-NA
+      mle_1_upper <- NA
+      mle_2_upper <- NA
       
     } else {
-      gumbel_aic <- round(gumbel_fit$aic, 4)
-      # get mle
-      gumbel_mle <- paste0(gumbel_fit$estimate[1], ' ', gumbel_fit$estimate[2])
+     gumbel_aic <- round(gumbel_fit$aic)
+      
+      if(is_advanced){
+        # get bootstrap values
+        gumbel_boot <- fitdistrplus::bootdist(gumbel_fit, niter = 1000)
+        mle_1 <- gumbel_boot[[6]]$estimate[1]
+        mle_2 <- gumbel_boot[[6]]$estimate[2]
+        mle_1_lower <- gumbel_boot[[5]][[3]]
+        mle_2_lower <- gumbel_boot[[5]][[4]]
+        mle_1_upper <- gumbel_boot[[5]][[5]]
+        mle_2_upper <- gumbel_boot[[5]][[6]]
+      } else {
+        # get aic
+        mle_1 <- gumbel_fit$estimate[1] 
+        mle_2 <- gumbel_fit$estimate[2]
+        mle_1_lower <- NA
+        mle_2_lower <-NA
+        mle_1_upper <- NA
+        mle_2_upper <- NA
+      }
     }
+    # create dat frame to store aic and MLEs
     gumbel_dat <- data_frame(name = 'gumbel',
-                              aic = gumbel_aic,
-                              mle_1 = gumbel_fit$estimate[1],
-                              mle_2 = gumbel_fit$estimate[2])
-    
+                                 aic = gumbel_aic,
+                                 mle_1 = mle_1,
+                                 mle_2 = mle_2,
+                                 mle_1_lower =mle_1_lower,
+                                 mle_2_lower = mle_2_lower,
+                                 mle_1_upper = mle_1_upper,
+                                 mle_2_upper = mle_2_upper)
     
     
     # fit weibull
@@ -491,43 +563,76 @@ get_aic_mle <- function(dat){
     if(class(weibull) == 'try-error'){
       weibull <- NULL
       weibull_aic <- NA
-      weibull$estimate[1] <- NA
-      weibull$estimate[2] <- NA
-      
+      mle_1 <- NA
+      mle_2 <- NA
+      mle_1_lower <- NA
+      mle_2_lower <-NA
+      mle_1_upper <- NA
+      mle_2_upper <- NA
     } else {
-      weibull_aic <- round(weibull$aic, 4)
-     
+      weibull_aic <- round(weibull$aic)
       
-      # get mle
-      weibull_mle <- paste0(weibull$estimate[1], ' ', weibull$estimate[2])
-      
+      if(is_advanced){
+        # get bootstrap values
+        weibull_boot <- fitdistrplus::bootdist(weibull, niter = 1000)
+        mle_1 <- weibull_boot[[6]]$estimate[1]
+        mle_2 <- weibull_boot[[6]]$estimate[2]
+        mle_1_lower <- weibull_boot[[5]][[3]]
+        mle_2_lower <- weibull_boot[[5]][[4]]
+        mle_1_upper <- weibull_boot[[5]][[5]]
+        mle_2_upper <- weibull_boot[[5]][[6]]
+      } else {
+        # get aic
+        mle_1 <- weibull$estimate[1] 
+        mle_2 <- weibull$estimate[2]
+        mle_1_lower <- NA
+        mle_2_lower <-NA
+        mle_1_upper <- NA
+        mle_2_upper <- NA
+      }
     }
+    # create dat frame to store aic and MLEs
     weibull_dat <- data_frame(name = 'weibull',
-                               aic = weibull_aic,
-                               mle_1 = weibull$estimate[1],
-                               mle_2 = weibull$estimate[2])
-    
-    
+                                 aic = weibull_aic,
+                                 mle_1 = mle_1,
+                                 mle_2 = mle_2,
+                                 mle_1_lower =mle_1_lower,
+                                 mle_2_lower = mle_2_lower,
+                                 mle_1_upper = mle_1_upper,
+                                 mle_2_upper = mle_2_upper)
     
     # fit pareto
     pareto <-try(ParetoPosStable::pareto.fit(sub_dat$country, estim.method = 'MLE'), silent = TRUE)
     if(class(pareto) == 'try-error'){
       pareto <- NULL
       pareto_aic <- NA
-      pareto$estimate[1] <- NA
-      pareto$estimate[2] <- NA
+      mle_1 <- NA
+      mle_2 <- NA
+      mle_1_lower <- NA
+      mle_2_lower <-NA
+      mle_1_upper <- NA
+      mle_2_upper <- NA
       
     } else {
       pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
       
       # get mle
-      pareto_mle <- paste0(pareto$estimate[1], ' ', pareto$estimate[2])
+      mle_1 <- pareto$estimate[1]
+      mle_2 <- pareto$estimate[2]
+      mle_1_lower <- NA
+      mle_2_lower <-NA
+      mle_1_upper <- NA
+      mle_2_upper <- NA
      
     }
     pareto_dat <- data_frame(name = 'pareto',
                               aic = pareto_aic,
-                              mle_1 = pareto$estimate[[1]],
-                              mle_2 = pareto$estimate[[2]])
+                             mle_1 = mle_1,
+                             mle_2 = mle_2,
+                             mle_1_lower =mle_1_lower,
+                             mle_2_lower = mle_2_lower,
+                             mle_1_upper = mle_1_upper,
+                             mle_2_upper = mle_2_upper)
     
     
     
@@ -542,7 +647,7 @@ get_aic_mle <- function(dat){
                           pareto_dat)
     
     # change names of variable
-    names(aic_mle_dat) <- c('distribution', 'aic', 'mle1', 'mle2')
+    names(aic_mle_dat) <- c('distribution', 'aic', 'mle1', 'mle2', 'mle1_lower', 'mle2_lower', 'mle1_upper', 'mle2_upper')
     
     # capitalize and remove underscore of distribution
     aic_mle_dat$distribution <- Hmisc::capitalize(aic_mle_dat$distribution)
@@ -554,6 +659,7 @@ get_aic_mle <- function(dat){
     aic_mle_dat$peril <- peril_name
     
     dat_list[[i]] <- aic_mle_dat
+    print(i)
     
   }
   
@@ -692,6 +798,9 @@ make_simulation <- function(dis_name, dat){
       sim <- NA
     }  else {
       sim <- rlnorm(n = 15000, meanlog = dat$`mle1`, sdlog = dat$`mle2`)
+      sim_lower <- rlnorm(n = 15000, meanlog = dat$`mle1_lower`, sdlog = dat$`mle2_lower`)
+      sim_upper <- rlnorm(n = 15000, meanlog = dat$`mle1_upper`, sdlog = dat$`mle2_upper`)
+     
     }
   } else if (dis_name == 'Gamma'){
     if(any(is.na(dat$aic))){
@@ -699,44 +808,64 @@ make_simulation <- function(dis_name, dat){
     }  else {
       # check to see how much seed matters
       sim <- rgamma(n = 15000, shape = dat$`mle1`, scale = dat$`mle2`)
+      sim_lower <- rgamma(n = 15000, shape = dat$`mle1_lower`, scale = dat$`mle2_lower`)
+      sim_upper <- rgamma(n = 15000, shape = dat$`mle1_upper`, scale = dat$`mle2_upper`)
+      
     }
   } else if (dis_name == 'Beta'){
     if(any(is.na(dat$aic))){
       sim <- NA
     } else {
       sim <- rbeta(n = 15000, shape1 = dat$`mle1`, scale2 = dat$`mle2`)
+      sim_lower <- rbeta(n = 15000, shape1 = dat$`mle1_lower`, scale2 = dat$`mle2_lower`)
+      sim_upper <- rbeta(n = 15000, shape1 = dat$`mle1_upper`, scale2 = dat$`mle2_upper`)
+      
     }
   }  else if (dis_name == 'Frechet'){
     if(any(is.na(dat$aic))){
       sim <- NA
     }  else {
-      sim <- rfrechet(n = 15000, loc=0, scale=dat$`mle1`, shape=dat$`mle2`)
+      sim <- rfrechet(n = 15000,lambda = dat$`mle1`, mu = dat$`mle2`)
+      sim_lower <- rfrechet(n = 15000,lambda = dat$`mle1_lower`, mu = dat$`mle2_lower`)
+      sim_upper <- rfrechet(n = 15000,lambda = dat$`mle1_upper`, mu = dat$`mle2_upper`)
+      
     }
   } else if (dis_name == 'Gumbel'){
     if(any(is.na(dat$aic))){
       sim <- NA
     } else {
       sim <- actuar::rgumbel(n = 15000, alpha = dat$`mle1`, scale = dat$`mle2`)
+      sim_lower <- actuar::rgumbel(n = 15000, alpha = dat$`mle1_lower`, scale = dat$`mle2_lower`)
+      sim_upper <- actuar::rgumbel(n = 15000, alpha = dat$`mle1_upper`, scale = dat$`mle2_upper`)
+      
     }
   } else if (dis_name == 'Weibull'){
     if(any(is.na(dat$aic))){
       sim <- NA
     }  else {
       sim <- rweibull(n = 15000, shape = dat$`mle1`, scale = dat$`mle2`)
+      sim_lower <- rweibull(n = 15000, shape = dat$`mle1_lower`, scale = dat$`mle2_lower`)
+      sim_upper <- rweibull(n = 15000, shape = dat$`mle1_upper`, scale = dat$`mle2_upper`)
+      
     }
   } else {
     if(any(is.na(dat$aic))){
       sim <- NA
     }  else {
       sim <- extraDistr::rpareto(n = 15000, a = dat$`mle1`, b = dat$`mle2`)
+      sim_lower <- extraDistr::rpareto(n = 15000, a = dat$`mle1_lower`, b = dat$`mle2_lower`)
+      sim_upper <- extraDistr::rpareto(n = 15000, a = dat$`mle1_upper`, b = dat$`mle2_upper`)
+      
     }
   }
+  sim <- as.data.frame(cbind(sim, sim_lower, sim_upper))
+
   return(sim)
 }
 
 
 
-fit_distribution <- function(the_right_data = NULL){
+fit_distribution <- function(the_right_data = NULL, advanced_mode){
   require(tidyverse)
   # the right data should be either scaled, detrended or core data, depending on inputs
   
@@ -749,7 +878,7 @@ fit_distribution <- function(the_right_data = NULL){
   }
   if(ok){
     the_right_data <- the_right_data[the_right_data$value > 0,]
-    out <- get_aic_mle(the_right_data)
+    out <- get_aic_mle(the_right_data, is_advanced = advanced_mode)
     # save(out, file = 'out.RData')
   }
   return(out)
@@ -799,11 +928,6 @@ prepare_simulations <- function(fitted_distribution = NULL,
     dist_earthquake = 'Gamma'  
   }
   
-  
-  
-  
-  
-  
   out <- NULL
   ok <- FALSE
   if(!is.null(fitted_distribution)){
@@ -840,9 +964,8 @@ run_simulations <- function(prepared_simulation_data = NULL, prepared_frequency_
   }
   
   if(ok){
-    if(nrow(prepared_simulation_data) != 4){
-      message('Prepared simulation data should have more than 4 rows')
-    }
+    # load(file = 'new_pre_data.RData')
+    prepared_simulation_data <- prepared_simulation_data %>% filter(!is.na(aic))
     perils <- sort(unique(prepared_simulation_data$peril))
     names(prepared_frequency_data) <- c('peril', 'freq')
     # The following is fake data code
@@ -853,12 +976,17 @@ run_simulations <- function(prepared_simulation_data = NULL, prepared_frequency_
       sub_peril_freq <- prepared_frequency_data %>% filter(peril == this_peril)
       x <-make_simulation(dis_name = sub_peril$distribution, dat = sub_peril)
       out_list[[i]] <- tibble(key = this_peril,
-                              value = x,
+                              value = x$sim,
+                              value_lower = x$sim_lower,
+                              value_upper = x$sim_upper,
                               # freq is still not working
                               freq = sub_peril_freq$freq) %>% 
-        mutate(outcome = freq * value)
+        mutate(outcome = freq * value,
+               outcome_lower = freq * value_lower,
+               outcome_upper = freq * value_upper)
     }
     out <- bind_rows(out_list)
+
     # returns a dataframe with key, value, freq, n, and outcome
   }
   return(out)
@@ -1041,9 +1169,20 @@ quant_that <- function(dat_sim,
   if(is.null(dat)){
     dat <- dat_sim
   }
-  num_years = 16
+  save(dat_sim, file = 'quant_that.RData')
+  # get normal point estimate
   output <- quantile(dat_sim$value,c(0.8,0.9, 0.96,0.98,0.99))
-  annual_avg = round(sum(dat$value)/num_years, 2)
+  annual_avg = round(mean(dat_sim$value), 2)
+  
+  # get upper point estimate
+  annual_avg_upper <- round(mean(dat_sim$value_upper), 2) 
+  output_upper <- quantile(dat_sim$value_upper,c(0.8,0.9, 0.96,0.98,0.99), na.rm = TRUE)
+  
+  # lower point estimate
+  annual_avg_lower <- round(mean(dat_sim$value_lower), 2)
+  output_lower <- quantile(dat_sim$value_lower,c(0.8,0.9, 0.96,0.98,0.99), na.rm = TRUE)
+  
+  
   
   # create sub_data frame sub_dat to store output with chart labels
   sub_dat <- data_frame(`Annual average` = annual_avg,
@@ -1057,6 +1196,10 @@ quant_that <- function(dat_sim,
   
   # melt the sub_data frame to get value and variable
   sub_dat <- melt(sub_dat)
+  sub_dat$value_lower <- c(annual_avg_lower, output_lower[1], output_lower[2], output_lower[3], output_lower[4],
+                           output_lower[5], max(dat$value), dat$value[nrow(dat)]) 
+  sub_dat$value_upper <- c(annual_avg_upper, output_upper[1], output_upper[2], output_upper[3], output_upper[4],
+                           output_upper[5], max(dat$value), dat$value[nrow(dat)])
   return(sub_dat)
 }
 

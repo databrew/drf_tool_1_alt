@@ -1,0 +1,51 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# App configuration
+
+## Installing software
+
+- Install R: 
+ - Windows: `https://cran.r-project.org/bin/windows/base/`
+ - MAC: `https://courses.edx.org/courses/UTAustinX/UT.7.01x/3T2014/56c5437b88fa43cf828bff5371c6a924/`
+ - Linux: `https://www.r-bloggers.com/download-and-install-r-in-ubuntu/`
+
+- Install Rstudio:
+ - Windows: `https://rstudio.com/products/rstudio/download/`
+ - MAC:  `https://rstudio.com/products/rstudio/download/`
+ - Linux: `https://rstudio.com/products/rstudio/download/`
+ 
+- Install git 
+ - Windows: `https://www.atlassian.com/git/tutorials/install-git`
+ - MAC: `https://www.atlassian.com/git/tutorials/install-git`
+ - Linux: `https://www.atlassian.com/git/tutorials/install-git`
+ 
+## Installing R libraries
+
+For example
+
+```{r}
+# Only use this code once to install a library to your local computer.
+install.packages('ggplot2')
+
+# To use the libraries functions use this code everytime you run the app
+library(ggplot2)
+
+```
+
+## Cloning the app to your local computer
+
+- The URL to the github repository is `https://github.com/databrew/drf_tool_1_alt`
+- This can be done with in a "point and click manner" using github.com and/or rstudio. 
+- To clone via the terminal, simply open up a terminal (after installing git) and type `git clone https://github.com/databrew/drf_tool_1_alt`
+
+## Running the app
+
+- Open up app.R using RStuido (or the terminal) in the same directory (folder) you cloned the app to. 
+- If you do not have the libaries installed, the app won't run. Follow the instructions above to install each library.
+- Once installed, click on the "Run app" button in the top right hand side of app.R.
+
+
+

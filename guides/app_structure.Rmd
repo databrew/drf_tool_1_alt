@@ -1,0 +1,76 @@
+---
+output: 
+  pdf_document: default
+  html_document: default
+---
+# App repository structure
+
+## Repository name = drf_tool_1_alt
+
+### Files 
+
+1) global.R
+2) functions.R
+3) app.R
+4) .gitignore
+
+#### global.R Overview
+
+- Loads main R libraries for analysis.
+- Responsible for reading in all data: Country, archetype, inflation, gdp, and population.
+- Creates objects that store information for the app: input names for country, archetype, damage type, cost per person inputs, distribution names, and creates objects to store floating strings and numbers.
+- Combines Loss (total damage and cost per person) with frequency data.
+- Combines all scaling data.
+- Also houses some of the UI used in the app.
+
+#### functions.R 
+
+- Stores all the custom functions built for this app. 
+- Functions were built in the case where code could be generalized for multiple purposes. 
+- This script is sourced when the app is initiated.
+
+##### app.R
+
+- Consists of two main functions: (1) ui and (2) server. 
+- The UI builds the main aesthetic frame of the app and creates all the inputs for use in the server.
+- The Server houses all of the analysis: 
+ - "reactive dataframes" were used to dynamically take user inputs and create
+ dataframes for analysis.
+ - "reactive values" to control the flow of the app (landing page, going back and forth between tabs, etc)
+ - "UI outputs" to dynamically change the user interface based on inputs from the user. For example, displaying a choice of countries if the user chooses to view countries over archetypes.
+
+### Folders
+
+1) www
+2) rsconnect
+3) guides
+4) data
+
+##### www
+
+- Consists of .png and .jpg files for logos.
+- "custom.css" files that controls the aesthetics of the app.
+
+##### rsconnect
+
+- Houses shiny server information for deployment
+
+##### guides
+
+- Consists of .Rmd files to assist basic and advanced users, as well as a programmers guide to set up the app.
+
+##### data
+
+- Three subfolders: (1) Archetypes, (2) Countries, and (3) Scale.
+ - Archetypes: 
+  - (a) cost_data: This folder consists of all archetype data.
+  - (b) freq_data: This folder consists of the corresponding frequency data for archetypes.
+ - Countries:
+  - All the data from EM_DAT, OCHA, and DesInvenar.
+  - A key data set to identify which data source is best for each country.
+ - Scale:
+  - Contains all three datasets for scaling: Population, GDP, and Inlfation.
+
+
+
+
