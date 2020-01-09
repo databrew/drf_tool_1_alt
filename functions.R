@@ -47,6 +47,13 @@ get_best_data <- function(data){
   
 }
 
+detrend_linear_data <- function(dat){
+  # get linear predictions
+  fitted_values <- lm(data = sub_data, value ~ year)$fitted.values
+  sub_data$value <- fitted_values[1] + (sub_data$value - fitted_values)
+  return(sub_data)
+}
+
 expand_data <- function(data){
   data_combinations <- as.data.frame(expand.grid(year = unique(data$year), country = unique(data$country), peril = unique(data$peril), origin = unique(data$origin)))
   
@@ -1275,5 +1282,22 @@ bootstrap_cis <- function(grd){
     group_by(peril) %>%
     arrange(value)
 
+}
+
+test_linear_trend <- function(dat){
+  
+  peril_names <- unique(dat$peril)
+  result_list <- list()
+  for(i in 1:length(peril_names)){
+    this_peril <- peril_names[i]
+    sub_dat <- dat %>% filter(peril == this_peril)
+    lm_ob <- lm(data = sub_dat, value ~ year)
+    t_test <- t.test(lm_ob$fitted.values, sub_dat$value)$p.value
+    result_data <- data_frame(peril = this_peril,
+                              p_value = t_test)
+    result_list[[i]] <- result_data
+  }
+  out <- do.call('rbind', result_list)
+  return(out)
 }
 

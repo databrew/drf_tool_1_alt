@@ -1225,21 +1225,16 @@ server <- function(input, output, session) {
       return(NULL)
     } else {
       test_data <- sdr
+      # save(sdr, file = 'trend_data.RData')
       # split test_data by peril type
-      test_storm <-try(MannKendall(test_data$Outcome[test_data$peril == 'Storm'])$sl, silent = TRUE)
-      test_drought <-try(MannKendall(test_data$Outcome[test_data$peril == 'Drought'])$sl, silent = TRUE)
-      test_earthquake <-try(MannKendall(test_data$Outcome[test_data$peril == 'Earthquake'])$sl, silent = TRUE)
-      test_flood <-try(MannKendall(test_data$Outcome[test_data$peril == 'Flood'])$sl, silent = TRUE)
       
-      # concatanate
-      all_perils <- data_frame(peril = c('Storm', 'Drought', 'Earthquake', 'Flood'),
-                               p_value = c(test_storm,test_drought, test_earthquake, test_flood))
-      all_perils$p_value <- as.numeric(all_perils$p_value)
+      all_perils <- test_linear_trend(test_data)
       
       if(input$advanced == 'Basic'){
         return(NULL)
       } else {
         peril_names <- all_perils$peril[all_perils$p_value < 0.05 & !is.na(all_perils$p_value)]
+        # peril_names = c('Earthquake', 'Flood')
         if(identical(peril_names, character(0))){
           significant_trends(FALSE)
           fluidPage(
@@ -1255,7 +1250,6 @@ server <- function(input, output, session) {
         }
       }
     }
-    
   })
   
   execute_trend_test <- reactive({
@@ -1272,18 +1266,7 @@ server <- function(input, output, session) {
       return(NULL)
     } else {
       test_data <- sdr
-      # split test_data by peril type
-      test_storm <-try(MannKendall(test_data$Outcome[test_data$peril == 'Storm'])$sl, silent = TRUE)
-      test_drought <-try(MannKendall(test_data$Outcome[test_data$peril == 'Drought'])$sl, silent = TRUE)
-      test_earthquake <-try(MannKendall(test_data$Outcome[test_data$peril == 'Earthquake'])$sl, silent = TRUE)
-      test_flood <-try(MannKendall(test_data$Outcome[test_data$peril == 'Flood'])$sl, silent = TRUE)
-      
-      # concatanate
-      all_perils <- data_frame(peril = c('Storm', 'Drought', 'Earthquake', 'Flood'),
-                               p_value = c(test_storm,test_drought, test_earthquake, test_flood))
-      all_perils$p_value <- as.numeric(all_perils$p_value)
-      
-      
+      all_perils <- test_linear_trend(test_data)
       if(input$advanced == 'Basic'){
         return(NULL)
       } else {
@@ -1292,12 +1275,6 @@ server <- function(input, output, session) {
     }
     
   })
-  
-  
-  
-  # reactive object to correct for trend
-  # trend_perils <- all_perils
-  # trend_perils$p_value[trend_perils$peril == 'Storm'] <- 0.03
   
   correct_trend <- reactive({
     if(is.null(input$trend_test) | is.null(execute_trend_test())){
@@ -1308,19 +1285,26 @@ server <- function(input, output, session) {
         return(NULL)
       }
       trend_perils <- execute_trend_test()
+      trend_data <- scale_data_reactive()
+    
       peril_type <- trend_perils$peril[trend_perils$p_value <= 0.05 & !is.na(trend_perils$p_value)]
       
       # split data into 3 groups - loss trend perils, loss other perils, and other data
-      trend_data <- scale_data_reactive()
+      
       second_part <- trend_data[[2]]
       trend_data <- trend_data[[1]]
       trend_data_peril <-  trend_data[trend_data$peril %in% peril_type,]
       
       # apply trend to trend data for both trends
+      # When there is a p-value large than 0.05 the
+      # Tool replaces a past year value with 
+      # (linear prediction at starting year + (original value – linear prediction on the given year)).
+     
       data_list <- list()
       for(i in 1:length(peril_type)){
         peril <- peril_type[i]
         sub_data <- trend_data[trend_data$peril == peril,]
+        sub_data <- detrend_linear_data(sub_data)
         sub_data$trend_value <- detrend(sub_data$value)
         data_list[[i]] <- sub_data
       }
@@ -1332,9 +1316,6 @@ server <- function(input, output, session) {
       final_data[[2]] <- second_part
       return(final_data)
     }
-    
-    
-    
   })
   
   
