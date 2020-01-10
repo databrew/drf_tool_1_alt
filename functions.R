@@ -311,11 +311,14 @@ plot_bar <- function(temp_dat, bar_color, border_color, alpha, plot_title){
   
 }
 
-
+get_aic <- function(llhood){
+  aic <- (-2*llhood) + 2
+}
 
 get_aic_mle <- function(dat, is_advanced){
   # get aic mle  by looping through perils 
-
+  # save(dat, file = 'prefit.RData')
+  
   dat <- dat[dat$value > 0,]
   temp <- dat %>% group_by(peril) %>% summarise(counts = sum(value))
   present_perils <- unique(temp$peril)
@@ -338,7 +341,7 @@ get_aic_mle <- function(dat, is_advanced){
       mle_1_upper <- NA
       mle_2_upper <- NA
     } else {
-      log_normal_aic <- round(log_normal$aic)
+      log_normal_aic <- round(log_normal$aic,2)
       
       if(is_advanced){
         # get bootstrap values
@@ -390,11 +393,11 @@ get_aic_mle <- function(dat, is_advanced){
       mle_1_upper <- NA
       mle_2_upper <- NA
       
-      # beta_aic <- round(beta$aic, 4)
+      beta_aic <- round(beta$aic, 2)
      
     }
     beta_dat <- data_frame(name = 'beta',
-                            aic = round(beta_aic, 4),
+                            aic = beta_aic,
                            mle_1 = mle_1,
                            mle_2 = mle_2,
                            mle_1_lower =mle_1_lower,
@@ -409,9 +412,7 @@ get_aic_mle <- function(dat, is_advanced){
     
     # fit gamma
     # gamma <- fitdistr(sub_dat$value, 'gamma')
-    gamma <- try(fitdistrplus::fitdist(sub_dat$value, "gamma", start=list(shape=0.1, scale=0.1), method="mle"), silent = TRUE)
-    
-    if(class(gamma) == 'try-error'){
+    if(nrow(sub_dat) < 4){
       gamma <- NULL
       gamma_aic <- NA
       mle_1 <- NA
@@ -420,42 +421,24 @@ get_aic_mle <- function(dat, is_advanced){
       mle_2_lower <-NA
       mle_1_upper <- NA
       mle_2_upper <- NA
-      
+      # create dat frame to store aic and MLEs
+      gamma_dat <- data_frame(name = 'gamma',
+                              aic = gamma_aic,
+                              mle_1 = mle_1,
+                              mle_2 = mle_2,
+                              mle_1_lower =mle_1_lower,
+                              mle_2_lower = mle_2_lower,
+                              mle_1_upper = mle_1_upper,
+                              mle_2_upper = mle_2_upper)
     } else {
-      gamma_aic <- round(gamma$aic)
-      
       if(is_advanced){
-        # get bootstrap values
-        gamma_boot <- fitdistrplus::bootdist(gamma, niter = 1000)
-        mle_1 <- gamma_boot[[6]]$estimate[1]
-        mle_2 <- gamma_boot[[6]]$estimate[2]
-        mle_1_lower <- gamma_boot[[5]][[3]]
-        mle_2_lower <- gamma_boot[[5]][[4]]
-        mle_1_upper <- gamma_boot[[5]][[5]]
-        mle_2_upper <- gamma_boot[[5]][[6]]
+        gamma_dat <- bootstrap_gamma(dat = sub_dat, num_iter = 1000)
       } else {
-        # get aic
-        mle_1 <- gamma$estimate[1] 
-        mle_2 <- gamma$estimate[2]
-        mle_1_lower <- NA
-        mle_2_lower <-NA
-        mle_1_upper <- NA
-        mle_2_upper <- NA
+        gamma_dat <- bootstrap_gamma(dat = sub_dat, num_iter = 1)
       }
     }
-    # create dat frame to store aic and MLEs
-    gamma_dat <- data_frame(name = 'gamma',
-                                 aic = gamma_aic,
-                                 mle_1 = mle_1,
-                                 mle_2 = mle_2,
-                                 mle_1_lower =mle_1_lower,
-                                 mle_2_lower = mle_2_lower,
-                                 mle_1_upper = mle_1_upper,
-                                 mle_2_upper = mle_2_upper)
     
-    
-    
-    
+
     # fit frechet
     # dfrechet(sub_dat$value, lambda = 1, mu = 1, sigma = 1, log = FALSE)
     frechet <- try(fitdistrplus::fitdist(sub_dat$value, "frechet", start=list(lambda=0.1, mu=0.1, sigma = 0.1), method="mle"),
@@ -471,7 +454,7 @@ get_aic_mle <- function(dat, is_advanced){
       mle_2_upper <- NA
       
     } else {
-      frechet_aic <- round(frechet$aic)
+      frechet_aic <- round(frechet$aic,2)
       
       if(is_advanced){
         # get bootstrap values
@@ -533,7 +516,7 @@ get_aic_mle <- function(dat, is_advanced){
       mle_2_upper <- NA
       
     } else {
-     gumbel_aic <- round(gumbel_fit$aic)
+     gumbel_aic <- round(gumbel_fit$aic,2)
       
       if(is_advanced){
         # get bootstrap values
@@ -577,7 +560,7 @@ get_aic_mle <- function(dat, is_advanced){
       mle_1_upper <- NA
       mle_2_upper <- NA
     } else {
-      weibull_aic <- round(weibull$aic)
+      weibull_aic <- round(weibull$aic, 2)
       
       if(is_advanced){
         # get bootstrap values
@@ -642,7 +625,7 @@ get_aic_mle <- function(dat, is_advanced){
                              mle_2_upper = mle_2_upper)
     
     
-    
+   
     
     # create a dat frame out of dat results
     aic_mle_dat <- rbind(log_normal_dat,
@@ -885,8 +868,9 @@ fit_distribution <- function(the_right_data = NULL, advanced_mode){
   }
   if(ok){
     the_right_data <- the_right_data[the_right_data$value > 0,]
+    # save(the_right_data, file = 'out.RData')
+    
     out <- get_aic_mle(the_right_data, is_advanced = advanced_mode)
-    # save(out, file = 'out.RData')
   }
   return(out)
 }
@@ -1301,3 +1285,131 @@ test_linear_trend <- function(dat){
   return(out)
 }
 
+
+run_newton_raphson <- function(f, df, x0, eps=1e-08, maxiter=1000, ...) {
+  
+  if(!exists("ginv")) library(MASS)
+  x <- x0
+  t <- 0
+  
+  repeat {
+    
+    t <- t + 1
+    x.new <- x - as.numeric(ginv(df(x, ...)) %*% f(x, ...))
+    if(mean(abs(x.new - x)) < eps | t >= maxiter) {
+      
+      if(t >= maxiter) warning("Maximum number of iterations reached!")
+      break
+      
+    }
+    x <- x.new
+    
+  }
+  
+  out <- list(solution=x.new, value=f(x.new, ...), iter=t)
+  return(out)
+  
+}
+
+
+
+## Auxiliary functions
+
+# Derivative of the gamma log-likelihood
+
+dl <- function(theta, X, n) {
+  
+  alpha <- theta[1]
+  beta <- theta[2]
+  o1 <- -n * log(beta) - n * digamma(alpha) + sum(log(X))
+  o2 <- -n * alpha / beta + n * mean(X) / beta**2
+  return(c(o1, o2))
+  
+}
+
+# Second derivative of the gamma log-likelihood
+
+ddl <- function(theta, X, n) {
+  
+  alpha <- theta[1]
+  beta <- theta[2]
+  o11 <- -n * trigamma(alpha)
+  o12 <- -n / beta
+  o22 <- -n * (2 * mean(X) / beta**3 - alpha / beta**2)
+  return(matrix(c(o11, o12, o12, o22), 2, 2, byrow=TRUE))
+  
+}
+
+# Gamma method of moments estimation
+
+gamma_mme <- function(X) {
+  
+  m <- mean(X)
+  v <- var(X)
+  return(c(m**2 / v, v / m))
+  
+}
+
+
+
+gamma_fit <- function(dat, num_iter){
+  x <- dat$value
+  n <- length(x)
+  mme <- gamma_mme(x)                             # method of moments estimator
+  mle <- run_newton_raphson(dl, ddl, mme, X=x, n=n)$solution  # maximum likelihood estimator
+  alpha = mle[1]
+  beta = mle[2]
+  
+  # sufficient stats:
+  xbar <- mean(x)
+  logxbar <- mean(log(x))
+  rhs <- log(xbar) - logxbar
+  # init
+  ll_hood <- sum(dgamma(x,shape = alpha,scale=beta,log=TRUE))
+  return(list(ll_hood = ll_hood, alpha = alpha, beta = beta))
+}
+
+# function for implementing bootstrap using gamma_mle_ll
+bootstrap_gamma <- function(dat, num_iter){
+  gamma_results <- list()
+  for(i in 1:num_iter){
+    set.seed(i)
+    dat <- dat %>% dplyr::filter(value > 0)
+    if(num_iter == 1){
+      sample_index <- 1:nrow(dat)
+    } else {
+      sample_index <- sample(1:nrow(dat), nrow(dat), replace = TRUE)
+    }
+    # get new data 
+    new_data <- dat[sample_index,]
+    test_error <- try(newton_rapshon <- gamma_fit(new_data), silent = TRUE)
+    if(class(test_error) == 'try-error'){
+      gamma_data <- data_frame(aic = NA, mle1 = NA, mle2 = NA)
+    } else {
+      ll_hood <- newton_rapshon$ll_hood
+      mle1 <- newton_rapshon$alpha
+      mle2 <- newton_rapshon$beta
+      aic <- get_aic(ll_hood)
+      gamma_data <- data_frame(aic = aic, mle1 = mle1, mle2 = mle2)
+    }
+    gamma_results[[i]] <- gamma_data
+  }
+  fitted_data <- do.call('rbind', gamma_results)
+  # get aic at the 50th percentile
+  aic <- quantile(fitted_data$aic, 0.5, na.rm = TRUE)
+  # get mle1 and mle2, lower mid and upper
+  mles_1 <- quantile(fitted_data$mle1, c(0.025, 0.5, 0.975), na.rm = TRUE)
+  mles_2 <- quantile(fitted_data$mle2, c(0.025, 0.5, 0.975), na.rm = TRUE)
+  # store results in dataframe
+  out <- data_frame(name = 'Gamma', 
+                    aic = aic,
+                    mle_1 = mles_1[2],
+                    mle_2 = mles_2[2],
+                    mle_1_lower = mles_1[1],
+                    mle_2_lower = mles_2[1],
+                    mle_1_upper = mles_1[3],
+                    mle_2_upper = mles_2[3])
+  
+  return(out)
+  
+}

@@ -281,7 +281,7 @@ body <- dashboardBody(
                     fluidPage(
                       br(),
                       checkboxInput('ci',
-                                    'CI under construction (only generated in advanced mode)',
+                                    'CI (only generated in advanced mode)',
                                     value = FALSE),
                       fluidRow(
                         box(title = "",
@@ -1374,6 +1374,7 @@ server <- function(input, output, session) {
     
     rd <- get_right_data()
     rd <- rd[[1]]
+    #save(rd, file = 'file_to_test.RData')
     temp <- fit_distribution(rd, advanced_mode = is_advanced)
     return(temp)
   })
@@ -1827,7 +1828,7 @@ server <- function(input, output, session) {
       plot_title <- paste0('Estimate of Annual Loss by ', sp, ' for ','\n', input$country )
     }
     
-    if(input$ci){
+    if(input$ci & input$advanced == 'Advanced'){
       # Plot
       g <- ggplot(plot_dat, aes(x=variable,
                                 y=value/scale_size,
@@ -1924,7 +1925,7 @@ server <- function(input, output, session) {
       
       plot_dat <- output
       # get budget
-      if(input$ci){
+      if(input$ci & input$advanced == 'Advanced'){
         
         g <- ggplot(plot_dat, aes(Probability, `Total Loss`/scale_size)) +
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
@@ -2023,7 +2024,7 @@ server <- function(input, output, session) {
       plot_title <- paste0('Estimate of Annual Loss by severity for ', sp, '\n',input$country )
     }
     
-    if(input$ci){
+    if(input$ci & input$advanced == 'Advanced'){
 
       g <- ggplot(plot_dat, aes(x=variable,
                                 y=value/scale_size,
@@ -2142,7 +2143,7 @@ server <- function(input, output, session) {
      curve$value_upper <- curve_upper$`Funding gap`
      
 
-      if(input$ci){
+      if(input$ci & input$advanced == 'Advanced'){
         
         g <-  ggplot(curve, aes(`Probability of exceeding loss`, `Funding gap`/scale_size)) +
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
