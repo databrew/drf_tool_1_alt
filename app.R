@@ -3,6 +3,10 @@ library(shiny)
 library(shinydashboard)
 library(tidyverse)
 library(shinyjs)
+library(shinyBS)
+library(shinyjqui)
+library(bsplus)
+
 
 # Source the data set-up and functions built for analysis
 source('functions.R')
@@ -2280,8 +2284,6 @@ server <- function(input, output, session) {
         vb3 <- valueBox(value = '', subtitle = '',
                         width = 3)
       }
-      
-      
       out <- fluidPage(
         fluidRow(
           column(3,

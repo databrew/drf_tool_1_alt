@@ -317,7 +317,7 @@ get_aic <- function(llhood){
 
 get_aic_mle <- function(dat, is_advanced){
   # get aic mle  by looping through perils 
-  # save(dat, file = 'prefit.RData')
+  save(dat, file = 'prefit.RData')
   
   dat <- dat[dat$value > 0,]
   temp <- dat %>% group_by(peril) %>% summarise(counts = sum(value))
@@ -373,37 +373,43 @@ get_aic_mle <- function(dat, is_advanced){
                                  mle_1_upper = mle_1_upper,
                                  mle_2_upper = mle_2_upper)
    
-    beta <- try(eBeta_ab(sub_dat$value, method = "numerical.MLE"), silent = TRUE)
-    if(class(beta) == 'try-error'){
+    if(nrow(sub_dat) < 4){
       beta <- NULL
       beta_aic <- NA
       mle_1 <- NA
       mle_2 <- NA
+      mle_3 <- NA
+      mle_4 <- NA
       mle_1_lower <- NA
       mle_2_lower <-NA
+      mle_3_lower <- NA
+      mle_4_lower <- NA
       mle_1_upper <- NA
       mle_2_upper <- NA
+      mle_3_upper <- NA
+      mle_4_upper <- NA
+      # create dat frame to store aic and MLEs
+      beta_dat <- data_frame(name = 'beta',
+                              aic = beta_aic,
+                              mle_1 = mle_1,
+                              mle_2 = mle_2,
+                              mle_3 = mle_3,
+                              mle_4 = mle_4,
+                              mle_1_lower =mle_1_lower,
+                              mle_2_lower = mle_2_lower,
+                              mle_3_lower = mle_3_lower,
+                              mle_4_lower = mle_4_lower,
+                              mle_1_upper = mle_1_upper,
+                              mle_2_upper = mle_2_upper,
+                              mle_3_upper = mle_3_upper,
+                              mle_4_upper = mle_4_upper)
     } else {
-      beta_ll <- lBeta_ab(X = sub_dat$value, params = beta, logL = TRUE)
-      beta_aic <- -(2*beta_ll + 2)
-      mle_1 <- beta$shape1
-      mle_2 <- beta$shape2
-      mle_1_lower <- NA
-      mle_2_lower <-NA
-      mle_1_upper <- NA
-      mle_2_upper <- NA
-      
-      beta_aic <- round(beta$aic, 2)
-     
+      if(is_advanced){
+        beta_dat <- bootstrap_beta(dat = sub_dat, num_iter = 30)
+      } else {
+        beta_dat <- bootstrap_beta(dat = sub_dat, num_iter = 1)
+      }
     }
-    beta_dat <- data_frame(name = 'beta',
-                            aic = beta_aic,
-                           mle_1 = mle_1,
-                           mle_2 = mle_2,
-                           mle_1_lower =mle_1_lower,
-                           mle_2_lower = mle_2_lower,
-                           mle_1_upper = mle_1_upper,
-                           mle_2_upper = mle_2_upper)
     
     
     
@@ -592,7 +598,7 @@ get_aic_mle <- function(dat, is_advanced){
                                  mle_2_upper = mle_2_upper)
     
     # fit pareto
-    pareto <-try(ParetoPosStable::pareto.fit(sub_dat$country, estim.method = 'MLE'), silent = TRUE)
+    pareto <- try(fitdistrplus::fitdist(sub_dat$value, "pareto", start=list(a=0.1, b=0.1), method="mle"), silent = TRUE)
     if(class(pareto) == 'try-error'){
       pareto <- NULL
       pareto_aic <- NA
@@ -602,33 +608,40 @@ get_aic_mle <- function(dat, is_advanced){
       mle_2_lower <-NA
       mle_1_upper <- NA
       mle_2_upper <- NA
-      
     } else {
-      pareto_aic <- round(-(2*pareto$loglik) + 2, 4)
+      pareto_aic <- round(pareto$aic, 2)
       
-      # get mle
-      mle_1 <- pareto$estimate[1]
-      mle_2 <- pareto$estimate[2]
-      mle_1_lower <- NA
-      mle_2_lower <-NA
-      mle_1_upper <- NA
-      mle_2_upper <- NA
-     
+      if(is_advanced){
+        # get bootstrap values
+        pareto_boot <- fitdistrplus::bootdist(pareto, niter = 1000)
+        mle_1 <- pareto_boot[[6]]$estimate[1]
+        mle_2 <- pareto_boot[[6]]$estimate[2]
+        mle_1_lower <- pareto_boot[[5]][[3]]
+        mle_2_lower <- pareto_boot[[5]][[4]]
+        mle_1_upper <- pareto_boot[[5]][[5]]
+        mle_2_upper <- pareto_boot[[5]][[6]]
+      } else {
+        # get aic
+        mle_1 <- pareto$estimate[1] 
+        mle_2 <- pareto$estimate[2]
+        mle_1_lower <- NA
+        mle_2_lower <-NA
+        mle_1_upper <- NA
+        mle_2_upper <- NA
+      }
     }
+    # create dat frame to store aic and MLEs
     pareto_dat <- data_frame(name = 'pareto',
                               aic = pareto_aic,
-                             mle_1 = mle_1,
-                             mle_2 = mle_2,
-                             mle_1_lower =mle_1_lower,
-                             mle_2_lower = mle_2_lower,
-                             mle_1_upper = mle_1_upper,
-                             mle_2_upper = mle_2_upper)
-    
-    
-   
+                              mle_1 = mle_1,
+                              mle_2 = mle_2,
+                              mle_1_lower =mle_1_lower,
+                              mle_2_lower = mle_2_lower,
+                              mle_1_upper = mle_1_upper,
+                              mle_2_upper = mle_2_upper)
     
     # create a dat frame out of dat results
-    aic_mle_dat <- rbind(log_normal_dat,
+    aic_mle_dat <- bind_rows(log_normal_dat,
                           gamma_dat,
                           beta_dat,
                           frechet_dat,
@@ -636,8 +649,11 @@ get_aic_mle <- function(dat, is_advanced){
                           weibull_dat,
                           pareto_dat)
     
+    save(aic_mle_dat, file = 'test_cols.RData')
+    
     # change names of variable
-    names(aic_mle_dat) <- c('distribution', 'aic', 'mle1', 'mle2', 'mle1_lower', 'mle2_lower', 'mle1_upper', 'mle2_upper')
+    names(aic_mle_dat) <- c('distribution', 'aic', 'mle1', 'mle2', 'mle1_lower', 'mle2_lower', 'mle1_upper', 'mle2_upper',
+                            'mle3', 'mle4', 'mle3_lower', 'mle4_lower', 'mle3_upper', 'mle4_upper')
     
     # capitalize and remove underscore of distribution
     aic_mle_dat$distribution <- Hmisc::capitalize(aic_mle_dat$distribution)
@@ -806,9 +822,11 @@ make_simulation <- function(dis_name, dat){
     if(any(is.na(dat$aic))){
       sim <- NA
     } else {
-      sim <- rbeta(n = 15000, shape1 = dat$`mle1`, scale2 = dat$`mle2`)
-      sim_lower <- rbeta(n = 15000, shape1 = dat$`mle1_lower`, scale2 = dat$`mle2_lower`)
-      sim_upper <- rbeta(n = 15000, shape1 = dat$`mle1_upper`, scale2 = dat$`mle2_upper`)
+      sim <- rBeta_ab(n = 15000, shape1 = dat$`mle1`, shape2 = dat$`mle2`, a = dat$`mle3`, b = dat$`mle4`)
+      sim_lower <- rBeta_ab(n = 15000, shape1 = dat$`mle1_lower`, shape2 = dat$`mle2_lower`, 
+                            a = dat$`mle3_lower`, b = dat$`mle4_lower`)
+      sim_upper <- rBeta_ab(n = 15000, shape1 = dat$`mle1_upper`, shape2 = dat$`mle2_upper`, 
+                         a = dat$`mle3_upper`, b = dat$`mle4_upper`)
       
     }
   }  else if (dis_name == 'Frechet'){
@@ -1382,15 +1400,17 @@ bootstrap_gamma <- function(dat, num_iter){
     }
     # get new data 
     new_data <- dat[sample_index,]
-    test_error <- try(newton_rapshon <- gamma_fit(new_data), silent = TRUE)
-    if(class(test_error) == 'try-error'){
+    newton_rapshon <-try(gamma_fit(new_data), silent = TRUE)
+    if(class(newton_rapshon) == 'try-error'){
       gamma_data <- data_frame(aic = NA, mle1 = NA, mle2 = NA)
     } else {
       ll_hood <- newton_rapshon$ll_hood
       mle1 <- newton_rapshon$alpha
       mle2 <- newton_rapshon$beta
       aic <- get_aic(ll_hood)
-      gamma_data <- data_frame(aic = aic, mle1 = mle1, mle2 = mle2)
+      gamma_data <- data_frame(aic = aic, 
+                               mle1 = mle1, 
+                               mle2 = mle2)
     }
     gamma_results[[i]] <- gamma_data
   }
@@ -1405,10 +1425,474 @@ bootstrap_gamma <- function(dat, num_iter){
                     aic = aic,
                     mle_1 = mles_1[2],
                     mle_2 = mles_2[2],
+                    mle_3 = NA,
+                    mle_4 = NA,
                     mle_1_lower = mles_1[1],
                     mle_2_lower = mles_2[1],
+                    mle_3_lower = NA,
+                    mle_4_lower = NA,
                     mle_1_upper = mles_1[3],
-                    mle_2_upper = mles_2[3])
+                    mle_2_upper = mles_2[3],
+                    mle_3_upper = NA,
+                    mle_4_upper = NA)
+  
+  return(out)
+  
+}
+
+
+dBeta_ab <-function(x, shape1=2, shape2=3, a = 0, b=1, params = list(shape1, shape2, a, b),...){
+  if(!missing(params)){
+    shape1 <- params$shape1
+    shape2 <- params$shape2
+    a <- params$a
+    b <- params$b
+  }
+  out <- (x>=a & x<=b) * dbeta((x-a)/(b-a),shape1,shape2)/(b-a)
+  return(out)
+}
+
+
+pBeta_ab <- function(q, shape1=2, shape2=3, a = 0, b=1, params = list(shape1=2, shape2 = 5, a = 0, b = 1),...){
+  if(!missing(params)){
+    shape1 <- params$shape1
+    shape2 <- params$shape2
+    a <- params$a
+    b <- params$b
+  }
+  out <- pbeta((q-a)/(b-a),shape1,shape2)
+  return(out)
+}
+
+
+qBeta_ab <- function(p, shape1=2, shape2=3, a = 0, b=1, params = list(shape1=2, shape2 = 5, a = 0, b = 1),...){
+  if(!missing(params)){
+    shape1 <- params$shape1
+    shape2 <- params$shape2
+    a <- params$a
+    b <- params$b
+  }
+  out <- (b-a)*qbeta(p,shape1,shape2) + a
+  return(out)
+}
+
+
+rBeta_ab <- function(n, shape1=2, shape2=3, a = 0, b = 1, params = list(shape1, shape2, a, b),...){
+  if(!missing(params)){
+    shape1 <- params$shape1
+    shape2 <- params$shape2
+    a <- params$a
+    b <- params$b
+  }
+  X <- rbeta(n,shape1,shape2)
+  out <- (b-a)*X + a
+  return(out)
+}
+
+eBeta_ab <- function(X,w, method ="numerical.MLE",...){
+  n <- length(X)
+  
+  w <- rep(1,n)
+  
+  
+  {
+    if(method != "numerical.MLE") warning(paste("method ", method, " is not avaliable, use numerial.MLE instead."))  
+    method = "numerical.MLE"  
+    
+    d <- max(X)-min(X)
+    est.par <- wmle(X=X, w=w, distname = "Beta_ab",
+                    initial=list(shape1=3,shape2=3,a=min(X)-0.1*d,b=max(X)+0.1*d),
+                    lower=list(shape1=1,shape2=1,a=-Inf,b=max(X)),
+                    upper=list(shape1=Inf,shape2=Inf,a=min(X),b=Inf))
+    
+    est.par.se <- try(sqrt(diag(solve(attributes(est.par)$nll.hessian))),silent=TRUE)
+    if(class(est.par.se) == "try-error") {
+      est.par.se <- rep(NA, length(est.par))
+    } 
+  } 
+  
+  attributes(est.par)$ob <- X
+  attributes(est.par)$weights <- w
+  attributes(est.par)$distname <- "Beta_ab"
+  attributes(est.par)$method <- method
+  attributes(est.par)$par.name <- c("shape1","shape2","a","b")
+  attributes(est.par)$par.type <- c("shape","shape","boundary","boundary")
+  attributes(est.par)$par.vals <- c(est.par$shape1, est.par$shape2, est.par$a, est.par$b)
+  attributes(est.par)$par.s.e <-  est.par.se  
+  
+  class(est.par) <- "eDist"
+  
+  return(est.par)
+}
+
+
+## (weighted) (log) likelihood function
+lBeta_ab <- function(X, w, shape1=2, shape2 =3, a = 0, b = 1,  params = list(shape1, shape2, a, b), logL = TRUE,...){
+  if(!missing(params)){
+    shape1 <- params$shape1
+    shape2 <- params$shape2
+    a <- params$a
+    b <- params$b
+  }
+  
+  n <- length(X)
+  if(missing(w)){
+    w <- rep(1,n)
+  } else {
+    w <- n*w/sum(w)
+  }
+  
+  #     ll <- sum(w*((shape1-1)*log(X-a)+(shape2-1)*log(b-X)-log(beta(shape1,shape2))-(shape1+shape2-1)*log(b-a)))
+  ll <- sum(w*log(dBeta_ab(x=X,params = params)))
+  l <- exp(ll)
+  
+  if(logL) {return(ll)} else{return(l)}
+}
+
+## (weighted) score vectors
+sBeta_ab <- function(X, w, shape1=2, shape2 =3, a = 0, b = 1,  params = list(shape1, shape2, a, b),...){
+  if(!missing(params)){
+    shape1 <- params$shape1
+    shape2 <- params$shape2
+    a <- params$a
+    b <- params$b
+  }
+  
+  n <- length(X)
+  if(missing(w)){
+    w <- rep(1,n)
+  } else {
+    w <- n*w/sum(w)
+  }
+  
+  score1 <- sum(w*(digamma(shape1+shape2)-digamma(shape1)+log(X-a)-log(b-a)))
+  score2 <- sum(w*(digamma(shape1+shape2)-digamma(shape2)+log(b-X)-log(b-a)))
+  score3 <- sum(w*((shape1+shape2-1)/(b-a)-(shape1-1)/(X-a)))
+  score4 <- sum(w*((shape2-1)/(b-X)-(shape1+shape2-1)/(b-a)))
+  
+  score <- c(score1,score2,score3,score4)
+  names(score) <- c("shape1","shape2","a","b")
+  return(score)
+}
+
+
+# weighted maximum likelihood (we keep the weights constant)
+wmle <- function(X, w, distname, initial, lower, upper, loglik.fn, score.fn, obs.info.fn){
+    n <- length(X)
+    
+    w <- rep(1,n)
+    
+    w <- n*w/sum(w)
+    par.name <- names(initial)
+    
+    # prepare log-likelihood function (ll)
+    
+    if(exists(paste("l",distname,sep=""), mode = "function")) {
+      ldist <- get(paste("l",distname,sep=""))
+      ll <- function(params) {ldist(X,w,params=as.list(params))}
+    } else {
+      ddist <- get(paste("d",distname,sep=""))
+      ll <- function(params) {sum(w*log(ddist(x=X,params=as.list(params))))}
+    }
+    
+    nll <- function(par) {-ll(as.list(par))}
+    
+    # prepare gradient of log-likelihood function (ll.gr, score function)
+    
+    if(exists(paste("s",distname,sep=""), mode = "function")) {
+      gr <- TRUE
+      sdist <- get(paste("s",distname,sep=""))
+      ll.gr <- function(params) {sdist(X,w,params=params)}
+    } else {
+      gr <- FALSE
+    }
+    
+    # prepare hessian of log-likelihood function (ll.hess, score function)
+    if(exists(paste("i",distname,sep=""), mode = "function")) {
+      hess <- TRUE
+      idist <- get(paste("i",distname,sep=""))
+      ll.hess <- function(params) {-idist(X,w,params=params)}
+    } else {
+      hess <- FALSE
+    }
+    
+    # transform parameter space
+    # set rules to transform all bounded intervals to whole real line
+    num.par <- max(length(lower),length(upper))
+    trans.fn <- vector("list",num.par)
+    trans.fn.deriv <- vector("list",num.par)
+    trans.fn.dd <- vector("list",num.par)    
+    inv.trans.fn <- vector("list",num.par)
+    
+    for(k in 1:num.par) {
+      if(lower[[k]] == -Inf & upper[[k]] == Inf) {
+        trans.fn[[k]] <- function(y){y}
+        trans.fn.deriv[[k]] <- function(y) {1}
+        trans.fn.dd[[k]] <- function(y) {0}
+        inv.trans.fn[[k]] <- function(y){y}
+      } else if(lower[[k]] != -Inf & upper[[k]] == Inf) {
+        trans.fn[[k]] <- function(y){log(y-lower[[k]])}
+        body(trans.fn[[k]])[[2]] <- parse(text=gsub("k",k,body(trans.fn[[k]])[2],fixed=T))[[1]]
+        
+        trans.fn.deriv[[k]] <- function(y){1/(y-lower[[k]])}
+        body(trans.fn.deriv[[k]])[[2]] <- parse(text=gsub("k",k,body(trans.fn.deriv[[k]])[2],fixed=T))[[1]]
+        
+        trans.fn.dd[[k]] <- function(y){-1/(lower[[k]]-y)^2}
+        body(trans.fn.dd[[k]])[[2]] <- parse(text=gsub("k",k,body(trans.fn.dd[[k]])[2],fixed=T))[[1]]
+        
+        inv.trans.fn[[k]] <- function(y){lower[[k]]+exp(y)}
+        body(inv.trans.fn[[k]])[[2]] <- parse(text=gsub("k",k,body(inv.trans.fn[[k]])[2],fixed=T))[[1]]
+        
+      } else if(lower[[k]] == -Inf & upper[[k]] != Inf) {
+        trans.fn[[k]] <- function(y){log(upper[[k]]-y)}
+        body(trans.fn[[k]])[[2]] <- parse(text=gsub("k",k,body(trans.fn[[k]])[2],fixed=T))[[1]]
+        
+        trans.fn.deriv[[k]] <- function(y){-1/(upper[[k]]-y)}
+        body(trans.fn.deriv[[k]])[[2]] <- parse(text=gsub("k",k,body(trans.fn.deriv[[k]])[2],fixed=T))[[1]]
+        
+        trans.fn.dd[[k]] <- function(y){-1/(upper[[k]]-y)^2}
+        body(trans.fn.dd[[k]])[[2]] <- parse(text=gsub("k",k,body(trans.fn.dd[[k]])[2],fixed=T))[[1]]
+        
+        inv.trans.fn[[k]] <- function(y){upper[[k]]-exp(y)}
+        body(inv.trans.fn[[k]])[[2]] <- parse(text=gsub("k",k,body(inv.trans.fn[[k]])[2],fixed=T))[[1]]
+        
+      } else if(lower[[k]] != -Inf & upper[[k]] != Inf) {
+        trans.fn[[k]] <- function(y){logit((upper[[k]]-y)/(upper[[k]]-lower[[k]]))}
+        body(trans.fn[[k]])[[2]] <- parse(text=gsub("k",k,body(trans.fn[[k]])[2],fixed=T))[[1]]
+        
+        trans.fn.deriv[[k]] <- function(y){ ifelse(y==upper[[k]] | y==lower[[k]], -Inf, 1/(lower[[k]]-y)+1/(y-upper[[k]]))}
+        body(trans.fn.deriv[[k]])[[2]] <- parse(text=gsub("k",k,body(trans.fn.deriv[[k]])[2],fixed=T))[[1]]
+        
+        trans.fn.dd[[k]] <- function(y){ ifelse(y==upper[[k]], -Inf, ifelse(y==lower[[k]], Inf, 1/(lower[[k]]-y)^2-1/(y-upper[[k]])^2))}
+        body(trans.fn.dd[[k]])[[2]] <- parse(text=gsub("k",k,body(trans.fn.dd[[k]])[2],fixed=T))[[1]]
+        
+        inv.trans.fn[[k]] <- function(y){upper[[k]]-invlogit(y)*(upper[[k]]-lower[[k]])}
+        body(inv.trans.fn[[k]])[[2]] <- parse(text=gsub("k",k,body(inv.trans.fn[[k]])[2],fixed=T))[[1]]
+        
+      } else {
+        stop("the boundary parameters are not set appropriately!")
+      }
+    }
+    
+    # function transform point from original parameter space to transformed space
+    do.call.list <- function(what, args,...) {do.call(what=what,args=list(args),...)}
+    trans.par.fn <- function(point){
+      out <- mapply(do.call.list, trans.fn, point)
+      names(out) <- names(unlist(point))
+      return(as.list(out))
+    }
+    #     trans.par.fn(initial)
+    #     trans.par.fn(unlist(initial))
+    
+    # trans.initial - transformed initial point
+    trans.initial <- trans.par.fn(initial)
+    
+    # function transform point from transformed parameter space to original space
+    inv.trans.par.fn <- function(point){
+      out <- mapply(do.call.list, inv.trans.fn, point)
+      names(out) <- names(unlist(point))
+      return(as.list(out))
+    }
+    #     inv.trans.par.fn(trans.initial)
+    #     inv.trans.par.fn(unlist(trans.initial))
+    
+    # log-likelihood function for transformed parameters    
+    trans.ll <- function(trans.arg) { return(ll(inv.trans.par.fn(trans.arg)))}
+    trans.nll <- function(trans.arg) {-trans.ll(trans.arg)}
+    
+    
+    # gradient of ll function for transformed parameters 
+    if(gr==TRUE){
+      trans.ll.gr <- function(trans.arg) { 
+        inv.trans.arg <- vector("list",length = num.par)
+        deriv <- NULL
+        for(k in 1:num.par){
+          inv.trans.arg[[k]] <- as.numeric(inv.trans.fn[[k]](trans.arg[[k]]))
+          deriv[k] <- as.numeric(trans.fn.deriv[[k]](inv.trans.arg[[k]]))
+        }
+        names(inv.trans.arg) <- names(initial)
+        return(ll.gr(params <-  as.list(inv.trans.arg))/deriv)
+      }
+      trans.nll.gr <- function(trans.arg) {-trans.ll.gr(trans.arg)}
+      
+      # hessian of ll function for transformed parameters 
+      if(hess==TRUE){
+        trans.ll.hess <- function(trans.arg) { 
+          inv.trans.arg <- vector("list",length = num.par)
+          deriv <- NULL
+          dd <- NULL
+          for(k in 1:num.par){
+            inv.trans.arg[[k]] <- as.numeric(inv.trans.fn[[k]](trans.arg[[k]]))
+            deriv[k] <- as.numeric(trans.fn.deriv[[k]](inv.trans.arg[[k]]))
+            dd[k] <- as.numeric(trans.fn.dd[[k]](inv.trans.arg[[k]]))
+          }
+          names(inv.trans.arg) <- names(initial)
+          return( (ll.hess(params <- as.list(inv.trans.arg)) - diag(ll.gr(params <-  as.list(inv.trans.arg))/deriv*dd)) / 
+                    deriv%*%t(deriv) )
+        }
+        trans.nll.hess <- function(trans.arg) {-trans.ll.hess(trans.arg)}
+      }
+      
+    }
+    
+    ## maximize ll (minimize nll)
+    available.methods <- c("BFGS", "CG", "Nelder-Mead", "L-BFGS-B", "nlm", "nlminb")
+    
+    convergence <- FALSE
+    approx.rst.list <- NULL
+    for(method in available.methods) {
+      if(gr == TRUE){
+        if(hess == TRUE) {
+          rst <- try(suppressWarnings(optimx::optimx( par=unlist(trans.initial), fn=trans.nll, 
+                                                      gr=trans.nll.gr, hess=trans.nll.hess,
+                                                      method = method, hessian = TRUE)))
+        } else {
+          rst <- try(suppressWarnings(optimx::optimx( par=unlist(trans.initial), fn=trans.nll, 
+                                                      gr=trans.nll.gr, 
+                                                      method = method, hessian = TRUE)))
+        }
+      } else {
+        rst <- try(suppressWarnings(optimx::optimx( par=unlist(trans.initial), fn=trans.nll, 
+                                                    method = method, hessian = TRUE)))
+      }
+      
+      if(any(class(rst)=="try-error")) next
+      
+      if(with(rst,convcode!=0)) {approx.rst.list <- rbind(approx.rst.list, rst);next}
+      
+      trans.est.par <- coef(rst)
+      est.par <- as.vector(by(1:num.par, 1:num.par,FUN= function(k){inv.trans.fn[[k]](trans.est.par[[k]])}))
+      names(est.par) <- par.name
+      
+      if(!all(is.finite(est.par))) next
+      
+      if(with(rst, any(!is.na(c(kkt1,kkt2))) & all(kkt1,kkt2,na.rm=TRUE))) {
+        convergence <- TRUE
+        break
+      } else {
+        approx.rst.list <- rbind(approx.rst.list, rst)
+      }
+    }
+    
+    if(!convergence) {
+      rst <- approx.rst.list[with(approx.rst.list, value==min(value, NA.rm=T)),]
+      
+      trans.est.par <- coef(rst)
+      est.par <- as.vector(by(1:num.par, 1:num.par,FUN= function(k){inv.trans.fn[[k]](trans.est.par[[k]])}))
+      names(est.par) <- par.name
+    }
+    
+    est.par <- as.list(est.par)
+    
+    if(gr & is.numeric(attributes(rst)$details[[2]])){
+      deriv <- as.vector(by(1:num.par, 1:num.par,FUN= function(k){trans.fn.deriv[[k]](est.par[[k]])}))
+      
+      trans.nll.gr <- attributes(rst)$details[[2]]
+      nll.gr <- trans.nll.gr*deriv
+      names(nll.gr) <- par.name
+    } else {
+      nll.gr <- try(suppressWarnings(grad(nll, unlist(est.par))),silent=TRUE)
+      if(any(class(nll.gr)=="try-error")) {nll.gr <- rep(NA, num.par)}
+      names(nll.gr) <- par.name
+    }
+    
+    
+    if(hess) {
+      deriv <- as.vector(by(1:num.par, 1:num.par,FUN= function(k){trans.fn.deriv[[k]](est.par[[k]])}))
+      dd <- as.vector(by(1:num.par, 1:num.par,FUN= function(k){trans.fn.dd[[k]](est.par[[k]])}))
+      
+      trans.nll.hess <- attributes(rst)$details[[3]]
+      nll.hessian <- diag(trans.nll.gr*dd) + trans.nll.hess * (deriv%*%t(deriv))
+      colnames(nll.hessian) <- rownames(nll.hessian) <- par.name
+    } else{
+      nll.hessian <- pracma::hessian(nll,unlist(est.par))
+      colnames(nll.hessian) <- rownames(nll.hessian) <- par.name
+    }
+    
+    
+    attributes(est.par)$nll.hessian <- nll.hessian
+    attributes(est.par)$nll.gr <- nll.gr
+    attributes(est.par)$nll <- rst$value
+    
+    attributes(est.par)$optim.fn <- paste0("optimx-",attributes(rst)$details[[1]])
+    
+    return(est.par)  
+  }      
+
+## Auxiliary Functions 
+## logit: a mathematical function transforming [0,1] to [-Inf, Inf]
+logit <- 
+  function(x){
+    log(x/(1-x))
+  }
+
+## invlogit: Inverse of logit function; transform [-Inf, Inf] to [0,1]
+invlogit <- 
+  function(x){
+    1/(1+exp(-x))
+  }
+
+
+# function for implementing bootstrap using gamma_mle_ll
+bootstrap_beta <- function(dat, num_iter){
+  beta_results <- list()
+  for(i in 1:num_iter){
+    set.seed(i)
+    dat <- dat %>% dplyr::filter(value > 0)
+    if(num_iter == 1){
+      sample_index <- 1:nrow(dat)
+    } else {
+      sample_index <- sample(1:nrow(dat), nrow(dat), replace = TRUE)
+    }
+    # get new data 
+    new_data <- dat[sample_index,]
+    beta_ab_params <-  try(eBeta_ab(new_data$value), silent = TRUE)
+    if(class(beta_ab_params) == 'try-error'){
+      beta_data <- data_frame(aic = NA, 
+                              mle1 = NA, 
+                              mle2 = NA,
+                              mle3 = NA,
+                              mle4 = NA)
+    } else {
+      ll_hood <- lBeta_ab(X = new_data$value, params = list(shape1 = beta_ab_params$shape1,shape2= beta_ab_params$shape2, 
+                                                            a = 0, b = beta_ab_params$b))
+      mle1 <- beta_ab_params$shape1
+      mle2 <- beta_ab_params$shape2
+      mle3 <- 0
+      mle4 <- beta_ab_params$b
+      aic <- get_aic(llhood = ll_hood)
+      beta_data <- data_frame(aic = aic, 
+                              mle1 = mle1, 
+                              mle2 = mle2,
+                              mle3 = mle3,
+                              mle4 = mle4)
+    }
+    beta_results[[i]] <- beta_data
+  }
+  # save(beta_results, file = 'beta_results.RData')
+  fitted_data <- do.call('rbind', beta_results)
+  # get aic at the 50th percentile
+  aic <- quantile(fitted_data$aic, 0.5, na.rm = TRUE)
+  # get mle1 and mle2, lower mid and upper
+  mles_1 <- quantile(fitted_data$mle1, c(0.025, 0.5, 0.975), na.rm = TRUE)
+  mles_2 <- quantile(fitted_data$mle2, c(0.025, 0.5, 0.975), na.rm = TRUE)
+  mles_3 <- quantile(fitted_data$mle3, c(0.025, 0.5, 0.975), na.rm = TRUE)
+  mles_4 <- quantile(fitted_data$mle4, c(0.025, 0.5, 0.975), na.rm = TRUE)
+  # store results in dataframe
+  out <- data_frame(name = 'Beta', 
+                    aic = aic,
+                    mle_1 = mles_1[2],
+                    mle_2 = mles_2[2],
+                    mle_3 = mles_3[2],
+                    mle_4 = mles_4[2],
+                    mle_1_lower = mles_1[1],
+                    mle_2_lower = mles_2[1],
+                    mle_3_lower = mles_3[1],
+                    mle_4_lower = mles_4[1],
+                    mle_1_upper = mles_1[3], 
+                    mle_2_upper = mles_2[3],
+                    mle_3_upper = mles_3[3],
+                    mle_4_upper = mles_4[3])
   
   return(out)
   
