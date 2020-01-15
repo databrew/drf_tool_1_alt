@@ -294,8 +294,6 @@ read_in_archetype_freq_data <- function(archetype_data, archetype_names){
 
 }
 
-
-
 # create a plot for a generalized bar graph.
 plot_bar <- function(temp_dat, bar_color, border_color, alpha, plot_title){
   # get data based on country input
@@ -317,7 +315,7 @@ get_aic <- function(llhood){
 
 get_aic_mle <- function(dat, is_advanced){
   # get aic mle  by looping through perils 
-  save(dat, file = 'prefit.RData')
+  # save(dat, file = 'prefit.RData')
   
   dat <- dat[dat$value > 0,]
   temp <- dat %>% group_by(peril) %>% summarise(counts = sum(value))
@@ -405,19 +403,13 @@ get_aic_mle <- function(dat, is_advanced){
                               mle_4_upper = mle_4_upper)
     } else {
       if(is_advanced){
-        beta_dat <- bootstrap_beta(dat = sub_dat, num_iter = 30)
-      } else {
         beta_dat <- bootstrap_beta(dat = sub_dat, num_iter = 1)
+      } else {
+        beta_dat <- bootstrap_beta(dat = sub_dat, num_iter = 20)
       }
     }
     
     
-    
-    # EQUATION FOR AIC
-    # -2*loglikihood + k*npar, where k is generally 2 and npar is number of parameters in the model.
-    
-    # fit gamma
-    # gamma <- fitdistr(sub_dat$value, 'gamma')
     if(nrow(sub_dat) < 4){
       gamma <- NULL
       gamma_aic <- NA
@@ -1505,10 +1497,10 @@ eBeta_ab <- function(X,w, method ="numerical.MLE",...){
                     lower=list(shape1=1,shape2=1,a=-Inf,b=max(X)),
                     upper=list(shape1=Inf,shape2=Inf,a=min(X),b=Inf))
     
-    est.par.se <- try(sqrt(diag(solve(attributes(est.par)$nll.hessian))),silent=TRUE)
-    if(class(est.par.se) == "try-error") {
-      est.par.se <- rep(NA, length(est.par))
-    } 
+    # est.par.se <- try(sqrt(diag(solve(attributes(est.par)$nll.hessian))),silent=TRUE)
+    # if(class(est.par.se) == "try-error") {
+    est.par.se <- rep(NA, length(est.par))
+    # } 
   } 
   
   attributes(est.par)$ob <- X
@@ -1832,8 +1824,7 @@ invlogit <-
     1/(1+exp(-x))
   }
 
-
-# function for implementing bootstrap using gamma_mle_ll
+# # function for implementing bootstrap using gamma_mle_ll
 bootstrap_beta <- function(dat, num_iter){
   beta_results <- list()
   for(i in 1:num_iter){
@@ -1844,25 +1835,25 @@ bootstrap_beta <- function(dat, num_iter){
     } else {
       sample_index <- sample(1:nrow(dat), nrow(dat), replace = TRUE)
     }
-    # get new data 
+    # get new data
     new_data <- dat[sample_index,]
     beta_ab_params <-  try(eBeta_ab(new_data$value), silent = TRUE)
     if(class(beta_ab_params) == 'try-error'){
-      beta_data <- data_frame(aic = NA, 
-                              mle1 = NA, 
+      beta_data <- data_frame(aic = NA,
+                              mle1 = NA,
                               mle2 = NA,
                               mle3 = NA,
                               mle4 = NA)
     } else {
-      ll_hood <- lBeta_ab(X = new_data$value, params = list(shape1 = beta_ab_params$shape1,shape2= beta_ab_params$shape2, 
+      ll_hood <- lBeta_ab(X = new_data$value, params = list(shape1 = beta_ab_params$shape1,shape2= beta_ab_params$shape2,
                                                             a = 0, b = beta_ab_params$b))
       mle1 <- beta_ab_params$shape1
       mle2 <- beta_ab_params$shape2
       mle3 <- 0
       mle4 <- beta_ab_params$b
       aic <- get_aic(llhood = ll_hood)
-      beta_data <- data_frame(aic = aic, 
-                              mle1 = mle1, 
+      beta_data <- data_frame(aic = aic,
+                              mle1 = mle1,
                               mle2 = mle2,
                               mle3 = mle3,
                               mle4 = mle4)
@@ -1879,7 +1870,7 @@ bootstrap_beta <- function(dat, num_iter){
   mles_3 <- quantile(fitted_data$mle3, c(0.025, 0.5, 0.975), na.rm = TRUE)
   mles_4 <- quantile(fitted_data$mle4, c(0.025, 0.5, 0.975), na.rm = TRUE)
   # store results in dataframe
-  out <- data_frame(name = 'Beta', 
+  out <- data_frame(name = 'Beta',
                     aic = aic,
                     mle_1 = mles_1[2],
                     mle_2 = mles_2[2],
@@ -1889,11 +1880,79 @@ bootstrap_beta <- function(dat, num_iter){
                     mle_2_lower = mles_2[1],
                     mle_3_lower = mles_3[1],
                     mle_4_lower = mles_4[1],
-                    mle_1_upper = mles_1[3], 
+                    mle_1_upper = mles_1[3],
                     mle_2_upper = mles_2[3],
                     mle_3_upper = mles_3[3],
                     mle_4_upper = mles_4[3])
-  
   return(out)
-  
 }
+
+# # function for implementing bootstrap using gamma_mle_ll
+# library(doParallel)
+# library(foreach)
+# doParallel::registerDoParallel(cores = 2)
+# bootstrap_beta <- function(dat, num_iter){
+#   dat <- dat %>% dplyr::filter(value > 0)
+#   start_time <- Sys.time()
+#   final_out <- foreach(temp = 1:num_iter, .combine = rbind, .errorhandling = 'stop') %do% {
+#     set.seed(temp)
+#     
+#     if(num_iter == 1){
+#       sample_index <- 1:nrow(dat)
+#     } else {
+#       sample_index <- sample(1:nrow(dat), nrow(dat), replace = TRUE)
+#     }
+#     # get new data 
+#     new_data <- dat[sample_index,]
+#     beta_ab_params <-  try(eBeta_ab(new_data$value), silent = TRUE)
+#     if(class(beta_ab_params) == 'try-error'){
+#       beta_data <- data_frame(aic = NA, 
+#                               mle1 = NA, 
+#                               mle2 = NA,
+#                               mle3 = NA,
+#                               mle4 = NA)
+#     } else {
+#       ll_hood <- lBeta_ab(X = new_data$value, params = list(shape1 = beta_ab_params$shape1,shape2= beta_ab_params$shape2, 
+#                                                             a = 0, b = beta_ab_params$b))
+#       mle1 <- beta_ab_params$shape1
+#       mle2 <- beta_ab_params$shape2
+#       mle3 <- 0
+#       mle4 <- beta_ab_params$b
+#       aic <- get_aic(llhood = ll_hood)
+#       beta_data <- data_frame(aic = aic, 
+#                               mle1 = mle1, 
+#                               mle2 = mle2,
+#                               mle3 = mle3,
+#                               mle4 = mle4)
+#     }
+#   
+#   fitted_data <- beta_data
+#   # get aic at the 50th percentile
+#   aic <- quantile(fitted_data$aic, 0.5, na.rm = TRUE)
+#   # get mle1 and mle2, lower mid and upper
+#   mles_1 <- quantile(fitted_data$mle1, c(0.025, 0.5, 0.975), na.rm = TRUE)
+#   mles_2 <- quantile(fitted_data$mle2, c(0.025, 0.5, 0.975), na.rm = TRUE)
+#   mles_3 <- quantile(fitted_data$mle3, c(0.025, 0.5, 0.975), na.rm = TRUE)
+#   mles_4 <- quantile(fitted_data$mle4, c(0.025, 0.5, 0.975), na.rm = TRUE)
+#   # store results in dataframe
+#   out <- data_frame(name = 'Beta', 
+#                     aic = aic,
+#                     mle_1 = mles_1[2],
+#                     mle_2 = mles_2[2],
+#                     mle_3 = mles_3[2],
+#                     mle_4 = mles_4[2],
+#                     mle_1_lower = mles_1[1],
+#                     mle_2_lower = mles_2[1],
+#                     mle_3_lower = mles_3[1],
+#                     mle_4_lower = mles_4[1],
+#                     mle_1_upper = mles_1[3], 
+#                     mle_2_upper = mles_2[3],
+#                     mle_3_upper = mles_3[3],
+#                     mle_4_upper = mles_4[3])
+#   
+#   print(temp)
+#   final_out[temp] <- out
+#   }
+#   end_time <- Sys.time()
+#   start_time - end_time
+# }

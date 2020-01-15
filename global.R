@@ -1,13 +1,8 @@
-library(shiny)
-library(shinydashboard)
 library(DT)
 library(ggplot2)
-library(pracma)
 library(ggthemes)
-library(shinyjs)
 library(shinyWidgets)
 library(shinythemes)
-library(markdown)
 library(dplyr)
 library(htmltools)
 library(MASS)
@@ -15,7 +10,6 @@ library(reshape2)
 library(optimx)
 library(fitdistrplus)
 library(actuar)
-library(extraDistr)
 library(Hmisc)
 library(boot)
 library(tidyr)
@@ -69,6 +63,7 @@ scale_size = 1000000
 
 # for number of years in each time horizon
 num_years = 16
+
 
 ###########
 # read in country data

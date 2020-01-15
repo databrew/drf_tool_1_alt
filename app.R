@@ -1696,6 +1696,7 @@ server <- function(input, output, session) {
       
       dat_sim <- gather_perils()
       dat_sim <- dat_sim %>% filter(!is.na(value))
+      # save(dat_sim, file = 'exceed.RData')
       # get budget
       exceed_budget <- input$exceed_budget
       budget <- exceed_budget + budget
@@ -1713,7 +1714,7 @@ server <- function(input, output, session) {
       output$Probability <- 1 - output$Probability
       # save(output, budget, file = 'prob_exceed.RData')
       # find where budget equals curve
-      prob_exceed_surplus_deficit <- output$Probability[which.min(abs(output$`Total Loss` - budget))]
+      prob_exceed_surplus_deficit <- output$Probability[which.min(abs(output$`Total Loss` - (budget*scale_size)))]
       return(prob_exceed_surplus_deficit)
       
     }
@@ -1827,9 +1828,9 @@ server <- function(input, output, session) {
     is_archetype <- input$data_type == 'Archetype'
     # get country input for plot title
     if(is_archetype){
-      plot_title <- paste0('Estimate of Annual Loss by ', sp, ' for ', '\n',input$archetype )
+      plot_title <- paste0('Estimate of Annual Loss by ', '\n', sp, ' for ', '\n',input$archetype )
     } else {
-      plot_title <- paste0('Estimate of Annual Loss by ', sp, ' for ','\n', input$country )
+      plot_title <- paste0('Estimate of Annual Loss by ', '\n', sp, ' for ','\n', input$country )
     }
     
     if(input$ci & input$advanced == 'Advanced'){
@@ -1903,13 +1904,13 @@ server <- function(input, output, session) {
       is_archetype <- input$data_type == 'Archetype'
       # get country input for plot title
       if(is_archetype){
-        plot_title <- paste0('Loss exceedance curve by ', sp, '\n', ' for ', input$archetype  )
+        plot_title <- paste0('Loss exceedance curve by ', '\n', sp, '\n', ' for ', input$archetype  )
       } else {
-        plot_title <- paste0('Loss exceedance curve by ', sp, '\n',' for ', input$country )
+        plot_title <- paste0('Loss exceedance curve by ',  '\n',sp, '\n',' for ', input$country )
       }      
       # caption 
       exceed_budget <- paste0('Probability of exceeding budget = ', prob_exceed)
-      plot_title <- paste0(plot_title, ' : ', exceed_budget)
+      plot_title <- paste0(plot_title, ' : ',  '\n',exceed_budget)
       
       # budget <- input$budget
       output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
@@ -2023,9 +2024,9 @@ server <- function(input, output, session) {
     is_archetype <- input$data_type == 'Archetype'
     # get country input for plot title
     if(is_archetype){
-      plot_title <- paste0('Estimate of Annual Loss by severity for ', sp, '\n',input$archetype )
+      plot_title <- paste0('Estimate of Annual Loss by severity for ',  '\n',sp, '\n',input$archetype )
     } else {
-      plot_title <- paste0('Estimate of Annual Loss by severity for ', sp, '\n',input$country )
+      plot_title <- paste0('Estimate of Annual Loss by severity for ', '\n', sp, '\n',input$country )
     }
     
     if(input$ci & input$advanced == 'Advanced'){
@@ -2092,27 +2093,31 @@ server <- function(input, output, session) {
       largest_loss_year <- dat$year[dat$value == max(dat$value)]
       exceed_budget <- input$exceed_budget
       
+      # scale up budget and exceed budget
+      exceed_budget <- exceed_budget*scale_size
+      budget <- budget*scale_size
+      
       # get country input for plot title
       if(budget == 0){
         is_archetype <- input$data_type == 'Archetype'
         # get country input for plot title
         if(is_archetype){
-          plot_title <- paste0('Estimate of Annual Funding gap by', sp, ' for ', '\n',input$archetype )
+          plot_title <- paste0('Estimate of Annual Funding gap by', '\n', sp, ' for ', '\n',input$archetype )
         } else {
-          plot_title <- paste0('Estimate of Annual Funding gap by ', sp, ' for ','\n', input$country )
+          plot_title <- paste0('Estimate of Annual Funding gap by ', '\n', sp, ' for ','\n', input$country )
         }
         
       } else {
         is_archetype <- input$data_type == 'Archetype'
         # get country input for plot title
         if(is_archetype){
-          plot_title <- paste0('Estimate of Annual Funding gap by', sp, ' for ', '\n',input$archetype )
+          plot_title <- paste0('Estimate of Annual Funding gap by', '\n', sp, ' for ', '\n',input$archetype )
         } else {
-          plot_title <- paste0('Estimate of Annual Funding gap by ', sp, ' for ','\n', input$country )
+          plot_title <- paste0('Estimate of Annual Funding gap by ',  '\n',sp, ' for ','\n', input$country )
         }
         
         exceed_surplus_deficit <- paste0('Probability of exceeding funding gap/surplus by \n', exceed_budget, ' is ', prob_exceed_suprplus_deficit)
-        plot_title <- paste0(plot_title, ' : ', exceed_surplus_deficit)
+        plot_title <- paste0(plot_title, ' : ',  '\n',exceed_surplus_deficit)
         
       }
       
@@ -2155,7 +2160,7 @@ server <- function(input, output, session) {
           geom_line(aes(`Probability of exceeding loss`, value_upper/scale_size), linetype = 'dotted') +
           scale_x_reverse(position = 'top') +
           ylab('') +
-          geom_hline(yintercept = 0, size = 2) +
+          geom_hline(yintercept = -(exceed_budget/scale_size), size = 2) +
           ggtitle(plot_title) +
           theme_bw(base_size = 14,
                    base_family = 'Ubuntu')
@@ -2166,7 +2171,7 @@ server <- function(input, output, session) {
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
           scale_x_reverse(position = 'top') +
           ylab('') +
-          geom_hline(yintercept = 0, size = 2) +
+          geom_hline(yintercept = -(exceed_budget/scale_size), size = 2) +
           ggtitle(plot_title) +
           theme_bw(base_size = 14,
                    base_family = 'Ubuntu')
