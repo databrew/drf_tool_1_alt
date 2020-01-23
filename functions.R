@@ -1,52 +1,5 @@
-# normalize data
-normalize_data <- function(x, add_decimal, dec = NULL){
-  min_x <- min(x)
-  max_x <- max(x)
-  z <- (x - min_x)/(max_x - min_x)
-  if(add_decimal){
-    min_z <- min(z)
-    max_z <- max(z)
-    z[z==max_z] <- max_z - dec
-    z[z==min_z] <- min_z + dec
-    
-  }
-  return(z)
-}
 
-get_best_data <- function(data){
-  # define a for loop
-  data_list <- list()
-  
-  for(i in 1:length(countries)){
-    country_name <- countries[i]
-    sub_dat <- data[data$country == country_name,]
-    if(length(unique(sub_dat$origin)) > 1) {
-      num_emdat <- nrow(sub_dat[sub_dat$origin == 'EMDAT',])
-      num_des <- nrow(sub_dat[sub_dat$origin == 'DesInventar',])
-      if(num_emdat >= num_des){
-        sub_dat$best_data[sub_dat$origin == 'EMDAT'] <- TRUE
-        sub_dat$best_data[sub_dat$origin == 'DesInventar'] <- FALSE
-        
-      } else {
-        sub_dat$best_data[sub_dat$origin == 'EMDAT'] <- FALSE
-        sub_dat$best_data[sub_dat$origin == 'DesInventar'] <- TRUE
-      }
-    } else {
-      sub_dat$best_data <- TRUE
-    }
-    data_list[[i]] <- sub_dat
-  }
-  
-  # get dataframe back wih new variable
-  data <- do.call('rbind', data_list)
-  
-  # # keep only best data
-  # data <- data[data$best_data == TRUE,]
-  # data$best_data <- NULL
-  return(data)
-  
-}
-
+# this function takes a dataset an returns the detreneded data set.
 detrend_linear_data <- function(dat){
   # get linear predictions
   fitted_values <- lm(data = sub_data, value ~ year)$fitted.values
@@ -54,6 +7,7 @@ detrend_linear_data <- function(dat){
   return(sub_data)
 }
 
+# this function takes an arbitrary data set and exapands from long form to wide form.
 expand_data <- function(data){
   data_combinations <- as.data.frame(expand.grid(year = unique(data$year), country = unique(data$country), peril = unique(data$peril), origin = unique(data$origin)))
   
@@ -69,6 +23,7 @@ expand_data <- function(data){
   
 }
 
+# this function simulates the frequency data based on the mle of bernoulli.
 sim_bern <- function(the_right_data = NULL){
   # save(the_right_data, file = 'the_right_data.RData')
   require(tidyverse)
@@ -110,7 +65,7 @@ sim_bern <- function(the_right_data = NULL){
   return(out)
 }
 
-# data <- cost_freq
+# this function fills NAs with 0, used for the frequency data
 fill_na <- function(data){
   
   data_list <- list()
@@ -127,52 +82,55 @@ fill_na <- function(data){
   return(out)
 }
 
-
-
+# this function takes the path to the archetype data and name of archeytpe and reads in and cleans archetype data
 read_in_archetype_cost_data <- function(archetype_data, archetype_names){
-
-
   # read in loss data
+  # high risk middle income, storms, floods, earthquakes
   hr_mi_sfe <- read.csv(paste0('data/Archetypes/',archetype_data, '/hr_mi_sfe_cost.csv'), stringsAsFactors = FALSE)
-  # change column names
+ 
+   # change column names
   names(hr_mi_sfe) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   hr_mi_sfe$Archetype <- archetype_names[1]
 
+  # low income drought
   li_d_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_d_cost.csv'),  stringsAsFactors = FALSE)
   names(li_d_cost) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   li_d_cost$Archetype <-  archetype_names[4]
 
+  # low in come drought, flood, and storm
   li_dfs_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_dfs_cost.csv'), stringsAsFactors = FALSE)
   names(li_dfs_cost) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   li_dfs_cost$Archetype <-  archetype_names[6]
 
+  # low income, storm, flood and earth quake
   li_sfe_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_sfe_cost.csv'), stringsAsFactors = FALSE)
   names(li_sfe_cost) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   li_sfe_cost$Archetype <-  archetype_names[5]
 
+  # middle income flood
   mi_f_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/mi_f_cost.csv'), stringsAsFactors = FALSE)
   names(mi_f_cost) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   mi_f_cost$Archetype <-  archetype_names[2]
 
+  # upper midlle income storm, flood, earthquake
   umi_sfe_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/umi_sfe_cost.csv'),  stringsAsFactors = FALSE)
   names(umi_sfe_cost) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   umi_sfe_cost$Archetype <-  archetype_names[3]
 
+  # combine data
   out <- rbind(hr_mi_sfe,
                li_d_cost,
                li_dfs_cost,
                li_sfe_cost,
                mi_f_cost,
                umi_sfe_cost)
+  
+  # name data
   out$data_type <- 'archetype_cost'
-
-
-
   return(out)
-
-
 }
 
+# this function takes the country name and reads in loss, cost, population.
 read_in_country_data <- function(country_name) {
 
   # create path
@@ -180,25 +138,20 @@ read_in_country_data <- function(country_name) {
 
   # read in loss data
   loss_data <- read.csv(paste0(path_to_file, 'data_loss.csv'))
-
   names(loss_data) <- c('Country', 'Year', 'Peril', 'Outcome')
-
   loss_data$data_type <- 'Loss'
 
   # read in cost data
   cost_data <- read.csv(paste0(path_to_file, 'data_cost.csv'))
-
   names(cost_data) <- c('Country', 'Year', 'Peril', 'Outcome')
-
   cost_data$data_type <- 'Cost'
 
   # read in population data
   pop_data <-  read.csv(paste0(path_to_file, 'data_pop.csv'))
-
   all_data  <- plyr::rbind.fill(loss_data,
                            cost_data)
 
-  # joine with pop data
+  # join with pop data
   all_data <- left_join(all_data, pop_data, by = c('Year', 'Country'))
 
   # read om freq for loss
@@ -220,15 +173,12 @@ read_in_country_data <- function(country_name) {
   all_data_freq$Country <- country_name
 
   out <- plyr::rbind.fill(all_data, all_data_freq)
-
-
-
   return(out)
-
 }
 
+# This function takes the archetype path and name and reads in frequency data for archetypes.
 read_in_archetype_freq_data <- function(archetype_data, archetype_names){
-  # read in loss data
+  # high risk middle income storms, floods, earthquakes
   hr_mi_sfe <- read.csv(paste0('data/Archetypes/',archetype_data, '/hr_mi_sfe_freq.csv'))
 
   # change names
@@ -237,7 +187,7 @@ read_in_archetype_freq_data <- function(archetype_data, archetype_names){
   names(hr_mi_sfe) <- c('Year', 'Peril', 'Count')
   hr_mi_sfe$Archetype <- archetype_names[[1]]
 
-  # read in loss data
+  # upper middle income storms, floods, earthquakes.
   umi_sfe <- read.csv(paste0('data/Archetypes/',archetype_data, '/umi_sfe_freq.csv'))
   names(umi_sfe)[ncol(umi_sfe)] <- 'Drought'
 
@@ -246,15 +196,16 @@ read_in_archetype_freq_data <- function(archetype_data, archetype_names){
   names(umi_sfe) <- c('Year', 'Peril', 'Count')
   umi_sfe$Archetype <- archetype_names[[3]]
 
-  # read in loss data
+  # middle income floods
   mi_f <- read.csv(paste0('data/Archetypes/',archetype_data, '/mi_f_freq.csv'))
   names(mi_f) <-  c('Year', 'Flood', 'Drought', 'Storm', 'Earthquake')
 
+  # change names
   mi_f <- melt(mi_f, id.vars = 'Year')
   names(mi_f) <- c('Year', 'Peril', 'Count')
   mi_f$Archetype <- archetype_names[[2]]
 
-  # read in loss data
+  # low income storms, floods, earthquakes.
   li_sfe <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_sfe_freq.csv'))
   names(li_sfe)[1] <- 'Year'
   names(li_sfe)[ncol(li_sfe)]  <-'Drought'
@@ -264,17 +215,19 @@ read_in_archetype_freq_data <- function(archetype_data, archetype_names){
   names(li_sfe) <- c('Year', 'Peril', 'Count')
   li_sfe$Archetype <- archetype_names[[5]]
 
-  # read in loss data
+  # lower income drought
   li_d <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_d_freq.csv'))
   names(li_d) <- c('Year', 'Drought','Storm', 'Earthquake', 'Flood')
+  
   # change names
   li_d <- melt(li_d, id.vars = 'Year')
   names(li_d) <- c('Year', 'Peril', 'Count')
   li_d$Archetype <- archetype_names[[4]]
 
-  # read in loss data
+  # lower income droughts, floods, storms
   li_dfs <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_dfs_freq.csv'))
   names(li_dfs) <- 'Year'
+  
   # change names
   names(li_dfs)[ncol(li_dfs)] <- 'Earthquake'
   li_dfs <- melt(li_dfs, id.vars = 'Year')
@@ -288,46 +241,35 @@ read_in_archetype_freq_data <- function(archetype_data, archetype_names){
                            mi_f,
                            umi_sfe)
   out$data_type <- 'archetype_frequency'
-
   return(out)
-
-
 }
 
-# create a plot for a generalized bar graph.
-plot_bar <- function(temp_dat, bar_color, border_color, alpha, plot_title){
-  # get data based on country input
-  ggplot(temp_dat, aes(variable, value)) +
-    geom_bar(stat = 'identity', fill = bar_color, color = border_color, alpha = alpha) +
-    labs(x = 'Return period',
-         y = 'Estimated annual loss (million USD',
-         title = plot_title)+
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
-          axis.text.y = element_text(size = 12),
-          axis.title = element_text(size = 12)) 
-  
-}
-
+# this function computes the aic score ffrom the log likelihood for distributions that don't have built in R functions.
 get_aic <- function(llhood){
   aic <- (-2*llhood) + 2
 }
 
+# this function takes the data and an argument whether advanced option was selected by user
+# and fits a distribution for each peril and returns the mle and aic.
 get_aic_mle <- function(dat, is_advanced){
   # get aic mle  by looping through perils 
   # save(dat, file = 'prefit.RData')
   
+  # remove observations with zeroes.
   dat <- dat[dat$value > 0,]
+  
+  # get the names of the perils present in this dataset (ones with enough observations)
   temp <- dat %>% group_by(peril) %>% summarise(counts = sum(value))
   present_perils <- unique(temp$peril)
   
-  # subset dat by present perils
+  # subset dat by present perils and loop through each one.
   dat <- dat %>% filter(peril %in% present_perils)
   dat_list <- list()
   for(i in 1:length(present_perils)){
     peril_name <- present_perils[i]
     sub_dat <- dat[dat$peril == peril_name,]
 
+    # fit log normal
     log_normal <- try(fitdistrplus::fitdist(sub_dat$value,distr =  "lnorm"),silent = TRUE)
     if(class(log_normal) == 'try-error'){
       log_normal <- NULL
@@ -340,9 +282,8 @@ get_aic_mle <- function(dat, is_advanced){
       mle_2_upper <- NA
     } else {
       log_normal_aic <- round(log_normal$aic,2)
-      
       if(is_advanced){
-        # get bootstrap values
+        # get bootstrap values if advanced mode
         log_normal_boot <- fitdistrplus::bootdist(log_normal, niter = 1000)
         mle_1 <- log_normal_boot[[6]]$estimate[1]
         mle_2 <- log_normal_boot[[6]]$estimate[2]
@@ -359,7 +300,6 @@ get_aic_mle <- function(dat, is_advanced){
         mle_1_upper <- NA
         mle_2_upper <- NA
       }
-   
     }
     # create dat frame to store aic and MLEs
     log_normal_dat <- data_frame(name = 'log_normal',
@@ -371,6 +311,8 @@ get_aic_mle <- function(dat, is_advanced){
                                  mle_1_upper = mle_1_upper,
                                  mle_2_upper = mle_2_upper)
    
+    # fit the 4 parameter beta. this does not use fitdisplus and generally fails if too little observations. 
+    # so if the number of observations is below 4, does not fit.
     if(nrow(sub_dat) < 4){
       beta <- NULL
       beta_aic <- NA
@@ -403,13 +345,14 @@ get_aic_mle <- function(dat, is_advanced){
                               mle_4_upper = mle_4_upper)
     } else {
       if(is_advanced){
-        beta_dat <- bootstrap_beta(dat = sub_dat, num_iter = 1)
+        beta_dat <- bootstrap_beta(dat = sub_dat, num_iter = 100)
       } else {
-        beta_dat <- bootstrap_beta(dat = sub_dat, num_iter = 20)
+        beta_dat <- bootstrap_beta(dat = sub_dat, num_iter = 1)
       }
     }
     
-    
+    # fit the gamma distribution using newton-raphson. This also does not use the fitdistplus package and generally
+    # fails is not enough observations.
     if(nrow(sub_dat) < 4){
       gamma <- NULL
       gamma_aic <- NA
@@ -436,9 +379,7 @@ get_aic_mle <- function(dat, is_advanced){
       }
     }
     
-
     # fit frechet
-    # dfrechet(sub_dat$value, lambda = 1, mu = 1, sigma = 1, log = FALSE)
     frechet <- try(fitdistrplus::fitdist(sub_dat$value, "frechet", start=list(lambda=0.1, mu=0.1, sigma = 0.1), method="mle"),
                    silent = TRUE)
     if(class(frechet) == 'try-error'){
@@ -453,7 +394,6 @@ get_aic_mle <- function(dat, is_advanced){
       
     } else {
       frechet_aic <- round(frechet$aic,2)
-      
       if(is_advanced){
         # get bootstrap values
         frechet_boot <- fitdistrplus::bootdist(frechet, niter = 1000)
@@ -484,8 +424,8 @@ get_aic_mle <- function(dat, is_advanced){
                                  mle_2_upper = mle_2_upper)
     
     
-    
-    # git gumbel
+  
+    # fit the gumbel distribution
     
     # dgumbel function
     dgumbel <- function(x,mu,s){ # PDF
@@ -658,68 +598,9 @@ get_aic_mle <- function(dat, is_advanced){
     
     dat_list[[i]] <- aic_mle_dat
     print(i)
-    
   }
-  
   aic_dat <- do.call('rbind', dat_list)
-  
   return(aic_dat)
-  
-}
-
-
-# create a generalized line plot
-plot_line <- function(temp_dat, 
-                      line_color, 
-                      line_size, 
-                      alpha, 
-                      exhibit_2,
-                      largest_loss_num,
-                      largest_loss_year,
-                      plot_title){
-  
-  if(!exhibit_2){
-    p <-  ggplot(temp_dat, aes(x, y)) +
-      geom_line(size = line_size, color = line_color, alpha = alpha) +
-      labs(x = 'Probability of Exceeding Loss',
-           y = 'Funding gap (million USD)',
-           title = plot_title) +
-      theme_bw() + 
-      theme(axis.text.x = element_text(angle = 0, size = 12),
-            axis.text.y = element_text(size = 12),
-            axis.title = element_text(size = 12)) 
-    
-  } else {
-    # get data based on country input
-    p <- ggplot(temp_dat, aes(x, y)) +
-      geom_line(size = 1.5, color = 'blue') +
-      labs(x = 'Probability of Exceeding Loss',
-           y = 'Value of loss (million USD)',
-           title = plot_title,
-           caption = paste0('dotted line represents largest loss',' (', largest_loss_year, ')'))  +
-      geom_hline(yintercept  = largest_loss_num, linetype= 2) + 
-      theme_bw() +
-      theme(axis.text.x = element_text(angle = 0, size = 12),
-            axis.text.y = element_text(size = 12),
-            axis.title = element_text(size = 12)) 
-    
-  }
-  
-  return(p)
-  
-}
-
-# create plot to visualize simulationdata data
-plot_sim <- function(temp_dat){
-
-  p <- ggplot(temp_dat, aes(SimulatedNNDISLoss)) +
-    geom_histogram(alpha = 0.6) +
-    labs(x="Simulated Loss", 
-         y="Frequency",
-         title='distribution of simulated loss',
-         subtitle = '15k simulations') +
-    theme_databrew()
-  return(p)
 }
 
 # Function for making core data a one row per peril-year data set
@@ -760,6 +641,7 @@ elongate_core_data <- function(cdx){
   return(out)
 }
 
+# function widens the data from long to wide format.
 widen_core_data <- function(cdx){
   if(is.null(cdx)){
     return(cdx)
@@ -770,6 +652,7 @@ widen_core_data <- function(cdx){
   return(cdx)
 }
 
+# this function converts values to frequency data.
 values_to_frequency <- function(cdx){
   message('Converting a values table to a frequency table')
   message('--- the original values table looks like')
@@ -790,6 +673,8 @@ values_to_frequency <- function(cdx){
   return(cdx)
 }
 
+# this function take the name of the distribution with the lowest aic score and the corresponding 
+# mle and aic values, then simulates 15000 observations.
 make_simulation <- function(dis_name, dat){
   if(dis_name == 'Log normal'){
     if(any(is.na(dat$aic))){
@@ -863,12 +748,10 @@ make_simulation <- function(dis_name, dat){
   return(sim)
 }
 
-
-
+# this function takes the data, after all user inputs and checks to see if the data is ready to be fit.
 fit_distribution <- function(the_right_data = NULL, advanced_mode){
   require(tidyverse)
   # the right data should be either scaled, detrended or core data, depending on inputs
-  
   out <- NULL
   ok <- FALSE
   if(!is.null(the_right_data)){
@@ -878,13 +761,12 @@ fit_distribution <- function(the_right_data = NULL, advanced_mode){
   }
   if(ok){
     the_right_data <- the_right_data[the_right_data$value > 0,]
-    # save(the_right_data, file = 'out.RData')
-    
     out <- get_aic_mle(the_right_data, is_advanced = advanced_mode)
   }
   return(out)
 }
 
+# this function finds the distribution with the smallest aic score
 filter_distribution <- function(fitted_distribution = NULL){
   # fitted_distribution should be a 5 column df as produced by
   # fit_distribution
@@ -908,6 +790,7 @@ filter_distribution <- function(fitted_distribution = NULL){
   return(out)
 }
 
+# this function prepares the data for simulations
 prepare_simulations <- function(fitted_distribution = NULL,
                                 dist_flood = NULL,
                                 dist_drought = NULL,
@@ -949,6 +832,8 @@ prepare_simulations <- function(fitted_distribution = NULL,
   return(out)
 }
 
+# this checks if data is ready to be simulation, the simulates the data with "make_simulations" function.
+# Then multiplies the simulated loss data by the simulated frequency data.
 run_simulations <- function(prepared_simulation_data = NULL, prepared_frequency_data = NULL){
   # prepared_simulation_data is the format that comes
   # from the prepare_simulations function, a 5 column df as produced by
@@ -965,7 +850,6 @@ run_simulations <- function(prepared_simulation_data = NULL, prepared_frequency_
   }
   
   if(ok){
-    # load(file = 'new_pre_data.RData')
     prepared_simulation_data <- prepared_simulation_data %>% filter(!is.na(aic))
     perils <- sort(unique(prepared_simulation_data$peril))
     names(prepared_frequency_data) <- c('peril', 'freq')
@@ -1053,75 +937,6 @@ plot_simulations <- function(rs = NULL,
   return(out)
 }
 
-# Plot simulations
-tabulate_simulations <- function(ran_simulations = NULL,
-                                 peril = 'Flood'){
-  # ran_simulations gets generated in run_simulations
-  # it should be a 3 column df with columns key, value and freq
-  # peril must be one of the peril types
-  
-  out <- NULL
-  ok <- FALSE
-  if(!is.null(ran_simulations)){
-    if(nrow(ran_simulations) > 0){
-      ok <- TRUE
-    }
-  }
-  
-  if(ok){
-    # Filter
-    pd <- ran_simulations %>%
-      filter(key == peril)
-    # Fake calculations
-    out <- pd %>%
-      group_by(key) %>%
-      summarive(value = mean(value, na.rm = TRUE))
-  } else {
-    out <- NULL
-  }
-  return(out)
-}
-
-simulate_ci <- function(right_data = NULL){
-  # the right data should be either scaled, detrended or core data, depending on inputs
-  # what is returned is 2 rows for each peril, the lower and upper
-  out <- NULL
-  ok <- FALSE
-  if(!is.null(the_right_data)){
-    if(nrow(the_right_data) > 0){
-      ok <- TRUE
-    }
-  }
-  if(ok){
-    perils <- c('Flood', 'Drought', 'Storm', 'Earthquake')
-    out <- expand.grid(key = perils,
-                       type = c('Lower', 'Upper'))
-    out <- out %>%
-      mutate(mle1 <- rnorm(n = nrow(out)),
-             mle2 = rnorm(n = nrow(out)))
-  }
-  return(out)
-}
-
-generate_ci <- function(simulated_ci = NULL){
-  # this takes the output of simulate_ci and prepares plotting
-  # values for confidence intervals
-  out <- NULL
-  ok <- FALSE
-  if(!is.null(simulated_ci)){
-    if(nrow(simulated_ci) > 0){
-      ok <- TRUE
-    }
-  }
-  if(ok){
-    out <- tibble(x = 1:100,
-                  upr = 1:100,
-                  lwr = (1:100) - 5)
-  }
-  return(out)
-}
-
-
 # Function for conditional coloring, etc. in the tab panel headers
 tab_maker <- function(n = 1,
                       label = 'TOOL SETTINGS',
@@ -1182,9 +997,7 @@ quant_that <- function(dat_sim,
   # lower point estimate
   annual_avg_lower <- round(mean(dat_sim$value_lower), 2)
   output_lower <- quantile(dat_sim$value_lower,c(0.8,0.9, 0.96,0.98,0.99), na.rm = TRUE)
-  
-  
-  
+ 
   # create sub_data frame sub_dat to store output with chart labels
   sub_dat <- data_frame(`Annual average` = annual_avg,
                         `1 in 5 Years` = output[1],
@@ -1204,80 +1017,7 @@ quant_that <- function(dat_sim,
   return(sub_dat)
 }
 
-bootstrap_cis <- function(grd){
-  
-  if(is.null(grd)){
-    message('grd is null in the bootstrap functionality. returning null')
-    return(NULL)
-  }
-  if(nrow(grd[[1]]) == 0){
-    message('grd has no rows in the bootstrap functionality. returning null')
-    return(NULL)
-  }
-  
-  loss_data <- grd[[1]]
-  freq_data <- grd[[2]]
-  # # Collapse, combine accross all perils
-  # loss_data <- loss_data %>% group_by(year, country) %>% summarise(value = sum(value))
-  loss_list <- freq_list <- list()
-  perils <- sort(unique(loss_data$peril))
-  counter <- 0
-  for(j in 1:length(perils)){
-    for(i in 1:1000){
-      counter <- counter + 1
-      this_peril <- perils[j]
-      # Loss data
-      this_loss_data <- loss_data %>% filter(peril == this_peril)
-      loss_indices <- sample(1:nrow(this_loss_data), size = nrow(this_loss_data), replace = T)
-      new_loss_data <- this_loss_data[loss_indices,]
-      loss_list[[counter]] <- new_loss_data %>% mutate(county = i)
-      
-      # Freq data
-      this_freq_data <- freq_data %>% filter(peril == this_peril)
-      freq_indices <- sample(1:nrow(this_freq_data), size = nrow(this_freq_data), replace = T)
-      new_freq_data <- this_freq_data[freq_indices,]
-      freq_list[[counter]] <- new_freq_data %>% mutate(county = i)
-    }
-  }
-  
-  # Multiply the freq and the loss data
-  combined_list <- list()
-  for(i in 1:length(loss_list)){
-    this_loss_data <- loss_list[[i]]
-    this_freq_data <- freq_list[[i]]
-    out <- this_loss_data %>%
-      dplyr::select(-year) %>%
-      mutate(value = value * this_freq_data$value)
-    combined_list[[i]] <- out
-  }
-  # Collapse the combined_list dataframes so that they combine all perils together
-  # WORKING IN HERE, NOT DONE
-  collapsed <- bind_rows(combined_list)
-  collapsed
-    mutate(dummy = 1) %>%
-    group_by(county) %>%
-    mutate(cs = cumsum(dummy)) %>% ungroup
-  collapsed <- collapsed %>% group_by(country, cs) %>%
-    summarise(value = sum(value))
-  
-  quant_list <- list()
-  for(i in 1:length(combined_list)){
-    x <- quant_that(combined_list[[i]])
-    quant_list[[i]] <- x
-  }
-  quant <- bind_rows(quant_list)
-  done <- quant %>%
-    group_by(variable) %>%
-    summarise(lwr = quantile(value, 0.025),
-              upr = quantile(value, 0.975))
-  
-  quant_that(dat_sim = combined_list[[2]])
-  combined <- bind_rows(combined_list) %>%
-    group_by(peril) %>%
-    arrange(value)
-
-}
-
+# this function tests if linear trend exists in data.
 test_linear_trend <- function(dat){
   
   peril_names <- unique(dat$peril)
@@ -1295,38 +1035,26 @@ test_linear_trend <- function(dat){
   return(out)
 }
 
-
+# this function is used while fitting the gamma distribution
 run_newton_raphson <- function(f, df, x0, eps=1e-08, maxiter=1000, ...) {
-  
   if(!exists("ginv")) library(MASS)
   x <- x0
   t <- 0
-  
   repeat {
-    
     t <- t + 1
     x.new <- x - as.numeric(ginv(df(x, ...)) %*% f(x, ...))
     if(mean(abs(x.new - x)) < eps | t >= maxiter) {
       
       if(t >= maxiter) warning("Maximum number of iterations reached!")
       break
-      
     }
     x <- x.new
-    
   }
-  
   out <- list(solution=x.new, value=f(x.new, ...), iter=t)
   return(out)
-  
 }
 
-
-
-## Auxiliary functions
-
 # Derivative of the gamma log-likelihood
-
 dl <- function(theta, X, n) {
   
   alpha <- theta[1]
@@ -1338,7 +1066,6 @@ dl <- function(theta, X, n) {
 }
 
 # Second derivative of the gamma log-likelihood
-
 ddl <- function(theta, X, n) {
   
   alpha <- theta[1]
@@ -1351,17 +1078,13 @@ ddl <- function(theta, X, n) {
 }
 
 # Gamma method of moments estimation
-
 gamma_mme <- function(X) {
-  
   m <- mean(X)
   v <- var(X)
   return(c(m**2 / v, v / m))
-  
 }
 
-
-
+# fits the gamma distribution using newton raphson
 gamma_fit <- function(dat, num_iter){
   x <- dat$value
   n <- length(x)
@@ -1427,12 +1150,10 @@ bootstrap_gamma <- function(dat, num_iter){
                     mle_2_upper = mles_2[3],
                     mle_3_upper = NA,
                     mle_4_upper = NA)
-  
   return(out)
-  
 }
 
-
+# density function for four parameter beta
 dBeta_ab <-function(x, shape1=2, shape2=3, a = 0, b=1, params = list(shape1, shape2, a, b),...){
   if(!missing(params)){
     shape1 <- params$shape1
@@ -1444,7 +1165,7 @@ dBeta_ab <-function(x, shape1=2, shape2=3, a = 0, b=1, params = list(shape1, sha
   return(out)
 }
 
-
+# probability distribution function for 4 parameter beta
 pBeta_ab <- function(q, shape1=2, shape2=3, a = 0, b=1, params = list(shape1=2, shape2 = 5, a = 0, b = 1),...){
   if(!missing(params)){
     shape1 <- params$shape1
@@ -1456,7 +1177,7 @@ pBeta_ab <- function(q, shape1=2, shape2=3, a = 0, b=1, params = list(shape1=2, 
   return(out)
 }
 
-
+# quantile function for four parameter beta
 qBeta_ab <- function(p, shape1=2, shape2=3, a = 0, b=1, params = list(shape1=2, shape2 = 5, a = 0, b = 1),...){
   if(!missing(params)){
     shape1 <- params$shape1
@@ -1468,7 +1189,7 @@ qBeta_ab <- function(p, shape1=2, shape2=3, a = 0, b=1, params = list(shape1=2, 
   return(out)
 }
 
-
+# random number generator for 4 parameter beta
 rBeta_ab <- function(n, shape1=2, shape2=3, a = 0, b = 1, params = list(shape1, shape2, a, b),...){
   if(!missing(params)){
     shape1 <- params$shape1
@@ -1481,12 +1202,10 @@ rBeta_ab <- function(n, shape1=2, shape2=3, a = 0, b = 1, params = list(shape1, 
   return(out)
 }
 
+# maximum likelihood for 4 parameter beta
 eBeta_ab <- function(X,w, method ="numerical.MLE",...){
   n <- length(X)
-  
   w <- rep(1,n)
-  
-  
   {
     if(method != "numerical.MLE") warning(paste("method ", method, " is not avaliable, use numerial.MLE instead."))  
     method = "numerical.MLE"  
@@ -1502,7 +1221,6 @@ eBeta_ab <- function(X,w, method ="numerical.MLE",...){
     est.par.se <- rep(NA, length(est.par))
     # } 
   } 
-  
   attributes(est.par)$ob <- X
   attributes(est.par)$weights <- w
   attributes(est.par)$distname <- "Beta_ab"
@@ -1511,14 +1229,12 @@ eBeta_ab <- function(X,w, method ="numerical.MLE",...){
   attributes(est.par)$par.type <- c("shape","shape","boundary","boundary")
   attributes(est.par)$par.vals <- c(est.par$shape1, est.par$shape2, est.par$a, est.par$b)
   attributes(est.par)$par.s.e <-  est.par.se  
-  
   class(est.par) <- "eDist"
-  
   return(est.par)
 }
 
 
-## (weighted) (log) likelihood function
+## (weighted) (log) likelihood function for 4 parameter beta
 lBeta_ab <- function(X, w, shape1=2, shape2 =3, a = 0, b = 1,  params = list(shape1, shape2, a, b), logL = TRUE,...){
   if(!missing(params)){
     shape1 <- params$shape1
@@ -1526,22 +1242,19 @@ lBeta_ab <- function(X, w, shape1=2, shape2 =3, a = 0, b = 1,  params = list(sha
     a <- params$a
     b <- params$b
   }
-  
   n <- length(X)
   if(missing(w)){
     w <- rep(1,n)
   } else {
     w <- n*w/sum(w)
   }
-  
   #     ll <- sum(w*((shape1-1)*log(X-a)+(shape2-1)*log(b-X)-log(beta(shape1,shape2))-(shape1+shape2-1)*log(b-a)))
   ll <- sum(w*log(dBeta_ab(x=X,params = params)))
   l <- exp(ll)
-  
   if(logL) {return(ll)} else{return(l)}
 }
 
-## (weighted) score vectors
+# (weighted) score vectors for 4 parameter beta
 sBeta_ab <- function(X, w, shape1=2, shape2 =3, a = 0, b = 1,  params = list(shape1, shape2, a, b),...){
   if(!missing(params)){
     shape1 <- params$shape1
@@ -1567,8 +1280,7 @@ sBeta_ab <- function(X, w, shape1=2, shape2 =3, a = 0, b = 1,  params = list(sha
   return(score)
 }
 
-
-# weighted maximum likelihood (we keep the weights constant)
+# weighted maximum likelihood (we keep the weights constant) for 4 parameter beta
 wmle <- function(X, w, distname, initial, lower, upper, loglik.fn, score.fn, obs.info.fn){
     n <- length(X)
     
@@ -1811,20 +1523,20 @@ wmle <- function(X, w, distname, initial, lower, upper, loglik.fn, score.fn, obs
     return(est.par)  
   }      
 
-## Auxiliary Functions 
-## logit: a mathematical function transforming [0,1] to [-Inf, Inf]
+# Auxiliary Functions 
+# logit: a mathematical function transforming [0,1] to [-Inf, Inf]
 logit <- 
   function(x){
     log(x/(1-x))
   }
 
-## invlogit: Inverse of logit function; transform [-Inf, Inf] to [0,1]
+# invlogit: Inverse of logit function; transform [-Inf, Inf] to [0,1]
 invlogit <- 
   function(x){
     1/(1+exp(-x))
   }
 
-# # function for implementing bootstrap using gamma_mle_ll
+# function for implementing bootstrap using gamma_mle_ll
 bootstrap_beta <- function(dat, num_iter){
   beta_results <- list()
   for(i in 1:num_iter){
@@ -1887,72 +1599,24 @@ bootstrap_beta <- function(dat, num_iter){
   return(out)
 }
 
-# # function for implementing bootstrap using gamma_mle_ll
-# library(doParallel)
-# library(foreach)
-# doParallel::registerDoParallel(cores = 2)
-# bootstrap_beta <- function(dat, num_iter){
-#   dat <- dat %>% dplyr::filter(value > 0)
-#   start_time <- Sys.time()
-#   final_out <- foreach(temp = 1:num_iter, .combine = rbind, .errorhandling = 'stop') %do% {
-#     set.seed(temp)
-#     
-#     if(num_iter == 1){
-#       sample_index <- 1:nrow(dat)
-#     } else {
-#       sample_index <- sample(1:nrow(dat), nrow(dat), replace = TRUE)
-#     }
-#     # get new data 
-#     new_data <- dat[sample_index,]
-#     beta_ab_params <-  try(eBeta_ab(new_data$value), silent = TRUE)
-#     if(class(beta_ab_params) == 'try-error'){
-#       beta_data <- data_frame(aic = NA, 
-#                               mle1 = NA, 
-#                               mle2 = NA,
-#                               mle3 = NA,
-#                               mle4 = NA)
-#     } else {
-#       ll_hood <- lBeta_ab(X = new_data$value, params = list(shape1 = beta_ab_params$shape1,shape2= beta_ab_params$shape2, 
-#                                                             a = 0, b = beta_ab_params$b))
-#       mle1 <- beta_ab_params$shape1
-#       mle2 <- beta_ab_params$shape2
-#       mle3 <- 0
-#       mle4 <- beta_ab_params$b
-#       aic <- get_aic(llhood = ll_hood)
-#       beta_data <- data_frame(aic = aic, 
-#                               mle1 = mle1, 
-#                               mle2 = mle2,
-#                               mle3 = mle3,
-#                               mle4 = mle4)
-#     }
-#   
-#   fitted_data <- beta_data
-#   # get aic at the 50th percentile
-#   aic <- quantile(fitted_data$aic, 0.5, na.rm = TRUE)
-#   # get mle1 and mle2, lower mid and upper
-#   mles_1 <- quantile(fitted_data$mle1, c(0.025, 0.5, 0.975), na.rm = TRUE)
-#   mles_2 <- quantile(fitted_data$mle2, c(0.025, 0.5, 0.975), na.rm = TRUE)
-#   mles_3 <- quantile(fitted_data$mle3, c(0.025, 0.5, 0.975), na.rm = TRUE)
-#   mles_4 <- quantile(fitted_data$mle4, c(0.025, 0.5, 0.975), na.rm = TRUE)
-#   # store results in dataframe
-#   out <- data_frame(name = 'Beta', 
-#                     aic = aic,
-#                     mle_1 = mles_1[2],
-#                     mle_2 = mles_2[2],
-#                     mle_3 = mles_3[2],
-#                     mle_4 = mles_4[2],
-#                     mle_1_lower = mles_1[1],
-#                     mle_2_lower = mles_2[1],
-#                     mle_3_lower = mles_3[1],
-#                     mle_4_lower = mles_4[1],
-#                     mle_1_upper = mles_1[3], 
-#                     mle_2_upper = mles_2[3],
-#                     mle_3_upper = mles_3[3],
-#                     mle_4_upper = mles_4[3])
-#   
-#   print(temp)
-#   final_out[temp] <- out
-#   }
-#   end_time <- Sys.time()
-#   start_time - end_time
-# }
+# for output 4, creates funding gap curve
+get_gap_curve <- function(sim_vector, budget = budget){
+  funding_gap_curve <- as.data.frame(quantile(sim_vector,seq(0.5,0.98,by=0.002), na.rm = TRUE))
+  funding_gap_curve$x <- rownames(funding_gap_curve)
+  rownames(funding_gap_curve) <- NULL
+  names(funding_gap_curve)[1] <- 'y'
+  
+  # remove percent and turn numeric
+  funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
+  funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
+  
+  # divide y by 100k, so get data in millions
+  funding_gap_curve$x <- (1 - funding_gap_curve$x)
+  # funding_gap_curve$y <- funding_gap_curve$y/scale_by
+  
+  names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
+  names(funding_gap_curve)[1] <- 'Funding gap'
+  funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
+  funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
+  return(funding_gap_curve)
+}

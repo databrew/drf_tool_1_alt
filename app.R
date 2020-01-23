@@ -728,7 +728,7 @@ server <- function(input, output, session) {
       best_source <- best_data_source()
       country_data <- selected_country()
       country_frequency <- country_frequency()
-    
+      
       # subset data by best source
       country_data <- country_data[country_data$origin == best_source & country_data$damage_type == 'damage',]
       country_frequency <- country_frequency[country_frequency$origin == best_source & country_frequency$damage_type == 'damage',]
@@ -844,7 +844,7 @@ server <- function(input, output, session) {
       }
     }
   })
- 
+  
   # prepare cost per person data if damage type chosen is 'cost per person'
   prepare_cost_data <- reactive({
     best_source <- best_data_source()
@@ -868,7 +868,7 @@ server <- function(input, output, session) {
       
       # get frequency data
       country_frequency <- country_frequency()
-     
+      
       # subset by best source
       country_data <- country_data[country_data$origin == best_source & country_data$damage_type == 'affected',]
       country_frequency <- country_frequency[country_frequency$origin == best_source & country_frequency$damage_type == 'affected',]
@@ -916,7 +916,7 @@ server <- function(input, output, session) {
       
       # multiply people affected by cost
       archetype_data$value <- archetype_data$value*cost
-     
+      
       # store archetype loss and frequency in list
       data <- list()
       data[[1]] <- archetype_data
@@ -1059,10 +1059,8 @@ server <- function(input, output, session) {
                          "Storm"),currency = "", interval = 3, mark = ",")
     }
   })
+  
   proxy <- dataTableProxy('raw_data_table')
-  
-  
-  
   # Capture the edits to the raw_data_table
   observeEvent(input$raw_data_table_cell_edit, {
     # Indicate that we should instead use edited core data, instead of the default
@@ -1083,7 +1081,6 @@ server <- function(input, output, session) {
     cdx2 <- values_to_frequency(cdx1)
     edited <- list(cdx1, cdx2)
     core_data_edited$data <- edited
-    
   })
   
   # create table to visualize the country's scaling data
@@ -1144,7 +1141,6 @@ server <- function(input, output, session) {
     } else {
       return(NULL)
     }
-    
     if(is_advanced){
       if(ss == 'POPULATION'){
         # store frequenc
@@ -1210,13 +1206,14 @@ server <- function(input, output, session) {
     final_list[[1]] <- out
     final_list[[2]] <- second_part
     return(final_list)
-    
   })
   
   significant_trends <- reactiveVal(FALSE)
   
+  # ui output that tests if trend exists. if it does, a ui input is created to give 
+  # user the option to correct for trend. If a trend does not exists, text alerts the user
+  # that no trend is present.
   output$trend_test_ui <- renderUI({
-    
     sdr <- scale_data_reactive()
     sdr <- sdr[[1]]
     ok <- FALSE
@@ -1229,11 +1226,7 @@ server <- function(input, output, session) {
       return(NULL)
     } else {
       test_data <- sdr
-      # save(sdr, file = 'trend_data.RData')
-      # split test_data by peril type
-      
       all_perils <- test_linear_trend(test_data)
-      
       if(input$advanced == 'Basic'){
         return(NULL)
       } else {
@@ -1244,20 +1237,19 @@ server <- function(input, output, session) {
           fluidPage(
             helpText('All perils had no significant trend or not enough observations')
           )
-          
         } else {
           significant_trends(TRUE)
           peril_names <- paste(peril_names, collapse = ',')
           fluidPage(
-            selectInput('trend_test', paste0('Trends were found in ', paste0(peril_names, collapse = ', '), '. Correct linear trends?'), choices = c('Yes', 'No')))
-          
+            selectInput('trend_test', paste0('Trends were found in ', 
+                                             paste0(peril_names, collapse = ', '), '. Correct linear trends?'), choices = c('Yes', 'No')))
         }
       }
     }
   })
   
+  # this is a reactive object that tests (again) if trend is present and returns p value
   execute_trend_test <- reactive({
-    
     sdr <- scale_data_reactive()
     sdr <- sdr[[1]]
     ok <- FALSE
@@ -1277,24 +1269,24 @@ server <- function(input, output, session) {
         return(all_perils)
       }
     }
-    
   })
   
+  # this is a reactive object that corrects the trend for each peril if a pvalue is present that is
+  # less than 0.05 and if the user selects to correct the trend.
   correct_trend <- reactive({
     if(is.null(input$trend_test) | is.null(execute_trend_test())){
       return(NULL)
     } else {
-      
       if(input$trend_test  == 'No'){
         return(NULL)
       }
       trend_perils <- execute_trend_test()
       trend_data <- scale_data_reactive()
-    
+      
+      # get all perils that have a significant trend
       peril_type <- trend_perils$peril[trend_perils$p_value <= 0.05 & !is.na(trend_perils$p_value)]
       
       # split data into 3 groups - loss trend perils, loss other perils, and other data
-      
       second_part <- trend_data[[2]]
       trend_data <- trend_data[[1]]
       trend_data_peril <-  trend_data[trend_data$peril %in% peril_type,]
@@ -1303,7 +1295,6 @@ server <- function(input, output, session) {
       # When there is a p-value large than 0.05 the
       # Tool replaces a past year value with 
       # (linear prediction at starting year + (original value – linear prediction on the given year)).
-     
       data_list <- list()
       for(i in 1:length(peril_type)){
         peril <- peril_type[i]
@@ -1313,6 +1304,7 @@ server <- function(input, output, session) {
         data_list[[i]] <- sub_data
       }
       
+      # collapse list
       trended_data <- do.call('rbind', data_list)
       trend_data$value[trend_data$peril %in% peril_type] <- trended_data$trend_value
       final_data <- list()
@@ -1322,18 +1314,12 @@ server <- function(input, output, session) {
     }
   })
   
-  
   ################
-  # Data tab
+  # RISK PROFILE FITTING AND SIMULATIONS
   ################
-  # the problem here is that there are some reactives we are not nullifying out and need to spread data for frequency
-  # create a data table  
   
-  
-  # output for scaling data if available - the 3rd, 4th, and 5th index in the data list are scaling data. Population is 3rd
-  # gdp 4th, inflation 5th
-  
-  # reactive object to create right data
+  # reactive object to create right data based on all user inputs from tool settings and risk 
+  # profile fitting tabs
   get_right_data <- reactive({
     usde <- use_core_data_edited()
     if(usde){
@@ -1345,9 +1331,6 @@ server <- function(input, output, session) {
     trend_dat <- correct_trend()
     is_trend <- input$trend_test
     out <- NULL
-    # if(is.null(core_dat) & is.null(scale_dat) & is.null(trend_dat)){
-    #   NULL
-    # }
     if(input$data_type == 'Archetype'){
       out <- cored
     } else {
@@ -1365,29 +1348,31 @@ server <- function(input, output, session) {
     return(out)
   })
   
+  # reactive object that receives curated data and simulates bernoulli
   simulate_bernoulli <- reactive({
     rd <- get_right_data()
-    # save(rd, file = 'right_data.RData')
     rd <- rd[[2]]
     temp<- sim_bern(rd)
     return(temp)
   })
   
+  # reactive object that receives curated data and fits a distribution
   fitted_distribution <- reactive({
     is_advanced <- input$advanced == 'Advanced'
-    
     rd <- get_right_data()
     rd <- rd[[1]]
-    #save(rd, file = 'file_to_test.RData')
     temp <- fit_distribution(rd, advanced_mode = is_advanced)
     return(temp)
   })
   
+  # reactve object that gets the aic scores and filters based on the lowest one for each peril.
   filtered_distribution <- reactive({
     fd <- fitted_distribution()
     filter_distribution(fd)
   })
   
+  # based on the perils that were fit, a series of possible UI inputs are created on 
+  # this risk profiling tab. 
   output$peril_ui <- renderUI({
     is_advanced <- input$advanced == 'Advanced'
     fd <- filtered_distribution()
@@ -1434,11 +1419,11 @@ server <- function(input, output, session) {
         flood_go <- br()
       } else {
         flood_go <- fluidRow(
-            radioButtons('dist_flood_input',
-                         'Distribution for flood',
-                         choices = flood_choices,
-                         selected = chosen_flood,
-                         inline = TRUE),
+          radioButtons('dist_flood_input',
+                       'Distribution for flood',
+                       choices = flood_choices,
+                       selected = chosen_flood,
+                       inline = TRUE),
           bsPopover(id = "dist_flood_input", title = '',
                     content = 'The selected distribution is the "best" distribution for the observed flood damage. In advanced mode, however, you can select other distributions as well.',
                     placement = "top", 
@@ -1515,6 +1500,8 @@ server <- function(input, output, session) {
     }
   })
   
+  # this reactive object gathers the information on which distribution 
+  # fits each peril and prepares the data for simualtions
   prepared_simulations <- reactive({
     fd <- fitted_distribution()
     x <- prepare_simulations(fd, dist_flood = input$dist_flood_input,
@@ -1526,24 +1513,22 @@ server <- function(input, output, session) {
     x
   })
   
+  # this dataset takes the simulated bernoulli data (15k) and the mle's for the best distributions
+  # and runs the simulations
   ran_simulations <- reactive({
-
     bs <- simulate_bernoulli()
     ps <- prepared_simulations()
-    # save(bs, file = 'bs.RData')
-    # save(ps, file = 'ps.RData')
-    
     x <- run_simulations(ps, bs)
     return(x)
   })
   
+  ##########
+  # SIMULATIONS TAB
+  ##########
   
-  # output$delete <- DT::renderDataTable({
-  #   corrected_data <- ran_simulations()
-  #   datatable(corrected_data, rownames = FALSE)
-  # }, options = list(pageLength = 5, autoWidth = TRUE, rownames= FALSE
-  # ))
-  
+  # this takes the simulated data and the original loss data and plots 
+  # two overlapping densities, comparing the distribution of the loss data with 
+  # the simulated dat a for each peril.
   output$simulation_plot <- renderPlot({
     rs <- ran_simulations()
     rd <- get_right_data()
@@ -1555,6 +1540,8 @@ server <- function(input, output, session) {
                      overlap = ioc)
   })
   
+  # this table shows the aic scores and mles for the all the distributions that converged for 
+  # each peril. In advanced mode, you can chose any of these.
   output$simulation_table <- DT::renderDataTable({
     fd <- fitted_distribution()
     ok <- FALSE
@@ -1576,25 +1563,22 @@ server <- function(input, output, session) {
                      'AIC',
                      'MLE 1',
                      'MLE 2')
-        return(datatable(fd, rownames = FALSE, options = list(lengthChange = FALSE, dom = 't')))
+      return(datatable(fd, rownames = FALSE, options = list(lengthChange = FALSE, dom = 't')))
     } else{
       return(NULL)
     }
   })
   
-  ################
-  # Output tab
-  ################
+  # based on the perils present in the data, this creates a ui input to select 
+  # which perils you want to view on the output page.
   output$select_peril_ui <- renderUI({
     dat_sim <- ran_simulations()
     if(is.null(dat_sim)){
       return(NULL)
     }
     dat_sim <- dat_sim %>% filter(!is.na(value))
-
+    
     peril_choices <- unique(dat_sim$key)
-    
-    
     fluidRow(
       checkboxGroupInput('select_peril',
                          label = 'Perils to view on output page',
@@ -1609,6 +1593,12 @@ server <- function(input, output, session) {
     )
   })
   
+  ##########
+  # OUTPUT TAB
+  ##########
+  
+  # this reactive data frame combines perils based on which are chosen to view on the 
+  # risk profile tab.
   gather_perils <- reactive({
     selected_perils <- input$select_peril
     if(is.null(selected_perils)){
@@ -1634,6 +1624,8 @@ server <- function(input, output, session) {
     }
   })
   
+  # this reactive dataframe combines the original loss data based on the perils selected to view from the
+  # risk profile page.
   gather_data <- reactive({
     selected_perils <- input$select_peril
     if(is.null(selected_perils)){
@@ -1641,7 +1633,7 @@ server <- function(input, output, session) {
     } else {
       dat <- get_right_data()
       dat <- dat[[1]]
-
+      
       # filter selected_perils
       filtered_dat <- dat %>%
         filter(peril %in% selected_perils) %>%
@@ -1651,6 +1643,126 @@ server <- function(input, output, session) {
       return(filtered_dat)
     }
   })
+  
+  ##########
+  # output 1
+  ##########
+  
+  # this reactive data frame prepares the data for plotting.
+  annual_loss_data <- reactive({
+    budget <- input$budget
+    gp <- gather_perils()
+    gd <- gather_data()
+    selected_perils <- input$select_peril
+    if(is.na(budget) | is.null(gp) | is.null(gd) | is.null(selected_perils)){
+      return(NULL)
+    } else {
+      dat <- gather_data()
+      dat_sim <- gather_perils()
+      dat_sim <- dat_sim %>% filter(!is.na(value))
+      # remove obsevations with 0, if any
+      dat <- dat[dat$value > 0,]
+      dat <- dat[order(dat$year, decreasing = FALSE),]
+      # get budget
+      sub_dat <- quant_that(dat_sim = dat_sim,
+                            dat = dat)
+      sub_dat$variable <- factor(sub_dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
+                                                              'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
+      
+      sub_dat$value <- round(sub_dat$value, 2)
+      # save(sub_dat, file = 'p_dat.RData')
+      return(sub_dat)
+    }
+  })
+  
+  # table for output 1
+  output$annual_loss_tably <- DT::renderDataTable({
+    x <- annual_loss_data()
+    if(!is.null(x)){
+      x$value <- round(x$value)
+      x$value_lower <- round(x$value_lower)
+      x$value_upper <- round(x$value_upper)
+      names(x) <- c('Variable', 'Loss', 'Lower bound', 'Upper bound')
+      # names(x) <- Hmisc::capitalize(names(x))
+      datatable(x, rownames = FALSE,
+                editable = FALSE, options = list(lengthChange = FALSE, dom = 't')) %>%
+        formatCurrency(c("Loss", "Lower bound", "Upper bound"),currency = "", interval = 3, mark = ",")
+    }
+  })
+  
+  # ouptut 1 plot
+  output$annual_loss_plotly <- renderPlot({
+    budget <- input$budget
+    plot_dat <- annual_loss_data()
+    sp <- input$select_peril
+    
+    if(is.null(plot_dat) | is.null(sp)){
+      return(NULL)
+    }
+    is_archetype <- input$data_type == 'Archetype'
+    # get country input for plot title
+    if(is_archetype){
+      plot_title <- paste0('Estimate of Annual Loss by ', '\n', sp, ' for ', '\n',input$archetype )
+    } else {
+      plot_title <- paste0('Estimate of Annual Loss by ', '\n', sp, ' for ','\n', input$country )
+    }
+    if(input$ci & input$advanced == 'Advanced'){
+      # Plot
+      g <- ggplot(plot_dat, aes(x=variable,
+                                y=value/scale_size,
+                                text = value)) +
+        geom_bar(stat = 'identity',
+                 fill = '#5B84B1FF',
+                 col = '#FC766AFF',
+                 alpha = 0.6) +
+        geom_hline(yintercept = budget) +
+        theme_bw(base_size = 14,
+                 base_family = 'Ubuntu')  +
+        theme(axis.text.x = element_text(angle = 45,
+                                         hjust = 1)) +
+        xlab('') + ylab('(in millions)') +
+        ggtitle(plot_title) + geom_errorbar(aes(x = variable,
+                                                ymin = value_lower/scale_size,
+                                                ymax = value_upper/scale_size))
+    } else {
+      # Plot
+      g <- ggplot(plot_dat, aes(x=variable,
+                                y=value/scale_size,
+                                text = value)) +
+        geom_bar(stat = 'identity',
+                 fill = '#5B84B1FF',
+                 col = '#FC766AFF',
+                 alpha = 0.6) +
+        geom_hline(yintercept = budget) +
+        theme_bw(base_size = 14,
+                 base_family = 'Ubuntu')  +
+        theme(axis.text.x = element_text(angle = 45,
+                                         hjust = 1)) +
+        xlab('') + ylab('(in millions)') +
+        ggtitle(plot_title)
+    }
+    return(g)
+  })
+  
+  # ui output to determine if table or plot is shown.
+  output$output1 <- renderUI({
+    is_table <- input$is_table_1
+    if(is_table){
+      DT::dataTableOutput('annual_loss_tably')
+    } else {
+      fluidRow(
+        plotOutput('annual_loss_plotly'),
+        bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1',
+                  content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happen every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expected to happen every 10 years (ie 10% probability).",
+                  placement = "top", trigger = "hover", options = list(container ='body'))
+      )
+    }
+  })
+  
+  ##########
+  # output 2
+  ##########
+  
   # # make reactive object to store probability of exceeding budget
   probability_of_exceeding <- reactive({
     
@@ -1658,7 +1770,6 @@ server <- function(input, output, session) {
     if(is.null(budget) | is.null(gather_perils())){
       NULL
     } else {
-      
       dat_sim <- gather_perils()
       dat_sim <- dat_sim %>% filter(!is.na(value))
       # get budget
@@ -1678,227 +1789,25 @@ server <- function(input, output, session) {
       # find where budget equals curve
       prob_exceed <- output$Probability[which.min(abs(output$`Total Loss` - budget))]
       return(prob_exceed)
-      
-      
-    }
-    
-    
-    
-  })
-  #
-  # create a reactive object that takes new input
-  probability_of_exceeding_surplus_deficit <- reactive({
-    
-    budget <- input$budget
-    if(is.null(budget) |  is.null(gather_perils())){
-      NULL
-    } else {
-      
-      dat_sim <- gather_perils()
-      dat_sim <- dat_sim %>% filter(!is.na(value))
-      # save(dat_sim, file = 'exceed.RData')
-      # get budget
-      exceed_budget <- input$exceed_budget
-      budget <- exceed_budget + budget
-      output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
-      output$x <- rownames(output)
-      rownames(output) <- NULL
-      names(output)[1] <- 'y'
-      
-      # remove percent and turn numeric
-      output$x <- gsub('%', '', output$x)
-      output$x <- as.numeric(output$x)
-      output$x <- output$x/100
-      names(output)[1] <- 'Total Loss'
-      names(output)[2] <- 'Probability'
-      output$Probability <- 1 - output$Probability
-      # save(output, budget, file = 'prob_exceed.RData')
-      # find where budget equals curve
-      prob_exceed_surplus_deficit <- output$Probability[which.min(abs(output$`Total Loss` - (budget*scale_size)))]
-      return(prob_exceed_surplus_deficit)
-      
-    }
-    
-  })
-  #
-  #
-  #
-  # # OUTPUT 1
-  #
-  
-  annual_loss_data <- reactive({
-    
-    budget <- input$budget
-    gp <- gather_perils()
-    gd <- gather_data()
-    selected_perils <- input$select_peril
-    if(is.na(budget) | is.null(gp) | is.null(gd) | is.null(selected_perils)){
-      return(NULL)
-    } else {
-      
-      dat <- gather_data()
-      dat_sim <- gather_perils()
-      dat_sim <- dat_sim %>% filter(!is.na(value))
-      # remove obsevations with 0, if any
-      dat <- dat[dat$value > 0,]
-      dat <- dat[order(dat$year, decreasing = FALSE),]
-      # get budget
-      
-      sub_dat <- quant_that(dat_sim = dat_sim,
-                            dat = dat)
-      
-      sub_dat$variable <- factor(sub_dat$variable, levels = c('1 in 5 Years', '1 in 10 Years', '1 in 25 Years', '1 in 50 Years', '1 in 100 Years',
-                                                         'Annual average', 'Highest historical annual loss', 'Most recent annual loss'))
-      
-      sub_dat$value <- round(sub_dat$value, 2)
-      # save(sub_dat, file = 'p_dat.RData')
-      return(sub_dat)
     }
   })
   
-  output$output1 <- renderUI({
-    is_table <- input$is_table_1
-    if(is_table){
-      DT::dataTableOutput('annual_loss_tably')
-    } else {
-      fluidRow(
-        plotOutput('annual_loss_plotly'),
-        bsPopover(id = "annual_loss_plotly", title = 'Exhibit 1',
-                  content = "This graph shows the estimated annual loss across all selected perils. A return period of 1 in 5 years is the estimated annual loss expected to happen every five years (ie 20% probability). Similarly, a period of 1 in 10 years is the estimated annual loss expected to happen every 10 years (ie 10% probability).",
-                  placement = "top", trigger = "hover", options = list(container ='body'))
-      )
-    }
-  })
-  
-  output$annual_loss_gap_tably <- DT::renderDataTable({
-    x <- annual_loss_gap_data()
-    save(x, file = 'alg.RData')
-    if(!is.null(x)){
-      x$value <- round(x$value)
-      x$value_lower <- round(x$value_lower)
-      x$value_upper <- round(x$value_upper)
-      names(x) <- c('Variable', 'Loss', 'Lower bound', 'Upper bound')
-      # names(x) <- Hmisc::capitalize(names(x))
-      datatable(x, rownames = FALSE,
-                editable = FALSE, options = list(lengthChange = FALSE, dom = 't')) %>%
-        formatCurrency(c("Loss", "Lower bound", "Upper bound"),currency = "", interval = 3, mark = ",")
-      # DT::datatable(x)
-    }
-  })
-  
-  output$output3 <- renderUI({
-    is_table <- input$is_table_3
-    if(is_table){
-      DT::dataTableOutput('annual_loss_gap_tably')
-    } else {
-      fluidRow(
-        plotOutput('annual_loss_gap_plotly'),
-        bsPopover(id = 'annual_loss_gap_plotly', title = 'Exhibit 3', content = "The funding gap is the difference between the available federal budget and the estimated annual loss at the return period. A loss value below the red budget line represents an estimated surplus (if above, it would be a deficit).",
-                  placement = "top", trigger = "hover", options = list(container ='body'))
-      )
-    }
-  })
-  
-  
-  output$annual_loss_tably <- DT::renderDataTable({
-    x <- annual_loss_data()
-    if(!is.null(x)){
-      x$value <- round(x$value)
-      x$value_lower <- round(x$value_lower)
-      x$value_upper <- round(x$value_upper)
-      names(x) <- c('Variable', 'Loss', 'Lower bound', 'Upper bound')
-      # names(x) <- Hmisc::capitalize(names(x))
-      datatable(x, rownames = FALSE,
-                editable = FALSE, options = list(lengthChange = FALSE, dom = 't')) %>%
-        formatCurrency(c("Loss", "Lower bound", "Upper bound"),currency = "", interval = 3, mark = ",")
-    }
-  })
-  
-  
-  ### OUTPUT 1
-  output$annual_loss_plotly <- renderPlot({
-    budget <- input$budget
-    plot_dat <- annual_loss_data()
-    sp <- input$select_peril
-    
-    if(is.null(plot_dat) | is.null(sp)){
-      return(NULL)
-    }
-    
-    is_archetype <- input$data_type == 'Archetype'
-    # get country input for plot title
-    if(is_archetype){
-      plot_title <- paste0('Estimate of Annual Loss by ', '\n', sp, ' for ', '\n',input$archetype )
-    } else {
-      plot_title <- paste0('Estimate of Annual Loss by ', '\n', sp, ' for ','\n', input$country )
-    }
-    
-    if(input$ci & input$advanced == 'Advanced'){
-      # Plot
-      g <- ggplot(plot_dat, aes(x=variable,
-                                y=value/scale_size,
-                                text = value)) +
-        geom_bar(stat = 'identity',
-                 fill = '#5B84B1FF',
-                 col = '#FC766AFF',
-                 alpha = 0.6) +
-        geom_hline(yintercept = budget) +
-        theme_bw(base_size = 14,
-                 base_family = 'Ubuntu')  +
-        theme(axis.text.x = element_text(angle = 45,
-                                         hjust = 1)) +
-        xlab('') + ylab('(in millions)') +
-        ggtitle(plot_title) + geom_errorbar(aes(x = variable,
-                          ymin = value_lower/scale_size,
-                          ymax = value_upper/scale_size))
-    } else {
-      # Plot
-      g <- ggplot(plot_dat, aes(x=variable,
-                                y=value/scale_size,
-                                text = value)) +
-        geom_bar(stat = 'identity',
-                 fill = '#5B84B1FF',
-                 col = '#FC766AFF',
-                 alpha = 0.6) +
-        geom_hline(yintercept = budget) +
-        theme_bw(base_size = 14,
-                 base_family = 'Ubuntu')  +
-        theme(axis.text.x = element_text(angle = 45,
-                                         hjust = 1)) +
-        xlab('') + ylab('(in millions)') +
-        ggtitle(plot_title)
-      
-    }
-    
-    return(g)
-    
-   
-   
-  })
-  
-  ## OUTPUT 3
+  # output 2 plot
   output$loss_exceedance_plotly <- renderPlot({
-    
     prob_exceed <- probability_of_exceeding()
     budget <- input$budget
     sp <- input$select_peril
-    
-    
     if(is.null(prob_exceed) | is.na(budget) | is.null(gather_data()) | is.null(sp)){
       NULL
     } else {
-      
+      # get loss data and perils
       dat <- gather_data()
       dat_sim <- gather_perils()
-      # load(file = 'dat.RData')
-      # 
-      # load(file = 'dat_sim.RData')
+      
       dat <- dat[order(dat$year, decreasing = FALSE),]
       largest_loss_num <- round(max(dat$value), 2)
       largest_loss_year <- dat$year[dat$value == max(dat$value)]
       largest_loss_num <- largest_loss_num/scale_size
-      
-      # find where budget equals curve
       
       # get country input for plot title
       is_archetype <- input$data_type == 'Archetype'
@@ -1927,7 +1836,6 @@ server <- function(input, output, session) {
       output$Probability <- 1 - output$Probability
       output$`Total Loss lower` <-  quantile(dat_sim$value_lower,seq(0.5,0.98,by=0.002), na.rm = TRUE)
       output$`Total Loss upper` <-  quantile(dat_sim$value_upper,seq(0.5,0.98,by=0.002), na.rm = TRUE)
-      
       plot_dat <- output
       # get budget
       if(input$ci & input$advanced == 'Advanced'){
@@ -1946,8 +1854,6 @@ server <- function(input, output, session) {
           annotate('text', label = 'Largest loss', x = 0.45, y = largest_loss_num, vjust = -1) +
           theme_bw(base_size = 14,
                    base_family = 'Ubuntu')
-
-        
       } else {
         g <- ggplot(plot_dat, aes(Probability, `Total Loss`/scale_size)) +
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
@@ -1963,12 +1869,16 @@ server <- function(input, output, session) {
                    base_family = 'Ubuntu')
         
       }
-    return(g)
+      return(g)
     }
-  
+    
   })
   
-  # ############ OUTPUT 3
+  ##########
+  # OUTPUT 3
+  ##########
+  
+  # reactive object that creates data for output 3, based on the inputs for the definitions of 'extreme' and 'severe'
   annual_loss_gap_data <- reactive({
     budget <- input$budget
     if(is.na(budget) |  is.null(gather_perils()) | is.null(gather_data())){
@@ -1988,39 +1898,45 @@ server <- function(input, output, session) {
       extreme <- extreme/100
       extreme <- 1-extreme
       
-
+      # get quantiles for severe and extreme probability
       output <- quantile(dat_sim$value,c(severe, extreme))
       annual_avg <- mean(dat_sim$value)
       
+      # lower bound
       output_lower <- quantile(dat_sim$value_lower,c(severe, extreme), na.rm = TRUE)
       annual_avg_lower <- mean(dat_sim$value_lower)
       
+      # upper bound
       output_upper <- quantile(dat_sim$value_upper,c(severe, extreme), na.rm = TRUE)
       annual_avg_upper <- mean(dat_sim$value_upper)
+      
       # create data frame dat to store output with chart labels
       sub_plot_dat <- data_frame(`Average` = annual_avg,
                                  `Severe` = output[1],
                                  `Extreme` = output[2])
       
-      
-      # melt the data frame to get value and variable
+      # melt the data frame to get value and variable, to long format
       sub_plot_dat <- melt(sub_plot_dat)
       sub_plot_dat$value_lower <- c(annual_avg_lower, output_lower[1], output_lower[2])
       sub_plot_dat$value_upper <- c(annual_avg_upper, output_upper[1], output_upper[2])
-      
       return(sub_plot_dat)
     }
   })
   
+  # plot for output e
   output$annual_loss_gap_plotly <- renderPlot({
     
+    # get data from reactive object, where severe, extreme probabilities are taken into account.
     plot_dat <- annual_loss_gap_data()
     sp <- input$select_peril
     if(is.null(plot_dat) | is.null(sp)){
       return(NULL)
     }
     
+    # get budget
     budget <- input$budget
+    
+    # create custom title based on previous inputs
     is_archetype <- input$data_type == 'Archetype'
     # get country input for plot title
     if(is_archetype){
@@ -2029,8 +1945,9 @@ server <- function(input, output, session) {
       plot_title <- paste0('Estimate of Annual Loss by severity for ', '\n', sp, '\n',input$country )
     }
     
+    # plot
     if(input$ci & input$advanced == 'Advanced'){
-
+      
       g <- ggplot(plot_dat, aes(x=variable,
                                 y=value/scale_size,
                                 text = value)) +
@@ -2044,11 +1961,11 @@ server <- function(input, output, session) {
                                          hjust = 1)) +
         xlab('') + ylab('(in millions)') +
         geom_errorbar(aes(x = variable, ymin = value_lower/scale_size, ymax = value_upper/scale_size)) +
-
+        
         ggtitle(plot_title)
-
       
-    }else {
+      
+    } else {
       # plot
       g <- ggplot(plot_dat, aes(x=variable,
                                 y=value/scale_size,
@@ -2066,13 +1983,82 @@ server <- function(input, output, session) {
         
         ggtitle(plot_title)
     }
-    
     return(g)
-    
   })
   
+  # table for output 3
+  output$annual_loss_gap_tably <- DT::renderDataTable({
+    x <- annual_loss_gap_data()
+    if(!is.null(x)){
+      x$value <- round(x$value)
+      x$value_lower <- round(x$value_lower)
+      x$value_upper <- round(x$value_upper)
+      names(x) <- c('Variable', 'Loss', 'Lower bound', 'Upper bound')
+      # names(x) <- Hmisc::capitalize(names(x))
+      datatable(x, rownames = FALSE,
+                editable = FALSE, options = list(lengthChange = FALSE, dom = 't')) %>%
+        formatCurrency(c("Loss", "Lower bound", "Upper bound"),currency = "", interval = 3, mark = ",")
+      # DT::datatable(x)
+    }
+  })
+  
+  # ui output to determine if plot or table is shown
+  output$output3 <- renderUI({
+    is_table <- input$is_table_3
+    if(is_table){
+      DT::dataTableOutput('annual_loss_gap_tably')
+    } else {
+      fluidRow(
+        plotOutput('annual_loss_gap_plotly'),
+        bsPopover(id = 'annual_loss_gap_plotly', title = 'Exhibit 3', content = "The funding gap is the difference between the available federal budget and the estimated annual loss at the return period. A loss value below the red budget line represents an estimated surplus (if above, it would be a deficit).",
+                  placement = "top", trigger = "hover", options = list(container ='body'))
+      )
+    }
+  })
+  
+  #########
+  # OUTPUT 4
+  #########
+  
+  # create a reactive object that takes the budget input and returns the probability of exceeding the budget 
+  # by the "exceed_budget" value, entered on the outputs page
+  probability_of_exceeding_surplus_deficit <- reactive({
+    
+    # get bduget 
+    budget <- input$budget
+    if(is.null(budget) |  is.null(gather_perils())){
+      NULL
+    } else {
+      # get simulations
+      dat_sim <- gather_perils()
+      dat_sim <- dat_sim %>% filter(!is.na(value))
+      
+      # get probability vector
+      exceed_budget <- input$exceed_budget
+      budget <- exceed_budget + budget
+      output <- as.data.frame(quantile(dat_sim$value,seq(0.5,0.98,by=0.002), na.rm = TRUE))
+      output$x <- rownames(output)
+      rownames(output) <- NULL
+      names(output)[1] <- 'y'
+      
+      # remove percent and turn numeric
+      output$x <- gsub('%', '', output$x)
+      output$x <- as.numeric(output$x)
+      output$x <- output$x/100
+      names(output)[1] <- 'Total Loss'
+      names(output)[2] <- 'Probability'
+      output$Probability <- 1 - output$Probability
+      
+      # gets the probability of exceeding budget.
+      prob_exceed_surplus_deficit <- output$Probability[which.min(abs(output$`Total Loss` - (budget*scale_size)))]
+      return(prob_exceed_surplus_deficit)
+    }
+  })
+  
+  # output 4 plot
   output$loss_exceedance_gap_plotly <- renderPlot({
     
+    # get the probability of exceed budget and the budget
     prob_exceed_suprplus_deficit <- probability_of_exceeding_surplus_deficit()
     budget <- input$budget
     data_type <- input$data_type
@@ -2081,19 +2067,18 @@ server <- function(input, output, session) {
     if(is.null(prob_exceed_suprplus_deficit) | is.na(budget) | is.null(data_type) | is.null(gather_data())){
       NULL
     } else {
-      
+      # get the historical loss data and simulations data
       dat <- gather_data()
-      
-      
       dat_sim <- gather_perils()
       
+      # remove nas and store largest loss number and year
       dat_sim <- dat_sim %>% filter(!is.na(value))
       dat <- dat[order(dat$year, decreasing = FALSE),]
       largest_loss_num <- max(dat$value)
       largest_loss_year <- dat$year[dat$value == max(dat$value)]
       exceed_budget <- input$exceed_budget
       
-      # scale up budget and exceed budget
+      # scale up budget and exceed budget to shift the curve
       exceed_budget <- exceed_budget*scale_size
       budget <- budget*scale_size
       
@@ -2106,7 +2091,6 @@ server <- function(input, output, session) {
         } else {
           plot_title <- paste0('Estimate of Annual Funding gap by ', '\n', sp, ' for ','\n', input$country )
         }
-        
       } else {
         is_archetype <- input$data_type == 'Archetype'
         # get country input for plot title
@@ -2118,42 +2102,17 @@ server <- function(input, output, session) {
         
         exceed_surplus_deficit <- paste0('Probability of exceeding funding gap/surplus by \n', exceed_budget, ' is ', prob_exceed_suprplus_deficit)
         plot_title <- paste0(plot_title, ' : ',  '\n',exceed_surplus_deficit)
-        
       }
       
-      # save(dat_sim, plot_title, largest_loss_num, exceed_budget, largest_loss_year, file = 'output_4.RData')
       
-      # get best distirbution
-      get_gap_curve <- function(sim_vector, budget = budget){
-        funding_gap_curve <- as.data.frame(quantile(sim_vector,seq(0.5,0.98,by=0.002), na.rm = TRUE))
-        funding_gap_curve$x <- rownames(funding_gap_curve)
-        rownames(funding_gap_curve) <- NULL
-        names(funding_gap_curve)[1] <- 'y'
-        
-        # remove percent and turn numeric
-        funding_gap_curve$x <- gsub('%', '', funding_gap_curve$x)
-        funding_gap_curve$x <- as.numeric(funding_gap_curve$x)/100
-        
-        # divide y by 100k, so get data in millions
-        funding_gap_curve$x <- (1 - funding_gap_curve$x)
-        # funding_gap_curve$y <- funding_gap_curve$y/scale_by
-        
-        names(funding_gap_curve)[2] <- 'Probability of exceeding loss'
-        names(funding_gap_curve)[1] <- 'Funding gap'
-        funding_gap_curve$`Funding gap` <- -funding_gap_curve$`Funding gap`
-        funding_gap_curve$`Funding gap` <- funding_gap_curve$`Funding gap` + budget
-        return(funding_gap_curve)
-      }
-     curve <- get_gap_curve(dat_sim$value, budget = budget)
-     curve_lower <- get_gap_curve(dat_sim$value_lower, budget = budget)
-     curve_upper <- get_gap_curve(dat_sim$value_upper, budget = budget)
-     
-     curve$value_lower <- curve_lower$`Funding gap`
-     curve$value_upper <- curve_upper$`Funding gap`
-     
-
+      # Create funding gap curve
+      curve <- get_gap_curve(dat_sim$value, budget = budget)
+      curve_lower <- get_gap_curve(dat_sim$value_lower, budget = budget)
+      curve_upper <- get_gap_curve(dat_sim$value_upper, budget = budget)
+      
+      curve$value_lower <- curve_lower$`Funding gap`
+      curve$value_upper <- curve_upper$`Funding gap`
       if(input$ci & input$advanced == 'Advanced'){
-        
         g <-  ggplot(curve, aes(`Probability of exceeding loss`, `Funding gap`/scale_size)) +
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
           geom_line(aes(`Probability of exceeding loss`, value_lower/scale_size), linetype = 'dotted') +
@@ -2164,8 +2123,6 @@ server <- function(input, output, session) {
           ggtitle(plot_title) +
           theme_bw(base_size = 14,
                    base_family = 'Ubuntu')
-        # g
-
       } else {
         g <-  ggplot(curve, aes(`Probability of exceeding loss`, `Funding gap`/scale_size)) +
           geom_line(col = 'blue', size = 1, alpha = 0.7) +
@@ -2175,14 +2132,10 @@ server <- function(input, output, session) {
           ggtitle(plot_title) +
           theme_bw(base_size = 14,
                    base_family = 'Ubuntu')
-        
       }
-     return(g)
+      return(g)
     }
-    
   })
-  #   # #
-  #
   
   # UIs for panel headers
   output$tool_settings_ui <- renderUI({
@@ -2190,7 +2143,6 @@ server <- function(input, output, session) {
               input = input,
               tab_data = tab_data)
   })
-  
   output$data_ui <- renderUI({
     tab_maker(n = 2, label = 'DATA',
               input = input,
@@ -2222,7 +2174,6 @@ server <- function(input, output, session) {
     the_country_ok <- FALSE
     the_perils_ok <- FALSE
     the_damage_type_ok <- FALSE
-    
     
     if(!is.null(the_country)){
       the_country_ok <- TRUE
@@ -2263,7 +2214,6 @@ server <- function(input, output, session) {
         vb1 <- valueBox(value = '', subtitle = '',
                         width = 3)
       }
-      
       if(the_perils_ok){
         fs <- 40 / ((length(the_perils))^(1/4))
         vb2 <- valueBox(value = tags$p(paste0('Perils: ', paste0(the_perils, collapse = ', '), collapse = ''), style = paste0("font-size: ", fs, "%;")),
@@ -2273,7 +2223,6 @@ server <- function(input, output, session) {
         vb2 <- valueBox(value = '', subtitle = '',
                         width = 3)
       }
-      
       if(the_damage_type_ok){
         if(cpp){
           the_val <- input$cost_per_person
@@ -2305,13 +2254,6 @@ server <- function(input, output, session) {
     updateTabsetPanel(session, inputId="tabs", selected='TOOL SETTINGS')
   })
   
-  # output$delete <- renderUI({
-  #   grd <- get_right_data()
-  #   message('grd is')
-  #   print(head(grd))
-  #   h3('Test')
-  #   save(grd, file = 'grd.RData')
-  # })
 }
 
-shinyApp(ui, server)
+shinyApp(ui, server)d

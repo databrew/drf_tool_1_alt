@@ -152,7 +152,6 @@ for(i in 1:length(country_names)){
 # concatenate data that was stored in list
 population_data <- do.call('rbind', population_list)
 
-
 # gdp data
 gdp_data <- read.csv('data/Scale/gdp.csv')
 
@@ -198,7 +197,7 @@ for(i in 1:length(country_names)){
 scale_data <- do.call('rbind', scale_data_list)
 
 ##########
-# read in archetyp data
+# read in archetype data
 #########
 
 # get all archetype cost data into one data frame
