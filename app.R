@@ -721,11 +721,11 @@ server <- function(input, output, session) {
   
   # prepare loss (total damage) data if total damage was selected. Subset by best data source
   prepare_loss_data <- reactive({
-    data_source <- best_data_source()
-    if(is.null(data_source) | is.null(country_frequency())){
+    best_source <- best_data_source()
+    
+    if(is.null(best_source) | is.null(country_frequency())){
       NULL
     } else {
-      best_source <- best_data_source()
       country_data <- selected_country()
       country_frequency <- country_frequency()
       
@@ -1353,6 +1353,14 @@ server <- function(input, output, session) {
     rd <- get_right_data()
     rd <- rd[[2]]
     temp<- sim_bern(rd)
+    return(temp)
+  })
+  
+  # reactive object to simulate a poisson process
+  simulate_poisson <- reactive({
+    rd <- get_right_data()
+    rd <- rd[[2]]
+    temp<- sim_pois(rd)
     return(temp)
   })
   

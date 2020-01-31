@@ -70,20 +70,20 @@ num_years = 16
 ###########
 
 # emdat
-emdat_data <- read.csv('data/Countries/emdat_country.csv', stringsAsFactors = FALSE)
+emdat_data <- readRDS('data/Countries/emdat_country.rda')
 
 # add column for data origin
 emdat_data$origin <- 'EM_DAT'
 
 # desinventar
-des_data <- read.csv('data/Countries/desinventer_country.csv', stringsAsFactors = FALSE)
+des_data <- readRDS('data/Countries/desinventer_country.rda')
 
 # add column for data origin
 des_data$origin <- 'DesInventar'
 
 # read in ocha data
 # desinventar
-ocha_data <- read.csv('data/Countries/ocha_data.csv', stringsAsFactors = FALSE)
+ocha_data <- readRDS('data/Countries/ocha_data.rda')
 
 # add column for data origin
 ocha_data$origin <- 'OCHA'
@@ -103,7 +103,7 @@ country_data <- melt(country_data, id.vars = c('country', 'year', 'peril', 'orig
 names(country_data)[5] <- 'damage_type'
 
 # read in best data key
-best_data <- read.csv('data/Countries/best_data_emdat_investar_ocha.csv', stringsAsFactors = FALSE)
+best_data <- readRDS('data/Countries/best_data_emdat_investar_ocha.rda')
 
 names(best_data) <- c('country', 'desinventar', 'em_dat', 'ocha', 'affected', 'damage')
 
@@ -136,7 +136,7 @@ rm(cost_freq, damage_freq, cost_data, damage_data)
 ##########
 
 # population data
-population_data <- read.csv('data/Scale/population_data.csv')
+population_data <- readRDS('data/Scale/population_data.rda')
 
 # get scaled_factor for each country for population by looping through each country and applying the methodology 
 # that GAD provided.
@@ -153,7 +153,7 @@ for(i in 1:length(country_names)){
 population_data <- do.call('rbind', population_list)
 
 # gdp data
-gdp_data <- read.csv('data/Scale/gdp.csv')
+gdp_data <- readRDS('data/Scale/gdp_data.rda')
 
 # get scaled_factor for each country for gdp
 country_names <- unique(gdp_data$Country)
@@ -167,7 +167,7 @@ for(i in 1:length(country_names)){
 gdp_data <- do.call('rbind', gdp_list)
 
 # inflation
-inflation_data <- read.csv('data/Scale/inflation.csv')
+inflation_data <- readRDS('data/Scale/inflation_data.rda')
 
 # get scaled_factor for each country for inflation
 

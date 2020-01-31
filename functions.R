@@ -86,34 +86,34 @@ fill_na <- function(data){
 read_in_archetype_cost_data <- function(archetype_data, archetype_names){
   # read in loss data
   # high risk middle income, storms, floods, earthquakes
-  hr_mi_sfe <- read.csv(paste0('data/Archetypes/',archetype_data, '/hr_mi_sfe_cost.csv'), stringsAsFactors = FALSE)
+  hr_mi_sfe <- readRDS(paste0('data/Archetypes/',archetype_data, '/hr_mi_sfe_cost.rda'))
  
-   # change column names
+  # change column names
   names(hr_mi_sfe) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   hr_mi_sfe$Archetype <- archetype_names[1]
 
   # low income drought
-  li_d_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_d_cost.csv'),  stringsAsFactors = FALSE)
+  li_d_cost <- readRDS(paste0('data/Archetypes/',archetype_data, '/li_d_cost.rda'))
   names(li_d_cost) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   li_d_cost$Archetype <-  archetype_names[4]
 
   # low in come drought, flood, and storm
-  li_dfs_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_dfs_cost.csv'), stringsAsFactors = FALSE)
+  li_dfs_cost <- readRDS(paste0('data/Archetypes/',archetype_data, '/li_dfs_cost.rda'))
   names(li_dfs_cost) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   li_dfs_cost$Archetype <-  archetype_names[6]
 
   # low income, storm, flood and earth quake
-  li_sfe_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_sfe_cost.csv'), stringsAsFactors = FALSE)
+  li_sfe_cost <- readRDS(paste0('data/Archetypes/',archetype_data, '/li_sfe_cost.rda'))
   names(li_sfe_cost) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   li_sfe_cost$Archetype <-  archetype_names[5]
 
   # middle income flood
-  mi_f_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/mi_f_cost.csv'), stringsAsFactors = FALSE)
+  mi_f_cost <- readRDS(paste0('data/Archetypes/',archetype_data, '/mi_f_cost.rda'))
   names(mi_f_cost) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   mi_f_cost$Archetype <-  archetype_names[2]
 
   # upper midlle income storm, flood, earthquake
-  umi_sfe_cost <- read.csv(paste0('data/Archetypes/',archetype_data, '/umi_sfe_cost.csv'),  stringsAsFactors = FALSE)
+  umi_sfe_cost <- readRDS(paste0('data/Archetypes/',archetype_data, '/umi_sfe_cost.rda'))
   names(umi_sfe_cost) <- c('Archetype', 'Year', 'Peril', 'Outcome')
   umi_sfe_cost$Archetype <-  archetype_names[3]
 
@@ -179,7 +179,7 @@ read_in_country_data <- function(country_name) {
 # This function takes the archetype path and name and reads in frequency data for archetypes.
 read_in_archetype_freq_data <- function(archetype_data, archetype_names){
   # high risk middle income storms, floods, earthquakes
-  hr_mi_sfe <- read.csv(paste0('data/Archetypes/',archetype_data, '/hr_mi_sfe_freq.csv'))
+  hr_mi_sfe <- readRDS(paste0('data/Archetypes/',archetype_data, '/hr_mi_sfe_freq.rda'))
 
   # change names
   names(hr_mi_sfe)[ncol(hr_mi_sfe)] <- 'Drought'
@@ -188,7 +188,7 @@ read_in_archetype_freq_data <- function(archetype_data, archetype_names){
   hr_mi_sfe$Archetype <- archetype_names[[1]]
 
   # upper middle income storms, floods, earthquakes.
-  umi_sfe <- read.csv(paste0('data/Archetypes/',archetype_data, '/umi_sfe_freq.csv'))
+  umi_sfe <- readRDS(paste0('data/Archetypes/',archetype_data, '/umi_sfe_freq.rda'))
   names(umi_sfe)[ncol(umi_sfe)] <- 'Drought'
 
   # change names
@@ -206,7 +206,7 @@ read_in_archetype_freq_data <- function(archetype_data, archetype_names){
   mi_f$Archetype <- archetype_names[[2]]
 
   # low income storms, floods, earthquakes.
-  li_sfe <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_sfe_freq.csv'))
+  li_sfe <- readRDS(paste0('data/Archetypes/',archetype_data, '/li_sfe_freq.rda'))
   names(li_sfe)[1] <- 'Year'
   names(li_sfe)[ncol(li_sfe)]  <-'Drought'
 
@@ -216,7 +216,7 @@ read_in_archetype_freq_data <- function(archetype_data, archetype_names){
   li_sfe$Archetype <- archetype_names[[5]]
 
   # lower income drought
-  li_d <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_d_freq.csv'))
+  li_d <- readRDS(paste0('data/Archetypes/',archetype_data, '/li_d_freq.rda'))
   names(li_d) <- c('Year', 'Drought','Storm', 'Earthquake', 'Flood')
   
   # change names
@@ -225,7 +225,7 @@ read_in_archetype_freq_data <- function(archetype_data, archetype_names){
   li_d$Archetype <- archetype_names[[4]]
 
   # lower income droughts, floods, storms
-  li_dfs <- read.csv(paste0('data/Archetypes/',archetype_data, '/li_dfs_freq.csv'))
+  li_dfs <- readRDS(paste0('data/Archetypes/',archetype_data, '/li_dfs_freq.rda'))
   names(li_dfs) <- 'Year'
   
   # change names
@@ -499,7 +499,6 @@ get_aic_mle <- function(dat, is_advanced){
       mle_2_upper <- NA
     } else {
       weibull_aic <- round(weibull$aic, 2)
-      
       if(is_advanced){
         # get bootstrap values
         weibull_boot <- fitdistrplus::bootdist(weibull, niter = 1000)
@@ -1248,7 +1247,6 @@ lBeta_ab <- function(X, w, shape1=2, shape2 =3, a = 0, b = 1,  params = list(sha
   } else {
     w <- n*w/sum(w)
   }
-  #     ll <- sum(w*((shape1-1)*log(X-a)+(shape2-1)*log(b-X)-log(beta(shape1,shape2))-(shape1+shape2-1)*log(b-a)))
   ll <- sum(w*log(dBeta_ab(x=X,params = params)))
   l <- exp(ll)
   if(logL) {return(ll)} else{return(l)}
@@ -1298,11 +1296,9 @@ wmle <- function(X, w, distname, initial, lower, upper, loglik.fn, score.fn, obs
       ddist <- get(paste("d",distname,sep=""))
       ll <- function(params) {sum(w*log(ddist(x=X,params=as.list(params))))}
     }
-    
     nll <- function(par) {-ll(as.list(par))}
     
     # prepare gradient of log-likelihood function (ll.gr, score function)
-    
     if(exists(paste("s",distname,sep=""), mode = "function")) {
       gr <- TRUE
       sdist <- get(paste("s",distname,sep=""))
@@ -1385,8 +1381,6 @@ wmle <- function(X, w, distname, initial, lower, upper, loglik.fn, score.fn, obs
       names(out) <- names(unlist(point))
       return(as.list(out))
     }
-    #     trans.par.fn(initial)
-    #     trans.par.fn(unlist(initial))
     
     # trans.initial - transformed initial point
     trans.initial <- trans.par.fn(initial)
@@ -1397,13 +1391,10 @@ wmle <- function(X, w, distname, initial, lower, upper, loglik.fn, score.fn, obs
       names(out) <- names(unlist(point))
       return(as.list(out))
     }
-    #     inv.trans.par.fn(trans.initial)
-    #     inv.trans.par.fn(unlist(trans.initial))
     
     # log-likelihood function for transformed parameters    
     trans.ll <- function(trans.arg) { return(ll(inv.trans.par.fn(trans.arg)))}
     trans.nll <- function(trans.arg) {-trans.ll(trans.arg)}
-    
     
     # gradient of ll function for transformed parameters 
     if(gr==TRUE){
@@ -1523,7 +1514,7 @@ wmle <- function(X, w, distname, initial, lower, upper, loglik.fn, score.fn, obs
     return(est.par)  
   }      
 
-# Auxiliary Functions 
+## Auxiliary Functions 
 # logit: a mathematical function transforming [0,1] to [-Inf, Inf]
 logit <- 
   function(x){
